@@ -4,3 +4,4 @@ export { useAchievementChecker } from './useAchievementChecker.js';
 export { useKeyboard } from './useKeyboard.js';
 export { useNotifications } from './useNotifications.js';
 export { useWebSocketSync } from './useWebSocketSync.js';
+export { useEventChecker } from './useEventChecker.js';

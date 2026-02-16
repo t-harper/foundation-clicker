@@ -7,6 +7,7 @@ import { type ShipSlice, createShipSlice } from './ship-slice.js';
 import { type AchievementSlice, createAchievementSlice } from './achievement-slice.js';
 import { type PrestigeSlice, createPrestigeSlice } from './prestige-slice.js';
 import { type UISlice, createUISlice } from './ui-slice.js';
+import { type EventSlice, createEventSlice } from './event-slice.js';
 
 export type StoreState =
   & GameSlice
@@ -15,7 +16,8 @@ export type StoreState =
   & ShipSlice
   & AchievementSlice
   & PrestigeSlice
-  & UISlice;
+  & UISlice
+  & EventSlice;
 
 export const useGameStore = create<StoreState>()((...a) => ({
   ...createGameSlice(...a),
@@ -25,6 +27,7 @@ export const useGameStore = create<StoreState>()((...a) => ({
   ...createAchievementSlice(...a),
   ...createPrestigeSlice(...a),
   ...createUISlice(...a),
+  ...createEventSlice(...a),
 }));
 
 // Re-export selectors for convenience
@@ -47,3 +50,4 @@ export type { ShipSlice } from './ship-slice.js';
 export type { AchievementSlice } from './achievement-slice.js';
 export type { PrestigeSlice } from './prestige-slice.js';
 export type { UISlice, ActiveTab, BuyAmount, Notification } from './ui-slice.js';
+export type { EventSlice } from './event-slice.js';

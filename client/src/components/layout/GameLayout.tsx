@@ -14,6 +14,7 @@ import { EncyclopediaPanel } from '../encyclopedia/EncyclopediaPanel';
 import { ColonyMapPanel } from '../colony-map';
 import { SettingsModal } from '../settings/SettingsModal';
 import { NotificationArea } from '../common';
+import { ActiveEffectsBar } from '../events';
 
 function ActivePanel() {
   const activeTab = useGameStore((s) => s.activeTab);
@@ -74,6 +75,9 @@ export function GameLayout() {
 
         {/* Resource bar */}
         <ResourceBar />
+
+        {/* Active buffs/debuffs */}
+        <ActiveEffectsBar />
 
         {/* Main area: sidebar + content */}
         <div className="flex flex-1 overflow-hidden">

@@ -6,6 +6,7 @@ import { TradeRouteKey } from './ships.js';
 import { PrestigePreview, PrestigeHistoryEntry } from './prestige.js';
 import { AchievementState } from './achievements.js';
 import { Resources, ResourceKey } from './resources.js';
+import { EventKey, EventDefinition, ActiveEffect, EventHistoryEntry } from './events.js';
 
 // Auth
 export interface RegisterRequest {
@@ -29,6 +30,7 @@ export interface LoadGameResponse {
   gameState: GameState;
   offlineEarnings: Resources | null;
   offlineSeconds: number;
+  pendingEventKey: string | null;
 }
 
 export interface SaveGameRequest {
@@ -107,6 +109,29 @@ export interface PrestigeResponse {
 // Achievements
 export interface CheckAchievementsResponse {
   newAchievements: AchievementState[];
+}
+
+// Events
+export interface CheckEventsResponse {
+  event: { eventKey: EventKey } | null;
+}
+
+export interface ChooseEventRequest {
+  eventKey: EventKey;
+  choiceIndex: number;
+}
+
+export interface ChooseEventResponse {
+  resources: Resources;
+  newEffects: ActiveEffect[];
+}
+
+export interface GetActiveEffectsResponse {
+  activeEffects: ActiveEffect[];
+}
+
+export interface GetEventHistoryResponse {
+  history: EventHistoryEntry[];
 }
 
 // Generic

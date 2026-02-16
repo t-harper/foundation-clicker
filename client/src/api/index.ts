@@ -20,3 +20,5 @@ export {
 export { getAchievements, checkAchievements } from './achievements.js';
 
 export { previewPrestige, triggerPrestige, getPrestigeHistory } from './prestige.js';
+
+export { checkEvents, chooseEvent, getActiveEffects, getEventHistory } from './events.js';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGameStore, selectProductionRates } from '../../store';
-import type { ResourceKey } from '@foundation/shared';
+import type { ResourceKey, ActiveEffect } from '@foundation/shared';
 import { NumberDisplay, Tooltip } from '../common';
 import { formatResource } from '../../utils/format';
 import {
@@ -51,9 +51,39 @@ const RESOURCE_CONFIGS: ResourceConfig[] = [
   },
 ];
 
+function getResourceBuffStatus(
+  resource: ResourceKey,
+  effects: ActiveEffect[]
+): 'buff' | 'debuff' | null {
+  const now = Math.floor(Date.now() / 1000);
+  let hasBuff = false;
+  let hasDebuff = false;
+  for (const e of effects) {
+    if (e.expiresAt <= now) continue;
+    if (
+      (e.effectType === 'productionBuff' && e.resource === resource) ||
+      e.effectType === 'globalProductionBuff'
+    ) {
+      hasBuff = true;
+    }
+    if (
+      (e.effectType === 'productionDebuff' && e.resource === resource) ||
+      e.effectType === 'globalProductionDebuff'
+    ) {
+      hasDebuff = true;
+    }
+  }
+  if (hasBuff && hasDebuff) return 'buff'; // net positive visual
+  if (hasBuff) return 'buff';
+  if (hasDebuff) return 'debuff';
+  return null;
+}
+
 function ResourceItem({ config }: { config: ResourceConfig }) {
   const value = useGameStore((s) => s.resources[config.key]);
   const rate = useGameStore((s) => selectProductionRates(s)[config.key]);
+  const activeEffects = useGameStore((s) => s.activeEffects);
+  const buffStatus = getResourceBuffStatus(config.key, activeEffects);
 
   return (
     <Tooltip
@@ -62,11 +92,15 @@ function ResourceItem({ config }: { config: ResourceConfig }) {
           <span className="font-semibold">{config.label}</span>
           <span>Current: {formatResource(value)}</span>
           <span>Rate: {formatResource(rate)}/s</span>
+          {buffStatus === 'buff' && <span className="text-green-400">Boosted by active effect</span>}
+          {buffStatus === 'debuff' && <span className="text-red-400">Reduced by active effect</span>}
         </div>
       }
       position="bottom"
     >
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--era-surface)]/50 hover:bg-[var(--era-surface)] transition-colors cursor-default neon-border-subtle">
+      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--era-surface)]/50 hover:bg-[var(--era-surface)] transition-colors cursor-default neon-border-subtle ${
+        buffStatus === 'buff' ? 'ring-1 ring-green-500/30' : ''
+      }${buffStatus === 'debuff' ? 'ring-1 ring-red-500/30' : ''}`}>
         <span className={config.colorClass}>{config.icon}</span>
         <div className="flex flex-col leading-tight">
           <span className="text-[10px] text-[var(--era-text)]/50 uppercase tracking-wide">
@@ -80,7 +114,11 @@ function ResourceItem({ config }: { config: ResourceConfig }) {
               className={`text-sm font-semibold resource-glow ${config.colorClass}`}
             />
             {rate > 0 && (
-              <span className="text-[10px] text-[var(--era-text)]/40">
+              <span className={`text-[10px] ${
+                buffStatus === 'buff' ? 'text-green-400' :
+                buffStatus === 'debuff' ? 'text-red-400' :
+                'text-[var(--era-text)]/40'
+              }`}>
                 +{formatResource(rate)}/s
               </span>
             )}

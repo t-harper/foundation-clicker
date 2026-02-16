@@ -20,6 +20,7 @@ export function selectGameState(state: StoreState): GameState {
     ships: state.ships,
     tradeRoutes: state.tradeRoutes,
     achievements: state.achievements,
+    activeEffects: state.activeEffects,
     lastTickAt: state.lastTickAt,
     totalPlayTime: state.totalPlayTime,
     totalClicks: state.totalClicks,

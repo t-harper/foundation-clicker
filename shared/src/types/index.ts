@@ -5,5 +5,6 @@ export * from './upgrades.js';
 export * from './ships.js';
 export * from './achievements.js';
 export * from './prestige.js';
+export * from './events.js';
 export * from './game-state.js';
 export * from './api.js';

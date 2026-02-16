@@ -5,6 +5,7 @@ import { UpgradeState } from './upgrades.js';
 import { ShipState, TradeRouteState } from './ships.js';
 import { AchievementState } from './achievements.js';
 import { PrestigeState } from './prestige.js';
+import { ActiveEffect } from './events.js';
 
 export interface GameState {
   userId: number;
@@ -17,6 +18,7 @@ export interface GameState {
   ships: ShipState[];
   tradeRoutes: TradeRouteState[];
   achievements: AchievementState[];
+  activeEffects: ActiveEffect[];
   lastTickAt: number;
   totalPlayTime: number;
   totalClicks: number;

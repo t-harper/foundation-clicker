@@ -27,6 +27,7 @@ import { getUpgrades, initializeUpgrades } from '../db/queries/upgrade-queries.j
 import { getShips, updateShipStatus } from '../db/queries/ship-queries.js';
 import { getTradeRoutes, initializeTradeRoutes } from '../db/queries/trade-route-queries.js';
 import { getAchievements, initializeAchievements } from '../db/queries/achievement-queries.js';
+import { getActiveEffects, getPendingEvent } from '../db/queries/event-queries.js';
 import { getDb } from '../db/connection.js';
 import {
   ValidationError,
@@ -52,6 +53,7 @@ function buildGameState(userId: number): GameState {
   const shipRows = getShips(userId);
   const tradeRouteRows = getTradeRoutes(userId);
   const achievementRows = getAchievements(userId);
+  const activeEffectRows = getActiveEffects(userId);
 
   const resources: Resources = {
     credits: row.credits,
@@ -104,6 +106,16 @@ function buildGameState(userId: number): GameState {
       achievementKey: a.achievement_key,
       unlockedAt: a.unlocked_at,
     })),
+    activeEffects: activeEffectRows.map((e) => ({
+      id: e.id,
+      eventKey: e.event_key,
+      choiceIndex: e.choice_index,
+      effectType: e.effect_type as any,
+      resource: e.resource as any,
+      multiplier: e.multiplier,
+      startedAt: e.started_at,
+      expiresAt: e.expires_at,
+    })),
     lastTickAt: row.last_tick_at ?? Math.floor(Date.now() / 1000),
     totalPlayTime: row.total_play_time,
     totalClicks: row.total_clicks,
@@ -135,6 +147,7 @@ function saveResources(userId: number, resources: Resources): void {
 
 export function loadGameState(userId: number): LoadGameResponse {
   const state = buildGameState(userId);
+  const pendingEventKey = getPendingEvent(userId);
 
   const now = Math.floor(Date.now() / 1000);
   const elapsedSeconds = Math.max(0, now - state.lastTickAt);
@@ -177,6 +190,7 @@ export function loadGameState(userId: number): LoadGameResponse {
       gameState: updatedState,
       offlineEarnings,
       offlineSeconds,
+      pendingEventKey,
     };
   }
 
@@ -187,6 +201,7 @@ export function loadGameState(userId: number): LoadGameResponse {
     gameState: state,
     offlineEarnings: null,
     offlineSeconds: 0,
+    pendingEventKey,
   };
 }
 
@@ -263,6 +278,9 @@ export function resetGame(userId: number): void {
     db.prepare('DELETE FROM trade_routes WHERE user_id = ?').run(userId);
     db.prepare('DELETE FROM achievements WHERE user_id = ?').run(userId);
     db.prepare('DELETE FROM prestige_history WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM event_history WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM active_effects WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM pending_event WHERE user_id = ?').run(userId);
 
     // Reset game_state to initial values
     const now = Math.floor(Date.now() / 1000);

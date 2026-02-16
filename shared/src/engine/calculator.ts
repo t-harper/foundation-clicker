@@ -49,6 +49,26 @@ function collectMultipliers(state: GameState): MultiplierSet {
     }
   }
 
+  // Active event effects (timed buffs/debuffs)
+  const now = Math.floor(Date.now() / 1000);
+  if (state.activeEffects) {
+    for (const effect of state.activeEffects) {
+      if (now >= effect.expiresAt) continue;
+      switch (effect.effectType) {
+        case 'productionBuff':
+        case 'productionDebuff':
+          if (effect.resource) {
+            resourceMultipliers[effect.resource] = (resourceMultipliers[effect.resource] ?? 1) * effect.multiplier;
+          }
+          break;
+        case 'globalProductionBuff':
+        case 'globalProductionDebuff':
+          globalMultiplier *= effect.multiplier;
+          break;
+      }
+    }
+  }
+
   return { buildingMultipliers, resourceMultipliers, globalMultiplier, achievementMultiplier };
 }
 
@@ -226,6 +246,17 @@ export function calcClickValue(state: GameState): number {
     if (!def?.reward) continue;
     if (def.reward.type === 'clickMultiplier') {
       clickMult *= def.reward.value;
+    }
+  }
+
+  // Active event click buffs/debuffs
+  const now = Math.floor(Date.now() / 1000);
+  if (state.activeEffects) {
+    for (const effect of state.activeEffects) {
+      if (now >= effect.expiresAt) continue;
+      if (effect.effectType === 'clickBuff' || effect.effectType === 'clickDebuff') {
+        clickMult *= effect.multiplier;
+      }
     }
   }
 

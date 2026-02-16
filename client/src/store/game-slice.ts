@@ -87,6 +87,7 @@ export const createGameSlice: StateCreator<StoreState, [], [], GameSlice> = (set
       ships: gameState.ships,
       tradeRoutes: gameState.tradeRoutes,
       achievements: gameState.achievements,
+      activeEffects: gameState.activeEffects,
       seldonPoints: gameState.prestige.seldonPoints,
       totalSeldonPoints: gameState.prestige.totalSeldonPoints,
       prestigeCount: gameState.prestige.prestigeCount,

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { loadGame } from '../api';
 import { useGameStore } from '../store';
-import { useGameEngine, useAutoSave, useAchievementChecker, useWebSocketSync } from '../hooks';
+import { useGameEngine, useAutoSave, useAchievementChecker, useWebSocketSync, useEventChecker } from '../hooks';
 import { GameLayout } from '../components/layout';
+import { EventModal } from '../components/events';
 
 export function GamePage() {
   const isLoaded = useGameStore((s) => s.isLoaded);
@@ -14,11 +15,12 @@ export function GamePage() {
   const offlineSeconds = useGameStore((s) => s.offlineSeconds);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Start the game engine, auto-save, achievement checker, and WebSocket sync
+  // Start the game engine, auto-save, achievement checker, WebSocket sync, and event checker
   useGameEngine();
   useAutoSave();
   useAchievementChecker();
   useWebSocketSync();
+  useEventChecker();
 
   // Load game state on mount
   useEffect(() => {
@@ -31,6 +33,11 @@ export function GamePage() {
         if (cancelled) return;
 
         setGameState(response.gameState);
+
+        // Re-show pending event if player hasn't responded yet
+        if (response.pendingEventKey) {
+          useGameStore.getState().showEvent(response.pendingEventKey);
+        }
 
         // Show offline earnings modal if applicable
         if (response.offlineEarnings && response.offlineSeconds > 0) {
@@ -90,6 +97,7 @@ export function GamePage() {
   return (
     <>
       <GameLayout />
+      <EventModal />
 
       {/* Offline earnings placeholder */}
       {showOfflineModal && (

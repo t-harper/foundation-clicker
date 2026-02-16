@@ -8,6 +8,7 @@ import shipsRouter from './routes/ships.js';
 import tradeRouter from './routes/trade.js';
 import prestigeRouter from './routes/prestige.js';
 import achievementsRouter from './routes/achievements.js';
+import eventsRouter from './routes/events.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 const app = express();
@@ -29,6 +30,7 @@ app.use(shipsRouter);
 app.use(tradeRouter);
 app.use(prestigeRouter);
 app.use(achievementsRouter);
+app.use(eventsRouter);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
