@@ -49,7 +49,7 @@ export function GameLayout() {
   return (
     <div
       data-era={currentEra}
-      className="min-h-screen flex flex-col"
+      className="h-screen flex flex-col overflow-hidden"
       style={{
         '--era-primary': eraDef.themeColors.primary,
         '--era-secondary': eraDef.themeColors.secondary,
@@ -69,7 +69,7 @@ export function GameLayout() {
       <div className="scanlines" aria-hidden="true" />
 
       {/* Content (above overlays) */}
-      <div className="relative z-10 flex flex-col flex-1 min-h-screen">
+      <div className="relative z-10 flex flex-col flex-1 min-h-0">
         {/* Top header */}
         <Header />
 

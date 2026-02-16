@@ -278,7 +278,7 @@ export function EncyclopediaPanel() {
       />
 
       {/* Section content */}
-      <div className="max-h-[calc(100vh-280px)] overflow-y-auto pr-2">
+      <div className="pr-2">
         {activeSection === 'about' && <AboutSection />}
         {activeSection === 'eras' && <ErasSection />}
         {activeSection === 'buildings' && <BuildingsSection />}
