@@ -1,0 +1,1 @@
+export { ColonyMapPanel } from './ColonyMapPanel';

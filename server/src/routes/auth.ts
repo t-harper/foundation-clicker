@@ -1,0 +1,51 @@
+import { Router, Response, NextFunction } from 'express';
+
+import { register, login } from '../services/auth.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+
+const router = Router();
+
+router.post(
+  '/api/auth/register',
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const { username, password } = req.body;
+      const result = await register(username, password);
+      res.status(201).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/api/auth/login',
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const { username, password } = req.body;
+      const result = await login(username, password);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/api/auth/me',
+  authMiddleware,
+  (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      res.json({
+        user: {
+          id: req.userId,
+          username: req.username,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+export default router;
