@@ -1,5 +1,6 @@
-import { getDb } from '../connection.js';
-import { ALL_ACHIEVEMENT_KEYS } from '@foundation/shared';
+import { PutCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { getDocClient, TABLE_NAME } from '../connection.js';
+import { queryItems, userPK } from '../dynamo-utils.js';
 
 export interface AchievementRow {
   user_id: number;
@@ -7,33 +8,35 @@ export interface AchievementRow {
   unlocked_at: number | null;
 }
 
-export function getAchievements(userId: number): AchievementRow[] {
-  const db = getDb();
-  const stmt = db.prepare('SELECT * FROM achievements WHERE user_id = ?');
-  return stmt.all(userId) as AchievementRow[];
+export async function getAchievements(userId: number): Promise<AchievementRow[]> {
+  const items = await queryItems(userPK(userId), 'ACHIEVEMENT#');
+  return items.map((item) => ({
+    user_id: userId,
+    achievement_key: item.SK.replace('ACHIEVEMENT#', ''),
+    unlocked_at: item.unlockedAt ?? null,
+  }));
 }
 
-export function unlockAchievement(userId: number, key: string): void {
-  const db = getDb();
+export async function unlockAchievement(userId: number, key: string): Promise<void> {
+  const client = getDocClient();
   const now = Math.floor(Date.now() / 1000);
-  const stmt = db.prepare(`
-    INSERT INTO achievements (user_id, achievement_key, unlocked_at)
-    VALUES (?, ?, ?)
-    ON CONFLICT(user_id, achievement_key)
-    DO UPDATE SET unlocked_at = COALESCE(achievements.unlocked_at, excluded.unlocked_at)
-  `);
-  stmt.run(userId, key, now);
+  // Only set unlockedAt if not already set (preserve first unlock time)
+  await client.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: `ACHIEVEMENT#${key}` },
+      UpdateExpression: 'SET unlockedAt = if_not_exists(unlockedAt, :now)',
+      ExpressionAttributeValues: { ':now': now },
+    })
+  );
 }
 
-export function initializeAchievements(userId: number): void {
-  const db = getDb();
-  const stmt = db.prepare(
-    'INSERT OR IGNORE INTO achievements (user_id, achievement_key, unlocked_at) VALUES (?, ?, NULL)'
+export async function revokeAchievement(userId: number, key: string): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: `ACHIEVEMENT#${key}` },
+    })
   );
-  const insertMany = db.transaction((keys: string[]) => {
-    for (const key of keys) {
-      stmt.run(userId, key);
-    }
-  });
-  insertMany(ALL_ACHIEVEMENT_KEYS);
 }

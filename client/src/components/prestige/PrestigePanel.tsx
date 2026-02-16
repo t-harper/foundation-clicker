@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGameStore, selectGameState } from '../../store';
 import type { PrestigePreview, PrestigeHistoryEntry } from '@foundation/shared';
+import { ERA_SELDON_THRESHOLDS } from '@foundation/shared';
 import { previewPrestige, triggerPrestige, getPrestigeHistory } from '../../api';
 import { Button, Modal, NumberDisplay } from '../common';
 import { PrestigeIcon, StarIcon } from '../../assets/svg/icons';
@@ -14,6 +15,7 @@ export function PrestigePanel() {
   const setGameState = useGameStore((s) => s.setGameState);
   const addNotification = useGameStore((s) => s.addNotification);
   const lifetimeCredits = useGameStore((s) => s.lifetimeCredits);
+  const currentEra = useGameStore((s) => s.currentEra);
 
   const [preview, setPreview] = useState<PrestigePreview | null>(null);
   const [history, setHistory] = useState<PrestigeHistoryEntry[]>([]);
@@ -180,7 +182,7 @@ export function PrestigePanel() {
 
             {preview.seldonPointsEarned === 0 && (
               <p className="text-sm text-amber-400/70">
-                You need at least 1 billion lifetime credits to earn Seldon Points.
+                You need at least {formatNumber(ERA_SELDON_THRESHOLDS[currentEra] ?? ERA_SELDON_THRESHOLDS[ERA_SELDON_THRESHOLDS.length - 1], 'short')} lifetime credits to earn Seldon Points.
                 Current: {formatNumber(lifetimeCredits, 'short')}
               </p>
             )}

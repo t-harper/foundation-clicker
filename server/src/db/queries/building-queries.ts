@@ -1,5 +1,6 @@
-import { getDb } from '../connection.js';
-import { ALL_BUILDING_KEYS } from '@foundation/shared';
+import { PutCommand } from '@aws-sdk/lib-dynamodb';
+import { getDocClient, TABLE_NAME } from '../connection.js';
+import { queryItems, userPK } from '../dynamo-utils.js';
 
 export interface BuildingRow {
   user_id: number;
@@ -8,37 +9,32 @@ export interface BuildingRow {
   is_unlocked: number;
 }
 
-export function getBuildings(userId: number): BuildingRow[] {
-  const db = getDb();
-  const stmt = db.prepare('SELECT * FROM buildings WHERE user_id = ?');
-  return stmt.all(userId) as BuildingRow[];
+export async function getBuildings(userId: number): Promise<BuildingRow[]> {
+  const items = await queryItems(userPK(userId), 'BUILDING#');
+  return items.map((item) => ({
+    user_id: userId,
+    building_key: item.SK.replace('BUILDING#', ''),
+    count: item.count ?? 0,
+    is_unlocked: item.isUnlocked ?? 0,
+  }));
 }
 
-export function upsertBuilding(
+export async function upsertBuilding(
   userId: number,
   key: string,
   count: number,
   isUnlocked: boolean
-): void {
-  const db = getDb();
-  const stmt = db.prepare(`
-    INSERT INTO buildings (user_id, building_key, count, is_unlocked)
-    VALUES (?, ?, ?, ?)
-    ON CONFLICT(user_id, building_key)
-    DO UPDATE SET count = excluded.count, is_unlocked = excluded.is_unlocked
-  `);
-  stmt.run(userId, key, count, isUnlocked ? 1 : 0);
-}
-
-export function initializeBuildings(userId: number): void {
-  const db = getDb();
-  const stmt = db.prepare(
-    'INSERT OR IGNORE INTO buildings (user_id, building_key, count, is_unlocked) VALUES (?, ?, 0, 0)'
+): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        PK: userPK(userId),
+        SK: `BUILDING#${key}`,
+        count,
+        isUnlocked: isUnlocked ? 1 : 0,
+      },
+    })
   );
-  const insertMany = db.transaction((keys: string[]) => {
-    for (const key of keys) {
-      stmt.run(userId, key);
-    }
-  });
-  insertMany(ALL_BUILDING_KEYS);
 }

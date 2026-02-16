@@ -21,6 +21,13 @@ export class NotFoundError extends Error {
   }
 }
 
+export class ForbiddenError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ForbiddenError';
+  }
+}
+
 export function errorHandler(
   err: Error,
   _req: Request,
@@ -43,6 +50,14 @@ export function errorHandler(
   if (err instanceof AuthenticationError) {
     res.status(401).json({
       error: 'Authentication Error',
+      message: err.message,
+    });
+    return;
+  }
+
+  if (err instanceof ForbiddenError) {
+    res.status(403).json({
+      error: 'Forbidden',
       message: err.message,
     });
     return;

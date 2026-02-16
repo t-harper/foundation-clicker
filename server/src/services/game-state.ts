@@ -24,16 +24,16 @@ import {
   createGameState,
   GameStateRow,
 } from '../db/queries/game-state-queries.js';
-import { getBuildings, upsertBuilding, initializeBuildings } from '../db/queries/building-queries.js';
-import { getUpgrades, initializeUpgrades } from '../db/queries/upgrade-queries.js';
+import { getBuildings, upsertBuilding } from '../db/queries/building-queries.js';
+import { getUpgrades } from '../db/queries/upgrade-queries.js';
 import { getShips, updateShipStatus } from '../db/queries/ship-queries.js';
-import { getTradeRoutes, initializeTradeRoutes } from '../db/queries/trade-route-queries.js';
-import { getAchievements, initializeAchievements } from '../db/queries/achievement-queries.js';
+import { getTradeRoutes } from '../db/queries/trade-route-queries.js';
+import { getAchievements } from '../db/queries/achievement-queries.js';
 import { getActiveEffects, getPendingEvent } from '../db/queries/event-queries.js';
-import { getUserHeroes } from '../db/queries/hero-queries.js';
+import { getUserHeroes, hasHero, unlockHero } from '../db/queries/hero-queries.js';
 import { getUserActivities, getActiveActivities } from '../db/queries/activity-queries.js';
 import { getUserInventory, getActiveConsumable, clearActiveConsumable } from '../db/queries/inventory-queries.js';
-import { getDb } from '../db/connection.js';
+import { deleteItemsByPrefix, userPK } from '../db/dynamo-utils.js';
 import {
   ValidationError,
   NotFoundError,
@@ -45,25 +45,40 @@ import type {
 } from '@foundation/shared';
 
 /** Convert DB rows into a full GameState object */
-function buildGameState(userId: number): GameState {
-  const row = getGameState(userId);
+async function buildGameState(userId: number): Promise<GameState> {
+  const row = await getGameState(userId);
   if (!row) {
     throw new NotFoundError('Game state not found for user');
   }
 
-  const buildingRows = getBuildings(userId);
+  const [
+    buildingRows,
+    upgradeRows,
+    shipRows,
+    tradeRouteRows,
+    achievementRows,
+    activeEffectRows,
+    heroRows,
+    activityRows,
+    activeActivityRows,
+    inventoryRows,
+    activeConsumableRow,
+  ] = await Promise.all([
+    getBuildings(userId),
+    getUpgrades(userId),
+    getShips(userId),
+    getTradeRoutes(userId),
+    getAchievements(userId),
+    getActiveEffects(userId),
+    getUserHeroes(userId),
+    getUserActivities(userId),
+    getActiveActivities(userId),
+    getUserInventory(userId),
+    getActiveConsumable(userId),
+  ]);
+
   const buildingRowMap = new Map(buildingRows.map((b) => [b.building_key, b]));
-  const upgradeRows = getUpgrades(userId);
   const upgradeRowMap = new Map(upgradeRows.map((u) => [u.upgrade_key, u]));
-  const shipRows = getShips(userId);
-  const tradeRouteRows = getTradeRoutes(userId);
-  const achievementRows = getAchievements(userId);
-  const activeEffectRows = getActiveEffects(userId);
-  const heroRows = getUserHeroes(userId);
-  const activityRows = getUserActivities(userId);
-  const activeActivityRows = getActiveActivities(userId);
-  const inventoryRows = getUserInventory(userId);
-  const activeConsumableRow = getActiveConsumable(userId);
 
   const resources: Resources = {
     credits: row.credits,
@@ -72,6 +87,24 @@ function buildGameState(userId: number): GameState {
     nuclearTech: row.nuclear_tech,
     rawMaterials: row.raw_materials,
   };
+
+  let activeConsumable = null;
+  if (activeConsumableRow) {
+    const now = Math.floor(Date.now() / 1000);
+    if (now >= activeConsumableRow.expires_at) {
+      await clearActiveConsumable(userId);
+    } else {
+      const itemDef = ITEM_DEFINITIONS[activeConsumableRow.item_key];
+      if (itemDef && itemDef.category === 'consumable') {
+        activeConsumable = {
+          itemKey: activeConsumableRow.item_key,
+          startedAt: activeConsumableRow.started_at,
+          expiresAt: activeConsumableRow.expires_at,
+          effect: itemDef.effect as ConsumableEffect,
+        };
+      }
+    }
+  }
 
   const state: GameState = {
     userId: row.user_id,
@@ -144,31 +177,14 @@ function buildGameState(userId: number): GameState {
       itemKey: i.item_key,
       quantity: i.quantity,
     })),
-    activeConsumable: (() => {
-      if (!activeConsumableRow) return null;
-      const now = Math.floor(Date.now() / 1000);
-      if (now >= activeConsumableRow.expires_at) {
-        clearActiveConsumable(userId);
-        return null;
-      }
-      const itemDef = ITEM_DEFINITIONS[activeConsumableRow.item_key];
-      if (!itemDef || itemDef.category !== 'consumable') return null;
-      return {
-        itemKey: activeConsumableRow.item_key,
-        startedAt: activeConsumableRow.started_at,
-        expiresAt: activeConsumableRow.expires_at,
-        effect: itemDef.effect as ConsumableEffect,
-      };
-    })(),
+    activeConsumable,
     lastTickAt: row.last_tick_at ?? Math.floor(Date.now() / 1000),
     totalPlayTime: row.total_play_time,
     totalClicks: row.total_clicks,
     lifetimeCredits: row.lifetime_credits,
   };
 
-  // Dynamically compute unlock states so buildings with no requirement
-  // (e.g. terminusSettlement, nuclearPlant) are available immediately,
-  // even before the DB is_unlocked flag gets set by a purchase.
+  // Dynamically compute unlock states
   for (const b of state.buildings) {
     if (!b.isUnlocked && isBuildingUnlocked(b.buildingKey, state)) {
       b.isUnlocked = true;
@@ -179,8 +195,8 @@ function buildGameState(userId: number): GameState {
 }
 
 /** Save resources back to the DB from a Resources object */
-function saveResources(userId: number, resources: Resources): void {
-  updateGameState(userId, {
+async function saveResources(userId: number, resources: Resources): Promise<void> {
+  await updateGameState(userId, {
     credits: resources.credits,
     knowledge: resources.knowledge,
     influence: resources.influence,
@@ -189,9 +205,14 @@ function saveResources(userId: number, resources: Resources): void {
   });
 }
 
-export function loadGameState(userId: number): LoadGameResponse {
-  const state = buildGameState(userId);
-  const pendingEventKey = getPendingEvent(userId);
+export async function loadGameState(userId: number): Promise<LoadGameResponse> {
+  // Auto-grant starter hero for existing players who don't have it
+  if (!(await hasHero(userId, 'hariSeldon'))) {
+    await unlockHero(userId, 'hariSeldon', Math.floor(Date.now() / 1000));
+  }
+
+  const state = await buildGameState(userId);
+  const pendingEventKey = await getPendingEvent(userId);
 
   const now = Math.floor(Date.now() / 1000);
   const elapsedSeconds = Math.max(0, now - state.lastTickAt);
@@ -215,8 +236,8 @@ export function loadGameState(userId: number): LoadGameResponse {
     const newLifetimeCredits = state.lifetimeCredits + creditsEarned;
 
     // Save updated state
-    saveResources(userId, newResources);
-    updateGameState(userId, {
+    await saveResources(userId, newResources);
+    await updateGameState(userId, {
       last_tick_at: now,
       lifetime_credits: newLifetimeCredits,
     });
@@ -224,12 +245,12 @@ export function loadGameState(userId: number): LoadGameResponse {
     // Update ships that returned during offline
     for (const ship of state.ships) {
       if (ship.status === 'trading' && ship.returnsAt && ship.returnsAt <= now * 1000) {
-        updateShipStatus(ship.id, 'docked', null, null, null);
+        await updateShipStatus(userId, ship.id, 'docked', null, null, null);
       }
     }
 
     // Reload state with applied earnings
-    const updatedState = buildGameState(userId);
+    const updatedState = await buildGameState(userId);
     return {
       gameState: updatedState,
       offlineEarnings,
@@ -239,7 +260,7 @@ export function loadGameState(userId: number): LoadGameResponse {
   }
 
   // Update last tick even if no offline earnings
-  updateGameState(userId, { last_tick_at: now });
+  await updateGameState(userId, { last_tick_at: now });
 
   return {
     gameState: state,
@@ -249,8 +270,8 @@ export function loadGameState(userId: number): LoadGameResponse {
   };
 }
 
-export function saveGameState(userId: number, data: SaveGameRequest): void {
-  const row = getGameState(userId);
+export async function saveGameState(userId: number, data: SaveGameRequest): Promise<void> {
+  const row = await getGameState(userId);
   if (!row) {
     throw new NotFoundError('Game state not found for user');
   }
@@ -259,18 +280,17 @@ export function saveGameState(userId: number, data: SaveGameRequest): void {
     throw new ValidationError('Resources are required');
   }
 
-  // Stale-save guard: if a mutation has updated resources more recently
-  // than this save's tick timestamp, only save counters (not resources)
+  // Stale-save guard
   if (row.last_tick_at != null && data.lastTickAt < row.last_tick_at) {
-    updateGameState(userId, {
+    await updateGameState(userId, {
       total_play_time: data.totalPlayTime,
       total_clicks: data.totalClicks,
     });
     return;
   }
 
-  saveResources(userId, data.resources);
-  updateGameState(userId, {
+  await saveResources(userId, data.resources);
+  await updateGameState(userId, {
     last_tick_at: data.lastTickAt,
     total_play_time: data.totalPlayTime,
     total_clicks: data.totalClicks,
@@ -278,12 +298,12 @@ export function saveGameState(userId: number, data: SaveGameRequest): void {
   });
 }
 
-export function handleClick(userId: number, clicks: number): ClickResponse {
+export async function handleClick(userId: number, clicks: number): Promise<ClickResponse> {
   if (!Number.isInteger(clicks) || clicks < 1 || clicks > 100) {
     throw new ValidationError('Click count must be an integer between 1 and 100');
   }
 
-  const state = buildGameState(userId);
+  const state = await buildGameState(userId);
   const projected = projectResources(state);
   const clickValue = calcClickValue(state);
   const earned = clickValue * clicks;
@@ -300,8 +320,8 @@ export function handleClick(userId: number, clicks: number): ClickResponse {
   const newTotalClicks = state.totalClicks + clicks;
   const newLifetimeCredits = projected.lifetimeCredits + earned;
 
-  saveResources(userId, newResources);
-  updateGameState(userId, {
+  await saveResources(userId, newResources);
+  await updateGameState(userId, {
     last_tick_at: projected.lastTickAt,
     total_clicks: newTotalClicks,
     lifetime_credits: newLifetimeCredits,
@@ -317,62 +337,62 @@ export function handleClick(userId: number, clicks: number): ClickResponse {
   };
 }
 
-export function resetGame(userId: number): void {
-  const row = getGameState(userId);
+export async function resetGame(userId: number): Promise<void> {
+  const row = await getGameState(userId);
   if (!row) {
     throw new NotFoundError('Game state not found for user');
   }
 
-  const db = getDb();
-  db.transaction(() => {
-    // Delete all user data except the game_state row
-    db.prepare('DELETE FROM buildings WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM upgrades WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM ships WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM trade_routes WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM achievements WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM prestige_history WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM event_history WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM active_effects WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM pending_event WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM heroes WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM activities WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM active_activities WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM inventory WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM active_consumable WHERE user_id = ?').run(userId);
+  const pk = userPK(userId);
 
-    // Reset game_state to initial values
-    const now = Math.floor(Date.now() / 1000);
-    db.prepare(`
-      UPDATE game_state SET
-        credits = 0,
-        knowledge = 0,
-        influence = 0,
-        nuclear_tech = 0,
-        raw_materials = 0,
-        click_value = 1,
-        current_era = 0,
-        seldon_points = 0,
-        total_seldon_points = 0,
-        prestige_count = 0,
-        prestige_multiplier = 1,
-        last_tick_at = ?,
-        total_play_time = 0,
-        total_clicks = 0,
-        lifetime_credits = 0
-      WHERE user_id = ?
-    `).run(now, userId);
+  // Delete all non-profile, non-gamestate items in parallel
+  await Promise.all([
+    deleteItemsByPrefix(pk, 'BUILDING#'),
+    deleteItemsByPrefix(pk, 'UPGRADE#'),
+    deleteItemsByPrefix(pk, 'SHIP#'),
+    deleteItemsByPrefix(pk, 'TRADEROUTE#'),
+    deleteItemsByPrefix(pk, 'ACHIEVEMENT#'),
+    deleteItemsByPrefix(pk, 'PRESTIGE#'),
+    deleteItemsByPrefix(pk, 'EVENT#'),
+    deleteItemsByPrefix(pk, 'EFFECT#'),
+    deleteItemsByPrefix(pk, 'HERO#'),
+    deleteItemsByPrefix(pk, 'ACTIVITY#'),
+    deleteItemsByPrefix(pk, 'ACTIVE_ACTIVITY#'),
+    deleteItemsByPrefix(pk, 'INVENTORY#'),
+  ]);
 
-    // Re-initialize all data
-    initializeBuildings(userId);
-    initializeUpgrades(userId);
-    initializeTradeRoutes(userId);
-    initializeAchievements(userId);
-  })();
+  // Also delete singleton items
+  const { DeleteCommand } = await import('@aws-sdk/lib-dynamodb');
+  const { getDocClient, TABLE_NAME } = await import('../db/connection.js');
+  const client = getDocClient();
+  await Promise.all([
+    client.send(new DeleteCommand({ TableName: TABLE_NAME, Key: { PK: pk, SK: 'PENDING_EVENT' } })),
+    client.send(new DeleteCommand({ TableName: TABLE_NAME, Key: { PK: pk, SK: 'ACTIVE_CONSUMABLE' } })),
+  ]);
+
+  // Reset game_state to initial values
+  const now = Math.floor(Date.now() / 1000);
+  await updateGameState(userId, {
+    credits: 0,
+    knowledge: 0,
+    influence: 0,
+    nuclear_tech: 0,
+    raw_materials: 0,
+    click_value: 1,
+    current_era: 0,
+    seldon_points: 0,
+    total_seldon_points: 0,
+    prestige_count: 0,
+    prestige_multiplier: 1,
+    last_tick_at: now,
+    total_play_time: 0,
+    total_clicks: 0,
+    lifetime_credits: 0,
+  });
 }
 
-export function getGameStats(userId: number): GameStats {
-  const state = buildGameState(userId);
+export async function getGameStats(userId: number): Promise<GameStats> {
+  const state = await buildGameState(userId);
 
   const totalBuildings = state.buildings.reduce((sum, b) => sum + b.count, 0);
   const totalUpgrades = state.upgrades.filter((u) => u.isPurchased).length;
@@ -393,7 +413,6 @@ export function getGameStats(userId: number): GameStats {
 
 /**
  * Project DB resources forward to "now" using production rates.
- * This closes the staleness gap between auto-saves and mutations.
  */
 export function projectResources(state: GameState): {
   resources: Resources;

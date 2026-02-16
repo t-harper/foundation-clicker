@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useGameStore, selectBestCreditROIUpgrade } from '../../store';
 import { UPGRADE_DEFINITIONS, ERA_DEFINITIONS, Era } from '@foundation/shared';
-import type { UpgradeState } from '@foundation/shared';
+import type { UpgradeState, ResourceKey } from '@foundation/shared';
 import { UpgradeCard } from './UpgradeCard';
 
 interface EraUpgradeGroup {
@@ -13,9 +13,11 @@ interface EraUpgradeGroup {
 
 export function UpgradePanel() {
   const upgrades = useGameStore((s) => s.upgrades);
+  const buildings = useGameStore((s) => s.buildings);
   const currentEra = useGameStore((s) => s.currentEra);
+  const resources = useGameStore((s) => s.resources);
   const bestValueKey = useGameStore(selectBestCreditROIUpgrade);
-
+  const [showAll, setShowAll] = useState(false);
 
   const eraGroups = useMemo<EraUpgradeGroup[]>(() => {
     function totalCost(upgradeKey: string): number {
@@ -67,6 +69,36 @@ export function UpgradePanel() {
   const totalAvailable = eraGroups.reduce((sum, g) => sum + g.available.length, 0);
   const totalPurchased = eraGroups.reduce((sum, g) => sum + g.purchased.length, 0);
 
+  // Filter available upgrades by affordability and prerequisites unless showAll is on
+  const filteredGroups = useMemo(() => {
+    if (showAll) return eraGroups;
+    const purchasedKeys = new Set(upgrades.filter((u) => u.isPurchased).map((u) => u.upgradeKey));
+    return eraGroups.map((group) => ({
+      ...group,
+      available: group.available.filter((u) => {
+        const def = UPGRADE_DEFINITIONS[u.upgradeKey];
+        if (!def) return false;
+        // Check affordability
+        const affordable = Object.entries(def.cost).every(
+          ([key, amount]) => amount === undefined || (resources[key as ResourceKey] ?? 0) >= amount,
+        );
+        if (!affordable) return false;
+        // Check prerequisite upgrades
+        if (def.prerequisites?.some((p) => !purchasedKeys.has(p))) return false;
+        // Check required building
+        if (def.requiredBuilding) {
+          const b = buildings.find((b) => b.buildingKey === def.requiredBuilding!.key);
+          if (!b || b.count < def.requiredBuilding.count) return false;
+        }
+        return true;
+      }),
+    })).filter((g) => g.available.length > 0 || g.purchased.length > 0);
+  }, [eraGroups, showAll, resources, upgrades, buildings]);
+
+  const hiddenCount = showAll
+    ? 0
+    : totalAvailable - filteredGroups.reduce((sum, g) => sum + g.available.length, 0);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -79,14 +111,40 @@ export function UpgradePanel() {
         </span>
       </div>
 
+      {/* Show all toggle */}
+      <button
+        type="button"
+        onClick={() => setShowAll((v) => !v)}
+        className="flex items-center gap-2 text-xs text-[var(--era-text)]/60 hover:text-[var(--era-text)] transition-colors"
+      >
+        <span
+          className={[
+            'relative inline-flex h-4 w-7 shrink-0 rounded-full border transition-colors',
+            showAll
+              ? 'bg-[var(--era-accent)]/30 border-[var(--era-accent)]'
+              : 'bg-[var(--era-surface)]/50 border-[var(--era-primary)]/30',
+          ].join(' ')}
+        >
+          <span
+            className={[
+              'absolute top-0.5 h-2.5 w-2.5 rounded-full transition-all',
+              showAll
+                ? 'left-3.5 bg-[var(--era-accent)]'
+                : 'left-0.5 bg-[var(--era-text)]/40',
+            ].join(' ')}
+          />
+        </span>
+        Show unaffordable upgrades{!showAll && hiddenCount > 0 ? ` (${hiddenCount} hidden)` : ''}
+      </button>
+
       {/* Era groups */}
-      {eraGroups.length === 0 ? (
+      {filteredGroups.length === 0 ? (
         <div className="text-center py-12 text-[var(--era-text)]/40">
           <p className="text-lg">No upgrades available yet.</p>
           <p className="text-sm mt-2">Build more to unlock upgrades!</p>
         </div>
       ) : (
-        eraGroups.map((group) => {
+        filteredGroups.map((group) => {
           const eraDef = ERA_DEFINITIONS[group.era];
           return (
             <section key={group.era}>

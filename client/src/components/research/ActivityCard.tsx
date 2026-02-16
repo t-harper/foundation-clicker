@@ -33,11 +33,14 @@ export function ActivityCard({ activityKey, timesCompleted }: ActivityCardProps)
   const activeActivity = activeActivities.find((a) => a.activityKey === activityKey);
   const isActive = !!activeActivity;
 
-  // Which heroes are idle and unlocked?
+  // Which heroes are idle, unlocked, and from the current era?
+  const currentEra = useGameStore((s) => s.currentEra);
   const busyHeroKeys = new Set(activeActivities.map((a) => a.heroKey));
-  const availableHeroes = heroes.filter(
-    (h) => h.unlockedAt !== null && !busyHeroKeys.has(h.heroKey)
-  );
+  const availableHeroes = heroes.filter((h) => {
+    if (h.unlockedAt === null || busyHeroKeys.has(h.heroKey)) return false;
+    const heroDef = HERO_DEFINITIONS[h.heroKey];
+    return heroDef && heroDef.era === currentEra;
+  });
 
   // Affordability check
   const canAfford = Object.entries(def.cost).every(([key, amount]) =>

@@ -153,9 +153,9 @@ class WebSocketManager {
 
       case 'sync': {
         const state = useGameStore.getState();
-        state.setBuildings(msg.buildings);
-        state.setUpgrades(msg.upgrades);
-        state.setShips(msg.ships);
+        if (msg.buildings) state.setBuildings(msg.buildings);
+        if (msg.upgrades) state.setUpgrades(msg.upgrades);
+        if (msg.ships) state.setShips(msg.ships);
         break;
       }
 

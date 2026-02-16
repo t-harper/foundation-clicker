@@ -28,7 +28,7 @@ import {
 } from '../middleware/error-handler.js';
 import type { CheckEventsResponse, ChooseEventResponse } from '@foundation/shared';
 
-function activeEffectRowToModel(row: ReturnType<typeof getActiveEffects>[number]): ActiveEffect {
+function activeEffectRowToModel(row: ReturnType<typeof getActiveEffects> extends Promise<(infer T)[]> ? T : never): ActiveEffect {
   return {
     id: row.id,
     eventKey: row.event_key,
@@ -41,13 +41,13 @@ function activeEffectRowToModel(row: ReturnType<typeof getActiveEffects>[number]
   };
 }
 
-export function getUserActiveEffects(userId: number): ActiveEffect[] {
-  const rows = getActiveEffects(userId);
+export async function getUserActiveEffects(userId: number): Promise<ActiveEffect[]> {
+  const rows = await getActiveEffects(userId);
   return rows.map(activeEffectRowToModel);
 }
 
-export function getUserEventHistory(userId: number): EventHistoryEntry[] {
-  const rows = getEventHistory(userId);
+export async function getUserEventHistory(userId: number): Promise<EventHistoryEntry[]> {
+  const rows = await getEventHistory(userId);
   return rows.map((r) => ({
     eventKey: r.event_key,
     choiceIndex: r.choice_index,
@@ -55,33 +55,27 @@ export function getUserEventHistory(userId: number): EventHistoryEntry[] {
   }));
 }
 
-export function checkForEvent(userId: number): CheckEventsResponse {
-  // If there's already a pending event, return it
-  const pending = getPendingEvent(userId);
+export async function checkForEvent(userId: number): Promise<CheckEventsResponse> {
+  const pending = await getPendingEvent(userId);
   if (pending) {
     return { event: { eventKey: pending } };
   }
 
-  const state = buildGameState(userId);
+  const state = await buildGameState(userId);
   const now = Math.floor(Date.now() / 1000);
 
-  // Collect eligible events
   const eligible: { key: string; weight: number }[] = [];
 
   for (const [key, def] of Object.entries(EVENT_DEFINITIONS)) {
-    // Check era
     if (state.currentEra < def.era) continue;
 
-    // One-time events: skip if already fired
-    if (!def.repeatable && hasEventFired(userId, key)) continue;
+    if (!def.repeatable && await hasEventFired(userId, key)) continue;
 
-    // Repeatable events: check cooldown
     if (def.repeatable && def.cooldownSeconds > 0) {
-      const lastFired = getLastEventFiredAt(userId, key);
+      const lastFired = await getLastEventFiredAt(userId, key);
       if (lastFired !== null && now - lastFired < def.cooldownSeconds) continue;
     }
 
-    // Check all conditions
     if (!areAllConditionsMet(def.conditions, state)) continue;
 
     eligible.push({ key, weight: def.weight });
@@ -91,12 +85,10 @@ export function checkForEvent(userId: number): CheckEventsResponse {
     return { event: null };
   }
 
-  // Roll against base chance
   if (Math.random() > EVENT_BASE_CHANCE) {
     return { event: null };
   }
 
-  // Weighted random selection
   const totalWeight = eligible.reduce((sum, e) => sum + e.weight, 0);
   let roll = Math.random() * totalWeight;
   let selectedKey = eligible[eligible.length - 1].key;
@@ -108,19 +100,17 @@ export function checkForEvent(userId: number): CheckEventsResponse {
     }
   }
 
-  // Persist as pending so it survives page reloads
-  setPendingEvent(userId, selectedKey);
+  await setPendingEvent(userId, selectedKey);
 
   return { event: { eventKey: selectedKey } };
 }
 
-export function handleEventChoice(
+export async function handleEventChoice(
   userId: number,
   eventKey: string,
   choiceIndex: number
-): ChooseEventResponse {
-  // Validate this event is actually pending for this user
-  const pending = getPendingEvent(userId);
+): Promise<ChooseEventResponse> {
+  const pending = await getPendingEvent(userId);
   if (!pending || pending !== eventKey) {
     throw new ValidationError('No matching pending event');
   }
@@ -134,12 +124,11 @@ export function handleEventChoice(
     throw new ValidationError(`Invalid choice index: ${choiceIndex}`);
   }
 
-  const state = buildGameState(userId);
+  const state = await buildGameState(userId);
   const projected = projectResources(state);
   const now = Math.floor(Date.now() / 1000);
   const choice = def.choices[choiceIndex];
 
-  // Apply instant effects
   const resources = { ...projected.resources };
 
   for (const effect of choice.effects) {
@@ -160,8 +149,7 @@ export function handleEventChoice(
     }
   }
 
-  // Save resources
-  updateGameState(userId, {
+  await updateGameState(userId, {
     credits: resources.credits,
     knowledge: resources.knowledge,
     influence: resources.influence,
@@ -172,11 +160,9 @@ export function handleEventChoice(
       Math.max(0, resources.credits - projected.resources.credits),
   });
 
-  // Record history and clear pending
-  insertEventHistory(userId, eventKey, choiceIndex, now);
-  clearPendingEvent(userId);
+  await insertEventHistory(userId, eventKey, choiceIndex, now);
+  await clearPendingEvent(userId);
 
-  // Create timed effects
   const newEffects: ActiveEffect[] = [];
   for (const effect of choice.effects) {
     if (
@@ -191,7 +177,7 @@ export function handleEventChoice(
       const resource = 'resource' in effect ? effect.resource : null;
       const expiresAt = now + effect.durationSeconds;
 
-      insertActiveEffect(
+      await insertActiveEffect(
         id,
         userId,
         eventKey,
@@ -216,9 +202,8 @@ export function handleEventChoice(
     }
   }
 
-  // Unlock hero if this event has a heroReward
   if (def.heroReward) {
-    unlockHero(userId, def.heroReward);
+    await unlockHero(userId, def.heroReward);
   }
 
   return { resources, newEffects };

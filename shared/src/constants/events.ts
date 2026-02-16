@@ -5684,6 +5684,318 @@ export const EVENT_DEFINITIONS: Record<string, EventDefinition> = {
     cooldownSeconds: 1800,
     weight: 5,
   },
+  // ─── Epic Hero Events ─────────────────────────────────────────────────
+
+  gaalDornickArrival: {
+    key: 'gaalDornickArrival',
+    name: 'Arrival from Synnax',
+    description:
+      'A young mathematician from the backwater world of Synnax arrives on Terminus, clutching a letter of introduction to the Encyclopedia project. Gaal Dornick is wide-eyed and naive — but his mathematical intuition is extraordinary. He was present at the trial of Hari Seldon, and his account of those proceedings is the only eyewitness record that survives.',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'heroOwned', hero: 'hariSeldon' },
+      { type: 'totalBuildings', count: 40 },
+      { type: 'resourceTotal', resource: 'knowledge', amount: 2000 },
+    ],
+    choices: [
+      {
+        label: 'Assign him to the archives',
+        description: 'Put his mathematical talents to work preserving knowledge.',
+        effects: [
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 600 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 1000 },
+        ],
+      },
+      {
+        label: 'Make him a field researcher',
+        description: 'Send him to observe the Outer Kingdoms firsthand.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 500 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Let him teach at the university',
+        description: 'His insights could inspire a new generation.',
+        effects: [
+          { type: 'globalProductionBuff', multiplier: 1.2, durationSeconds: 600 },
+          { type: 'resourceGrant', resource: 'credits', amount: 500 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 3,
+    heroReward: 'gaalDornick',
+  },
+
+  cleonsFinalDecree: {
+    key: 'cleonsFinalDecree',
+    name: 'Cleon\'s Final Decree',
+    description:
+      'An ancient holographic message from Emperor Cleon I has been discovered in the Vault. In it, the last enlightened Emperor reveals that he secretly supported Seldon\'s Plan, diverting Imperial resources to Terminus even as his court plotted against it. The decree contains authorization codes for hidden supply caches throughout the Periphery.',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'heroOwned', hero: 'lewisPirenne' },
+      { type: 'resourceTotal', resource: 'influence', amount: 5000 },
+      { type: 'totalBuildings', count: 50 },
+    ],
+    choices: [
+      {
+        label: 'Activate the supply caches',
+        description: 'Claim the Emperor\'s hidden resources.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 2000 },
+          { type: 'resourceGrant', resource: 'rawMaterials', amount: 1000 },
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 500 },
+        ],
+      },
+      {
+        label: 'Broadcast the message publicly',
+        description: 'Use Cleon\'s endorsement to legitimize the Foundation.',
+        effects: [
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.8, durationSeconds: 300 },
+          { type: 'resourceGrant', resource: 'influence', amount: 2000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 3,
+    heroReward: 'emperorCleon',
+  },
+
+  belRioseInvasion: {
+    key: 'belRioseInvasion',
+    name: 'The General\'s Gambit',
+    description:
+      'Imperial General Bel Riose has arrived at the Periphery with a battle fleet — the first serious Imperial military threat in decades. Unlike the petty warlords, Riose is brilliant, disciplined, and genuinely dangerous. But Seldon\'s mathematics predicted this: the greater the general, the more the Emperor fears him. Riose\'s own competence may be his undoing.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'heroOwned', hero: 'hoberMallow' },
+      { type: 'shipCount', count: 3 },
+      { type: 'totalBuildings', count: 40 },
+    ],
+    choices: [
+      {
+        label: 'Trade with Riose\'s fleet',
+        description: 'Foundation gadgets are irresistible, even to generals.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 5000 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Send intelligence to Trantor',
+        description: 'Make the Emperor aware of how powerful Riose is becoming.',
+        effects: [
+          { type: 'resourceLoss', resource: 'credits', amount: 1000 },
+          { type: 'resourceGrant', resource: 'influence', amount: 3000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 300 },
+        ],
+      },
+      {
+        label: 'Fortify the border worlds',
+        description: 'Prepare for the worst.',
+        effects: [
+          { type: 'resourceLoss', resource: 'rawMaterials', amount: 500 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.5, durationSeconds: 600 },
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 1000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 3,
+    heroReward: 'belRiose',
+  },
+
+  deversEscape: {
+    key: 'deversEscape',
+    name: 'Escape from Trantor',
+    description:
+      'Foundation trader Lathan Devers has been captured on Trantor while attempting to negotiate with Imperial officials. His ship is impounded, his cargo seized. But Devers is resourceful — and Trantor\'s decaying infrastructure has more security gaps than its administrators realize. He needs a diversion to escape, and he\'s willing to share the intelligence he gathered in the Imperial court.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'heroOwned', hero: 'limmarPonyets' },
+      { type: 'lifetimeCredits', amount: 100_000_000 },
+    ],
+    choices: [
+      {
+        label: 'Fund his escape',
+        description: 'Bribe the right officials to get Devers out.',
+        effects: [
+          { type: 'resourceLoss', resource: 'credits', amount: 5000 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 3000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Create a trade diversion',
+        description: 'Flood Trantor\'s markets to draw attention away.',
+        effects: [
+          { type: 'resourceLoss', resource: 'credits', amount: 2000 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.8, durationSeconds: 300 },
+          { type: 'clickBuff', multiplier: 2.0, durationSeconds: 300 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 3,
+    heroReward: 'lathanDevers',
+  },
+
+  muleOrigins: {
+    key: 'muleOrigins',
+    name: 'The Mule\'s Surrender',
+    description:
+      'The Mule — defeated, his empire crumbling — has come to the Foundation seeking asylum. The mutant warlord who conquered half the galaxy with emotional conversion now offers his mentalic knowledge in exchange for sanctuary. His understanding of the human mind is unparalleled, but can a man who controlled billions of minds through force ever be trusted?',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'heroOwned', hero: 'baytaDarell' },
+      { type: 'resourceTotal', resource: 'influence', amount: 100_000 },
+      { type: 'totalBuildings', count: 50 },
+    ],
+    choices: [
+      {
+        label: 'Accept and study his abilities',
+        description: 'His knowledge of mentalics is invaluable to psychology.',
+        effects: [
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 2.0, durationSeconds: 300 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 50000 },
+        ],
+      },
+      {
+        label: 'Grant conditional asylum',
+        description: 'Keep him contained but use his influence cautiously.',
+        effects: [
+          { type: 'resourceLoss', resource: 'influence', amount: 10000 },
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 600 },
+          { type: 'resourceGrant', resource: 'influence', amount: 30000 },
+        ],
+      },
+      {
+        label: 'Put him to work on defenses',
+        description: 'His conversion powers could protect the Foundation.',
+        effects: [
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.5, durationSeconds: 600 },
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 20000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 3,
+    heroReward: 'theMule',
+  },
+
+  arkadysGambit: {
+    key: 'arkadysGambit',
+    name: 'Arkady\'s Gambit',
+    description:
+      'Arkady Darell, barely fourteen, has stowed away on a trader ship bound for Trantor. She carries with her a manuscript that she claims reveals the true location of the Second Foundation — and a theory so audacious that even the First Speaker took notice. Her grandmother Bayta changed history with a single act of courage; Arkady may do the same with a single act of cleverness.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'heroOwned', hero: 'preemPalver' },
+      { type: 'resourceTotal', resource: 'knowledge', amount: 200_000 },
+      { type: 'prestigeCount', count: 3 },
+    ],
+    choices: [
+      {
+        label: 'Publish her manuscript',
+        description: 'Let the galaxy read her theory.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 100000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Send her to the Second Foundation',
+        description: 'Let the Second Foundation evaluate her claims.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 50000 },
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 3,
+    heroReward: 'arkadyDarell',
+  },
+
+  gendibalsChallenge: {
+    key: 'gendibalsChallenge',
+    name: 'Gendibal\'s Challenge',
+    description:
+      'Speaker Stor Gendibal of the Second Foundation has issued an extraordinary challenge: he will demonstrate, openly, the mentalic techniques that the Second Foundation has kept secret for centuries. He claims that the age of shadows is over — that Galaxia requires transparency, not manipulation. The First Speaker is furious. The Foundation Council is fascinated.',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'heroOwned', hero: 'golanTrevize' },
+      { type: 'resourceTotal', resource: 'knowledge', amount: 5_000_000 },
+      { type: 'totalBuildings', count: 60 },
+    ],
+    choices: [
+      {
+        label: 'Host the demonstration',
+        description: 'Let Gendibal show what mentalics can do.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 2000000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Join a collaborative research program',
+        description: 'Foundation science meets Second Foundation mentalics.',
+        effects: [
+          { type: 'globalProductionBuff', multiplier: 1.4, durationSeconds: 600 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 1000000 },
+          { type: 'resourceGrant', resource: 'influence', amount: 500000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 3,
+    heroReward: 'storGendibal',
+  },
+
+  solarianSecret: {
+    key: 'solarianSecret',
+    name: 'The Solarian Secret',
+    description:
+      'An expedition to the abandoned world of Solaria has discovered something remarkable: a child, Fallom, the last living Solarian. The Solarians were hermits who modified themselves with transducer organs capable of directly converting mental energy into physical force. Fallom\'s abilities are extraordinary — and may hold the key to the next step in human evolution.',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'heroOwned', hero: 'bliss' },
+      { type: 'shipCount', count: 5 },
+      { type: 'resourceTotal', resource: 'nuclearTech', amount: 1_000_000 },
+    ],
+    choices: [
+      {
+        label: 'Study Fallom\'s transducer abilities',
+        description: 'Understand how Solarians harness mental energy.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 3000000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Integrate Fallom into Galaxia',
+        description: 'A Solarian consciousness could enhance the network.',
+        effects: [
+          { type: 'globalProductionBuff', multiplier: 1.5, durationSeconds: 300 },
+          { type: 'resourceGrant', resource: 'influence', amount: 1000000 },
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 500000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 3,
+    heroReward: 'fallom',
+  },
 };
 
 export const ALL_EVENT_KEYS = Object.keys(EVENT_DEFINITIONS);

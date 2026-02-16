@@ -8,9 +8,10 @@ An incremental/idle game themed around Isaac Asimov's Foundation series. Players
 
 - **Monorepo**: npm workspaces (`shared`, `server`, `client`)
 - **Frontend**: React 18, TypeScript, Vite 5, Tailwind CSS 3, Zustand 5, React Router 6
-- **Backend**: Node.js, Express 4, better-sqlite3, JWT auth (jsonwebtoken), bcrypt, ws (WebSocket)
+- **Backend**: Node.js, Express 4, DynamoDB (single-table design), JWT auth (jsonwebtoken), bcrypt, ws (WebSocket)
+- **Database**: DynamoDB via `@aws-sdk/client-dynamodb` + `@aws-sdk/lib-dynamodb`. DynamoDB Local in Podman for development.
 - **Shared**: Pure TypeScript game engine (types, constants, formulas, tick logic) -- no runtime deps
-- **Dev tooling**: tsx (server watch), Vite (client HMR), TypeScript 5.6 strict mode
+- **Dev tooling**: tsx (server watch), Vite (client HMR), TypeScript 5.6 strict mode, Podman Compose (DynamoDB Local)
 
 ## Directory Structure
 
@@ -18,6 +19,7 @@ An incremental/idle game themed around Isaac Asimov's Foundation series. Players
 foundation-game/
   package.json              # Root workspace config
   tsconfig.base.json        # Shared TS compiler options (ES2022, strict, bundler resolution)
+  podman-compose.yml        # DynamoDB Local container for development
   shared/
     src/
       index.ts              # Re-exports all types, constants, engine
@@ -52,16 +54,13 @@ foundation-game/
   server/
     src/
       app.ts                # Express app setup, CORS, route mounting, error handler
-      index.ts              # Entry point: runs migrations, creates HTTP server, attaches WS
+      index.ts              # Entry point: ensures DynamoDB table, creates HTTP server, attaches WS
       db/
-        connection.ts       # better-sqlite3 singleton (WAL mode, FK enforcement)
-        migrate.ts          # Migration runner (manual registration pattern)
-        migrations/
-          001_initial_schema.ts
-          002_events.ts
-          003_pending_event.ts
-          004_heroes_activities_inventory.ts
-        queries/             # Raw SQL query functions per entity
+        connection.ts       # DynamoDB DocumentClient singleton, TABLE_NAME export
+        init-table.ts       # ensureTable(): CreateTable if not exists + GSI1 + TTL + counter seed
+        dynamo-utils.ts     # Shared DynamoDB utilities (queryItems, deleteItemsByPrefix, batchDeleteItems, userPK)
+        index.ts            # Re-exports connection, init-table, dynamo-utils, and all query modules
+        queries/             # DynamoDB query functions per entity (all async)
           user-queries.ts
           game-state-queries.ts
           building-queries.ts
@@ -76,20 +75,16 @@ foundation-game/
           inventory-queries.ts
       middleware/
         auth.ts             # JWT Bearer token extraction and verification
-        error-handler.ts    # Express error middleware (ValidationError, AuthenticationError, NotFoundError)
-      routes/               # Express route handlers (thin -- delegate to services)
+        admin.ts            # Async admin role check middleware
+        error-handler.ts    # Express error middleware (ValidationError, AuthenticationError, NotFoundError, ForbiddenError)
+      routes/               # Express route handlers (thin -- delegate to services, all async)
         auth.ts
         game.ts
-        buildings.ts
-        upgrades.ts
-        ships.ts
-        trade.ts
-        prestige.ts
-        achievements.ts
         heroes.ts           # GET /api/heroes
         activities.ts       # GET, POST start, POST collect
         inventory.ts        # GET, POST use consumable
-      services/             # Business logic layer
+        admin.ts            # Full admin CRUD panel
+      services/             # Business logic layer (all async)
         auth.ts             # register (bcrypt 10 rounds), login, JWT (7-day expiry)
         game-state.ts       # buildGameState, loadGameState, saveGameState, handleClick, projectResources
         building.ts         # buyBuilding (with resource projection), sellBuilding (50% refund)
@@ -101,8 +96,11 @@ foundation-game/
         hero.ts             # getHeroes, unlockHero
         activity.ts         # getActivities, startActivity, collectActivity
         inventory.ts        # getInventory, useConsumable
+        event.ts            # checkForEvent, handleEventChoice, getUserActiveEffects
+        admin.ts            # Admin operations (list users, impersonate, modify state, etc.)
       ws/
-        sync.ts             # WebSocket server -- pushes buildings/upgrades at 2 Hz
+        handlers.ts         # Async message handler switch (returns Promise<HandlerResult>)
+        sync.ts             # WebSocket server -- pushes buildings/upgrades at 2 Hz, async intervals
   client/
     src/
       api/                  # Typed fetch wrappers per domain
@@ -117,6 +115,7 @@ foundation-game/
         heroes.ts           # getHeroes
         activities.ts       # getActivities, startActivity, collectActivity
         inventory.ts        # getInventory, useConsumable
+        admin.ts            # Admin panel API calls
       assets/svg/
         buildings/          # 56 building art SVG components + GenericBuildingArt fallback
         ships/              # 4 ship art SVG components
@@ -135,6 +134,7 @@ foundation-game/
         common/             # Button, Modal, NotificationArea, NumberDisplay, ProgressBar, TabGroup, Tooltip
         research/           # ResearchPanel, ActivityCard, HeroCard, InventoryPanel, ItemCard
         settings/           # SettingsModal (stats, export/import save, hard reset)
+        admin/              # Admin panel components
       hooks/
         useGameEngine.ts    # RAF loop -- runs shared tick() each frame
         useAutoSave.ts      # Interval-based save to server (30s default)
@@ -166,23 +166,31 @@ foundation-game/
 ## Development Commands
 
 ```bash
-npm run dev:client        # Start Vite dev server (port 5173)
-npm run dev:server        # Start Express server with tsx watch (port 3001)
-npm run build             # Build all packages (shared -> server -> client)
-npm run build:shared      # Build only shared
-npm run build:server      # Build only server
-npm run build:client      # Build only client
-npm run typecheck         # Type-check all packages sequentially
+# Database (DynamoDB Local)
+npm run dev:db              # Start DynamoDB Local container (Podman)
+npm run dev:db:stop         # Stop DynamoDB Local container
+npm run dev:db:reset        # Reset DynamoDB Local (destroy data + restart)
+
+# Application
+npm run dev:client          # Start Vite dev server (port 5173)
+npm run dev:server          # Start Express server with tsx watch (port 3001)
+npm run build               # Build all packages (shared -> server -> client)
+npm run build:shared        # Build only shared
+npm run build:server        # Build only server
+npm run build:client        # Build only client
+npm run typecheck           # Type-check all packages sequentially
 ```
 
 **Important**: Shared must be built first (`npm run build:shared`) before server/client can type-check, because `shared/tsconfig.json` has `"composite": true` for project references.
+
+**Important**: DynamoDB Local must be running before starting the server. Run `npm run dev:db` first.
 
 ## Architecture
 
 ### Client-Server Split
 
 - **Client-authoritative ticking**: The RAF loop (`useGameEngine`) runs the shared `tick()` function every frame on the client, applying production rates * deltaTime to resources. This gives smooth, responsive resource counters.
-- **Server-authoritative mutations**: All state-changing actions (buy building, purchase upgrade, build ship, prestige) go through REST API calls. The server validates affordability, applies the mutation to the DB, and returns updated state.
+- **Server-authoritative mutations**: All state-changing actions (buy building, purchase upgrade, build ship, prestige) go through REST API calls. The server validates affordability, applies the mutation to DynamoDB, and returns updated state.
 - **Resource projection**: Before validating any mutation, the server calls `projectResources()` to fast-forward resources from `last_tick_at` to the current time using shared engine math. This closes the gap between the 30-second auto-save interval and real-time state.
 - **Shared engine**: `@foundation/shared` contains all game logic (production calculations, cost formulas, unlock checks) used identically by client and server. No game balance data lives outside `shared/`.
 
@@ -211,10 +219,13 @@ All game content (buildings, upgrades, ships, trade routes, achievements, eras, 
 | `shared/src/constants/upgrades.ts` | All 178 upgrade definitions with effects and prerequisites |
 | `shared/src/constants/ships.ts` | Ship types + trade route definitions |
 | `shared/src/types/game-state.ts` | `GameState` interface -- the canonical shape of all player state |
-| `server/src/db/migrations/001_initial_schema.ts` | Full DB schema |
+| `server/src/db/connection.ts` | DynamoDB DocumentClient singleton and TABLE_NAME |
+| `server/src/db/init-table.ts` | Table creation with GSI1, TTL, and atomic counter seed |
+| `server/src/db/dynamo-utils.ts` | Shared DynamoDB utilities (queryItems, deleteItemsByPrefix, batchDeleteItems) |
 | `server/src/services/game-state.ts` | Server game logic: load, save, click, reset, resource projection |
 | `server/src/middleware/auth.ts` | JWT verification middleware |
 | `server/src/ws/sync.ts` | WebSocket server for real-time state push |
+| `server/src/ws/handlers.ts` | Async message handler for all WebSocket client messages |
 | `shared/src/constants/heroes.ts` | 16 hero definitions (4 per era) with specialization and duration bonuses |
 | `shared/src/constants/activities.ts` | 40 activity definitions (5 research + 5 missions per era) |
 | `shared/src/constants/items.ts` | 40 item definitions (20 artifacts + 20 consumables) |
@@ -228,32 +239,61 @@ All game content (buildings, upgrades, ships, trade routes, achievements, eras, 
 
 ## Database
 
-SQLite via better-sqlite3. File at `./foundation.db` (configurable via `DB_PATH` env var). Uses WAL journal mode and enforces foreign keys.
+DynamoDB with a **single-table design**. Uses DynamoDB Local (via Podman Compose) for development and AWS DynamoDB in production. Table is created automatically on server startup via `ensureTable()`.
 
-### Tables
+### Single-Table Design
 
-| Table | Purpose |
-|-------|---------|
-| `users` | `id`, `username`, `password_hash`, `created_at` |
-| `game_state` | Per-user resource totals, click value, era, prestige state, timestamps, lifetime stats. PK = `user_id`. |
-| `buildings` | Per-user building ownership. Composite PK `(user_id, building_key)`. Stores `count` and `is_unlocked`. |
-| `upgrades` | Per-user upgrade purchase state. Composite PK `(user_id, upgrade_key)`. Stores `is_purchased`. |
-| `ships` | Per-user ships. PK = `id` (UUID). Stores type, name, status, trade route assignment, departure/return times. |
-| `trade_routes` | Per-user unlocked trade routes. Composite PK `(user_id, route_key)`. |
-| `achievements` | Per-user unlocked achievements. Composite PK `(user_id, achievement_key)`. Stores `unlocked_at`. |
-| `prestige_history` | Audit log of prestige events with credits/SP/era at reset time. |
-| `events` | Per-user event state. Composite PK `(user_id, event_key)`. Stores `times_seen`, `last_choice`. |
-| `heroes` | Per-user hero unlocks. Composite PK `(user_id, hero_key)`. Stores `unlocked_at`. |
-| `activities` | Per-user activity completion counts. Composite PK `(user_id, activity_key)`. Stores `times_completed`. |
-| `active_activities` | Currently running hero assignments. Composite PK `(user_id, activity_key)`. Stores hero, start/complete times. |
-| `inventory` | Per-user item quantities. Composite PK `(user_id, item_key)`. Stores `quantity`. |
-| `active_consumable` | At most one active consumable per user. PK = `user_id`. Stores item key, start/expire times. |
+**Table**: `FoundationGame` (PAY_PER_REQUEST billing)
+
+| PK | SK | Purpose |
+|----|-----|---------|
+| `USER#<id>` | `PROFILE` | username, passwordHash, isAdmin, createdAt. Has `GSI1PK`=`USERNAME#<name>` |
+| `USER#<id>` | `GAMESTATE` | All game state fields as one item |
+| `USER#<id>` | `BUILDING#<key>` | count, isUnlocked (only stored if count > 0 or unlocked) |
+| `USER#<id>` | `UPGRADE#<key>` | isPurchased (only stored if purchased) |
+| `USER#<id>` | `SHIP#<uuid>` | type, name, status, tradeRouteId, departedAt, returnsAt |
+| `USER#<id>` | `TRADEROUTE#<key>` | isUnlocked (only stored if unlocked) |
+| `USER#<id>` | `ACHIEVEMENT#<key>` | unlockedAt (only stored if unlocked) |
+| `USER#<id>` | `PRESTIGE#<zeroPad5>` | creditsAtReset, seldonPointsEarned, eraAtReset, triggeredAt |
+| `USER#<id>` | `EVENT#<zeroPadTs>#<uuid>` | eventKey, choiceIndex, firedAt |
+| `USER#<id>` | `EFFECT#<uuid>` | effectType, resource, multiplier, startedAt, expiresAt, `ttl` |
+| `USER#<id>` | `PENDING_EVENT` | eventKey |
+| `USER#<id>` | `HERO#<key>` | unlockedAt |
+| `USER#<id>` | `ACTIVITY#<key>` | timesCompleted |
+| `USER#<id>` | `ACTIVE_ACTIVITY#<key>` | heroKey, startedAt, completesAt |
+| `USER#<id>` | `INVENTORY#<key>` | quantity |
+| `USER#<id>` | `ACTIVE_CONSUMABLE` | itemKey, startedAt, expiresAt |
+| `USERNAME#<name>` | `RESERVATION` | userId (for username uniqueness enforcement) |
+| `COUNTER` | `USER_ID` | currentId (atomic counter for user ID generation) |
+
+**GSI1** (username lookup): `GSI1PK` (HASH) + `GSI1SK` (RANGE), projection ALL. Only PROFILE items set `GSI1PK`.
+
+**TTL**: Enabled on `ttl` attribute. Only EFFECT# items set this for auto-deletion of expired effects.
+
+### Sparse Model
+
+Buildings, upgrades, trade routes, and achievements are **NOT pre-created**. Items only exist in DynamoDB when state changes (building purchased, upgrade bought, etc.). `buildGameState()` handles missing items by defaulting to `count: 0` / `isPurchased: false` / `isUnlocked: false`. This eliminates hundreds of writes on registration and prestige.
+
+### Key Access Patterns
+
+| Pattern | DynamoDB Operation |
+|---------|-------------------|
+| Get all items by user + prefix | `Query PK=USER#<id>, SK begins_with(PREFIX#)` |
+| Get single item | `GetItem PK + SK` |
+| Upsert | `PutItem` or `UpdateItem` |
+| Increment | `UpdateItem SET val = if_not_exists(val, :zero) + :one` |
+| Conditional write | `UpdateItem` or `PutItem` with `ConditionExpression` |
+| Delete by prefix | Query + `BatchWriteItem` (25/batch) |
+| Username uniqueness | `TransactWriteItems` (reservation + profile) |
+| User ID generation | `UpdateItem` with `ADD currentId :one` + `ReturnValues: UPDATED_NEW` |
 
 ### Conventions
 
-- DB queries use **snake_case** column names; TypeScript types use **camelCase**
+- DynamoDB attribute names use **snake_case** for game state fields; TypeScript types use **camelCase**
 - `game_state.last_tick_at` stores seconds (Unix timestamp)
 - Ship `departed_at` / `returns_at` store milliseconds (`Date.now()`)
+- All query functions are **async** (return Promises)
+- `updateShipStatus` and `deleteShip` require `userId` as first parameter (DynamoDB needs PK+SK)
 
 ## API Endpoints
 
@@ -270,50 +310,6 @@ All endpoints except auth require a `Bearer` token in the `Authorization` header
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/game/load` | Load full game state (with offline earnings) |
-| POST | `/api/game/save` | Save resource snapshot (returns 204) |
-| POST | `/api/game/click` | Register clicks (body: `{ clicks }`, max 100) |
-| POST | `/api/game/reset` | Hard reset game state (returns 204) |
-| GET | `/api/game/stats` | Get game statistics |
-
-### Buildings
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/buildings` | List user buildings |
-| POST | `/api/buildings/buy` | Buy building(s) (body: `{ buildingKey, amount }`) |
-| POST | `/api/buildings/sell` | Sell building(s) (body: `{ buildingKey, amount }`, 50% refund) |
-
-### Upgrades
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/upgrades` | List user upgrades |
-| POST | `/api/upgrades/buy` | Purchase upgrade (body: `{ upgradeKey }`) |
-
-### Ships
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/ships` | List user ships |
-| POST | `/api/ships/build` | Build a ship (body: `{ shipType, name }`, name max 50 chars) |
-| POST | `/api/ships/send` | Send ship on trade route (body: `{ shipId, tradeRouteKey }`) |
-| POST | `/api/ships/recall` | Recall a trading ship (body: `{ shipId }`) |
-
-### Trade Routes
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/trade-routes` | List user trade routes |
-| POST | `/api/trade-routes/unlock` | Unlock a trade route (body: `{ routeKey }`) |
-
-### Prestige
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/prestige/preview` | Preview Seldon Point earnings |
-| POST | `/api/prestige/trigger` | Trigger a Seldon Crisis (prestige reset) |
-| GET | `/api/prestige/history` | Get prestige history log |
-
-### Achievements
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/achievements` | List user achievements |
-| POST | `/api/achievements/check` | Check and unlock new achievements |
 
 ### Heroes
 | Method | Path | Description |
@@ -333,10 +329,31 @@ All endpoints except auth require a `Bearer` token in the `Authorization` header
 | GET | `/api/inventory` | List inventory items + active consumable |
 | POST | `/api/inventory/use` | Use a consumable (body: `{ itemKey }`) |
 
+### Admin
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/admin/users` | List all users with summary |
+| POST | `/api/admin/users/:userId/impersonate` | Generate token for user |
+| DELETE | `/api/admin/users/:userId` | Delete user and all data |
+| POST | `/api/admin/users/:userId/password` | Force password change |
+| PATCH | `/api/admin/users/:userId/admin` | Toggle admin status |
+| GET | `/api/admin/users/:userId/state` | Get full game state |
+| PATCH | `/api/admin/users/:userId/resources` | Set resources |
+| PATCH | `/api/admin/users/:userId/era` | Set era |
+| PATCH | `/api/admin/users/:userId/prestige` | Set prestige values |
+| PATCH | `/api/admin/users/:userId/buildings/:key` | Set building count |
+| PATCH | `/api/admin/users/:userId/upgrades/:key` | Set upgrade purchased state |
+| DELETE | `/api/admin/users/:userId/ships/:shipId` | Delete ship |
+| POST | `/api/admin/users/:userId/achievements/:key` | Grant achievement |
+| DELETE | `/api/admin/users/:userId/achievements/:key` | Revoke achievement |
+| POST | `/api/admin/users/:userId/heroes/:key` | Grant hero |
+| DELETE | `/api/admin/users/:userId/heroes/:key` | Revoke hero |
+| DELETE | `/api/admin/users/:userId/activities/:key` | Cancel activity |
+
 ### WebSocket
 | Path | Description |
 |------|-------------|
-| `/ws?token=<jwt>` | Server-push sync of buildings/upgrades at 2 Hz |
+| `/ws?token=<jwt>` | Server-push sync + bidirectional mutations (buildings, upgrades, ships, clicks, prestige, events, etc.) |
 
 ## Game Engine
 
@@ -494,7 +511,7 @@ Era-specific colors are applied via CSS custom properties set on `GameLayout`:
 1. **Type**: Add the key to the `BuildingKey` union in `shared/src/types/buildings.ts`.
 2. **Definition**: Add an entry to `BUILDING_DEFINITIONS` in `shared/src/constants/buildings.ts` with key, name, description, era, baseCost, production rates, costMultiplier (1.15), and unlockRequirement.
 3. **SVG Art**: Create `client/src/assets/svg/buildings/YourBuildingArt.tsx` following the existing pattern (64x64 viewBox, currentColor, level prop). Export from the barrel `index.ts` and add to `BUILDING_ART_MAP`.
-4. **No DB changes needed** -- building state rows are created dynamically per building_key.
+4. **No DB changes needed** -- building state items are created dynamically via sparse model.
 
 ### Adding a New Upgrade
 
@@ -523,7 +540,7 @@ Era-specific colors are applied via CSS custom properties set on `GameLayout`:
 
 1. **Definition**: Add an entry to `HERO_DEFINITIONS` in `shared/src/constants/heroes.ts` with key, name, title, description, era, specialization (`research` | `mission`), and durationBonus (e.g. 0.85 = 15% faster).
 2. **Event link**: Add `heroReward: 'yourHeroKey'` to the triggering event in `shared/src/constants/events.ts`. The hero unlocks when the player makes their choice in that event.
-3. **No DB changes needed** -- hero rows are created via `unlockHero()` when the event fires.
+3. **No DB changes needed** -- hero items are created via `unlockHero()` when the event fires.
 
 ### Adding a New Activity
 
@@ -553,7 +570,11 @@ This is a larger change:
 |----------|---------|-------------|
 | `JWT_SECRET` | `foundation-dev-secret-key` | Secret for signing JWTs |
 | `PORT` | `3001` | Server port |
-| `DB_PATH` | `./foundation.db` | Path to SQLite database file |
+| `DYNAMODB_ENDPOINT` | *(none -- uses AWS default)* | DynamoDB endpoint URL. Set to `http://localhost:8000` for local dev. |
+| `DYNAMODB_TABLE` | `FoundationGame` | DynamoDB table name |
+| `AWS_REGION` | `us-east-1` | AWS region |
+| `AWS_ACCESS_KEY_ID` | *(none)* | AWS credentials. Set to `local` for DynamoDB Local. |
+| `AWS_SECRET_ACCESS_KEY` | *(none)* | AWS credentials. Set to `local` for DynamoDB Local. |
 
 ## Conventions
 
@@ -565,12 +586,12 @@ This is a larger change:
 - `ApiClient` auto-redirects to `/login` on 401 responses.
 - Auto-save interval is 30 seconds (`AUTO_SAVE_INTERVAL` in formulas.ts).
 - `Resources` type has no index signature -- use `resources[key as ResourceKey]` for dynamic access.
-- DB queries use snake_case column names; TypeScript types use camelCase.
+- DynamoDB attributes use snake_case for game state fields; TypeScript types use camelCase.
+- All server-side query and service functions are async (return Promises).
 - Routes define their full paths (e.g. `/api/auth/login`) and are mounted at root in `app.ts`.
 
 ## Known Issues
 
-- **Prestige multiplier mismatch**: `shared/formulas.ts` uses `0.02` per SP but `server/prestige-queries.ts` SQL uses `0.01` per SP in the reset calculation.
 - **Trade route rewards not collected**: Ships dock when their route completes, but the reward resources defined in `TRADE_ROUTE_DEFINITIONS` are never applied to the player's account.
 - **Ship timestamp units**: Ship `departed_at`/`returns_at` use milliseconds (`Date.now()`) while `game_state.last_tick_at` uses seconds, requiring care when comparing.
 - **Legacy SVG components**: `VaultOfKnowledgeArt` and `HyperspaceRelayArt` exist in the buildings directory but are not in `BUILDING_ART_MAP` (dead code).

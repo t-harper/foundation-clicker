@@ -400,12 +400,18 @@ export function calcMaxAffordableBuilding(
   return maxAffordable === Infinity ? 0 : maxAffordable;
 }
 
-/** Determine current era based on prestige state */
-export function calcCurrentEra(prestigeCount: number, totalSeldonPoints: number): Era {
-  if (totalSeldonPoints >= 10000) return Era.GalacticReunification;
-  if (totalSeldonPoints >= 100) return Era.PsychologicalInfluence;
-  if (prestigeCount >= 1) return Era.TradingExpansion;
-  return Era.ReligiousDominance;
+/** Determine current era based on prestige state.
+ *  When currentEra is provided, advancement is capped to +1 era per prestige. */
+export function calcCurrentEra(prestigeCount: number, totalSeldonPoints: number, currentEra?: Era): Era {
+  let maxEra = Era.ReligiousDominance;
+  if (totalSeldonPoints >= 10000) maxEra = Era.GalacticReunification;
+  else if (totalSeldonPoints >= 100) maxEra = Era.PsychologicalInfluence;
+  else if (prestigeCount >= 1) maxEra = Era.TradingExpansion;
+
+  if (currentEra !== undefined && maxEra > currentEra + 1) {
+    return (currentEra + 1) as Era;
+  }
+  return maxEra;
 }
 
 /** Check if a building is unlocked based on game state */

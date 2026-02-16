@@ -15,7 +15,8 @@ export type EventCondition =
   | { type: 'shipCount'; count: number }
   | { type: 'playTime'; seconds: number }
   | { type: 'upgradeOwned'; upgrade: string }
-  | { type: 'lifetimeCredits'; amount: number };
+  | { type: 'lifetimeCredits'; amount: number }
+  | { type: 'heroOwned'; hero: string };
 
 // What happens when a choice is picked
 export type EventEffect =

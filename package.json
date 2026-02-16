@@ -14,6 +14,9 @@
     "build:shared": "npm run build -w shared",
     "build:server": "npm run build -w server",
     "build:client": "npm run build -w client",
-    "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w client"
+    "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w client",
+    "dev:db": "podman-compose up -d",
+    "dev:db:stop": "podman-compose down",
+    "dev:db:reset": "podman-compose down -v && podman-compose up -d"
   }
 }

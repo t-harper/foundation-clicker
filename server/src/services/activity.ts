@@ -31,9 +31,11 @@ import type {
 } from '@foundation/shared';
 import { getUserInventory } from '../db/queries/inventory-queries.js';
 
-export function getActivities(userId: number): GetActivitiesResponse {
-  const activityRows = getUserActivities(userId);
-  const activeRows = getActiveActivities(userId);
+export async function getActivities(userId: number): Promise<GetActivitiesResponse> {
+  const [activityRows, activeRows] = await Promise.all([
+    getUserActivities(userId),
+    getActiveActivities(userId),
+  ]);
 
   return {
     activities: activityRows.map((r) => ({
@@ -49,11 +51,11 @@ export function getActivities(userId: number): GetActivitiesResponse {
   };
 }
 
-export function startActivity(
+export async function startActivity(
   userId: number,
   activityKey: string,
   heroKey: string
-): StartActivityResponse {
+): Promise<StartActivityResponse> {
   const activityDef = ACTIVITY_DEFINITIONS[activityKey];
   if (!activityDef) {
     throw new NotFoundError(`Activity not found: ${activityKey}`);
@@ -64,38 +66,36 @@ export function startActivity(
     throw new NotFoundError(`Hero not found: ${heroKey}`);
   }
 
-  // Validate hero is unlocked
-  if (!hasHero(userId, heroKey)) {
+  if (!(await hasHero(userId, heroKey))) {
     throw new ValidationError(`Hero ${heroKey} is not unlocked`);
   }
 
-  // Validate hero is idle (not assigned to another activity)
-  const existingAssignment = getActiveActivityByHero(userId, heroKey);
+  const existingAssignment = await getActiveActivityByHero(userId, heroKey);
   if (existingAssignment) {
     throw new ValidationError(`Hero ${heroKey} is already assigned to an activity`);
   }
 
-  // Validate activity is not already running
-  const existingActivity = getActiveActivityByKey(userId, activityKey);
+  const existingActivity = await getActiveActivityByKey(userId, activityKey);
   if (existingActivity) {
     throw new ValidationError(`Activity ${activityKey} is already in progress`);
   }
 
-  // Check era
-  const state = buildGameState(userId);
+  const state = await buildGameState(userId);
   if (state.currentEra < activityDef.era) {
     throw new ValidationError(`Activity ${activityKey} requires a later era`);
   }
 
-  // Check maxCompletions
+  if (heroDef.era !== state.currentEra) {
+    throw new ValidationError(`Hero ${heroKey} is not available in the current era`);
+  }
+
   if (activityDef.maxCompletions !== null) {
-    const completed = getTimesCompleted(userId, activityKey);
+    const completed = await getTimesCompleted(userId, activityKey);
     if (completed >= activityDef.maxCompletions) {
       throw new ValidationError(`Activity ${activityKey} has reached its maximum completions`);
     }
   }
 
-  // Project resources and check affordability
   const projected = projectResources(state);
   const cost = activityDef.cost as Partial<Record<ResourceKey, number>>;
 
@@ -103,10 +103,9 @@ export function startActivity(
     throw new ValidationError('Not enough resources to start this activity');
   }
 
-  // Deduct cost
   const newResources = subtractCost(projected.resources, cost);
 
-  updateGameState(userId, {
+  await updateGameState(userId, {
     credits: newResources.credits,
     knowledge: newResources.knowledge,
     influence: newResources.influence,
@@ -116,7 +115,6 @@ export function startActivity(
     lifetime_credits: projected.lifetimeCredits,
   });
 
-  // Calculate duration with hero specialization bonus
   let duration = activityDef.durationSeconds;
   if (heroDef.specialization === activityDef.type) {
     duration = Math.floor(duration * heroDef.durationBonus);
@@ -125,7 +123,7 @@ export function startActivity(
   const now = Math.floor(Date.now() / 1000);
   const completesAt = now + duration;
 
-  insertActiveActivity(userId, activityKey, heroKey, now, completesAt);
+  await insertActiveActivity(userId, activityKey, heroKey, now, completesAt);
 
   return {
     activeActivity: {
@@ -138,11 +136,11 @@ export function startActivity(
   };
 }
 
-export function collectActivity(
+export async function collectActivity(
   userId: number,
   activityKey: string
-): CollectActivityResponse {
-  const activeActivity = getActiveActivityByKey(userId, activityKey);
+): Promise<CollectActivityResponse> {
+  const activeActivity = await getActiveActivityByKey(userId, activityKey);
   if (!activeActivity) {
     throw new NotFoundError(`No active activity found: ${activityKey}`);
   }
@@ -157,19 +155,18 @@ export function collectActivity(
     throw new NotFoundError(`Activity definition not found: ${activityKey}`);
   }
 
-  // Grant rewards
   const rewards = activityDef.rewards;
   for (const reward of rewards) {
-    addItem(userId, reward.itemKey, reward.quantity);
+    await addItem(userId, reward.itemKey, reward.quantity);
   }
 
-  // Increment completion count and free hero
-  incrementTimesCompleted(userId, activityKey);
-  removeActiveActivity(userId, activityKey);
+  await incrementTimesCompleted(userId, activityKey);
+  await removeActiveActivity(userId, activityKey);
 
-  // Get updated state
-  const completed = getTimesCompleted(userId, activityKey);
-  const inventory = getUserInventory(userId);
+  const [completed, inventory] = await Promise.all([
+    getTimesCompleted(userId, activityKey),
+    getUserInventory(userId),
+  ]);
 
   return {
     rewards: rewards.map((r) => ({ itemKey: r.itemKey, quantity: r.quantity })),

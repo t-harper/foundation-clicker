@@ -1,11 +1,6 @@
-export { getDb, closeDb } from './connection.js';
-export { runMigrations, registerMigration } from './migrate.js';
-
-// Import migrations to register them
-import './migrations/001_initial_schema.js';
-import './migrations/002_events.js';
-import './migrations/003_pending_event.js';
-import './migrations/004_heroes_activities_inventory.js';
+export { getDocClient, TABLE_NAME } from './connection.js';
+export { ensureTable } from './init-table.js';
+export { queryItems, deleteItemsByPrefix, batchDeleteItems, userPK } from './dynamo-utils.js';
 
 export * from './queries/user-queries.js';
 export * from './queries/game-state-queries.js';

@@ -26,10 +26,10 @@ export interface HandlerResult {
   checkAchievements?: boolean;
 }
 
-export function handleClientMessage(userId: number, msg: ClientMessage): HandlerResult {
+export async function handleClientMessage(userId: number, msg: ClientMessage): Promise<HandlerResult> {
   switch (msg.type) {
     case 'saveState': {
-      saveGameState(userId, {
+      await saveGameState(userId, {
         resources: msg.resources,
         lastTickAt: msg.lastTickAt,
         totalPlayTime: msg.totalPlayTime,
@@ -41,7 +41,7 @@ export function handleClientMessage(userId: number, msg: ClientMessage): Handler
     }
 
     case 'click': {
-      const result = handleClick(userId, msg.clicks);
+      const result = await handleClick(userId, msg.clicks);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
         checkAchievements: true,
@@ -49,7 +49,7 @@ export function handleClientMessage(userId: number, msg: ClientMessage): Handler
     }
 
     case 'buyBuilding': {
-      const result = buyBuilding(userId, msg.buildingKey, msg.amount);
+      const result = await buyBuilding(userId, msg.buildingKey, msg.amount);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
         checkAchievements: true,
@@ -57,14 +57,14 @@ export function handleClientMessage(userId: number, msg: ClientMessage): Handler
     }
 
     case 'sellBuilding': {
-      const result = sellBuilding(userId, msg.buildingKey, msg.amount);
+      const result = await sellBuilding(userId, msg.buildingKey, msg.amount);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
       };
     }
 
     case 'buyUpgrade': {
-      const result = buyUpgrade(userId, msg.upgradeKey);
+      const result = await buyUpgrade(userId, msg.upgradeKey);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
         checkAchievements: true,
@@ -72,7 +72,7 @@ export function handleClientMessage(userId: number, msg: ClientMessage): Handler
     }
 
     case 'buildShip': {
-      const result = buildShip(userId, msg.shipType, msg.name);
+      const result = await buildShip(userId, msg.shipType, msg.name);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
         checkAchievements: true,
@@ -80,36 +80,36 @@ export function handleClientMessage(userId: number, msg: ClientMessage): Handler
     }
 
     case 'sendShip': {
-      const result = sendShip(userId, msg.shipId, msg.tradeRouteKey);
+      const result = await sendShip(userId, msg.shipId, msg.tradeRouteKey);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
       };
     }
 
     case 'recallShip': {
-      const result = recallShip(userId, msg.shipId);
+      const result = await recallShip(userId, msg.shipId);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
       };
     }
 
     case 'unlockTradeRoute': {
-      const result = unlockTradeRoute(userId, msg.routeKey);
+      const result = await unlockTradeRoute(userId, msg.routeKey);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
       };
     }
 
     case 'triggerPrestige': {
-      const result = triggerPrestige(userId);
-      const fullState = buildGameState(userId);
+      const result = await triggerPrestige(userId);
+      const fullState = await buildGameState(userId);
       return {
         response: { type: 'result', requestId: msg.requestId, data: { ...result, gameState: fullState } },
       };
     }
 
     case 'chooseEvent': {
-      const result = handleEventChoice(userId, msg.eventKey, msg.choiceIndex);
+      const result = await handleEventChoice(userId, msg.eventKey, msg.choiceIndex);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
         checkAchievements: true,
@@ -117,43 +117,43 @@ export function handleClientMessage(userId: number, msg: ClientMessage): Handler
     }
 
     case 'resetGame': {
-      resetGame(userId);
-      const fullState = buildGameState(userId);
+      await resetGame(userId);
+      const fullState = await buildGameState(userId);
       return {
         response: { type: 'result', requestId: msg.requestId, data: { gameState: fullState } },
       };
     }
 
     case 'getStats': {
-      const result = getGameStats(userId);
+      const result = await getGameStats(userId);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
       };
     }
 
     case 'getPrestigePreview': {
-      const result = previewPrestige(userId);
+      const result = await previewPrestige(userId);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
       };
     }
 
     case 'getPrestigeHistory': {
-      const result = getPrestigeHistoryForUser(userId);
+      const result = await getPrestigeHistoryForUser(userId);
       return {
         response: { type: 'result', requestId: msg.requestId, data: result },
       };
     }
 
     case 'getActiveEffects': {
-      const result = getUserActiveEffects(userId);
+      const result = await getUserActiveEffects(userId);
       return {
         response: { type: 'result', requestId: msg.requestId, data: { activeEffects: result } },
       };
     }
 
     case 'getEventHistory': {
-      const result = getUserEventHistory(userId);
+      const result = await getUserEventHistory(userId);
       return {
         response: { type: 'result', requestId: msg.requestId, data: { history: result } },
       };

@@ -12,10 +12,10 @@ import {
   NotFoundError,
 } from '../middleware/error-handler.js';
 import { buildGameState } from './game-state.js';
-import type { CheckAchievementsResponse } from '@foundation/shared';
+import type { CheckAchievementsResponse, GameState } from '@foundation/shared';
 
-export function getUserAchievements(userId: number): AchievementState[] {
-  const rows = getAchievements(userId);
+export async function getUserAchievements(userId: number): Promise<AchievementState[]> {
+  const rows = await getAchievements(userId);
   return rows.map((a) => ({
     achievementKey: a.achievement_key,
     unlockedAt: a.unlocked_at,
@@ -24,7 +24,7 @@ export function getUserAchievements(userId: number): AchievementState[] {
 
 function isConditionMet(
   condition: AchievementCondition,
-  state: ReturnType<typeof buildGameState>
+  state: GameState
 ): boolean {
   switch (condition.type) {
     case 'resourceTotal':
@@ -54,21 +54,20 @@ function isConditionMet(
   }
 }
 
-export function checkAchievements(
+export async function checkAchievements(
   userId: number
-): CheckAchievementsResponse {
-  const state = buildGameState(userId);
+): Promise<CheckAchievementsResponse> {
+  const state = await buildGameState(userId);
   const newAchievements: AchievementState[] = [];
 
   for (const achievement of state.achievements) {
-    // Skip already unlocked achievements
     if (achievement.unlockedAt !== null) continue;
 
     const def = ACHIEVEMENT_DEFINITIONS[achievement.achievementKey];
     if (!def) continue;
 
     if (isConditionMet(def.condition, state)) {
-      unlockAchievement(userId, achievement.achievementKey);
+      await unlockAchievement(userId, achievement.achievementKey);
       const now = Math.floor(Date.now() / 1000);
       newAchievements.push({
         achievementKey: achievement.achievementKey,

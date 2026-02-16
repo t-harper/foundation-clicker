@@ -77,9 +77,13 @@ export function ResearchPanel() {
   // Busy hero set
   const busyHeroKeys = new Set(activeActivities.map((a) => a.heroKey));
 
-  // Hero counts
+  // Hero counts (only current-era heroes count as usable)
   const unlockedHeroes = heroes.filter((h) => h.unlockedAt !== null);
-  const idleHeroes = unlockedHeroes.filter((h) => !busyHeroKeys.has(h.heroKey));
+  const currentEraHeroes = unlockedHeroes.filter((h) => {
+    const def = HERO_DEFINITIONS[h.heroKey];
+    return def && def.era === currentEra;
+  });
+  const idleHeroes = currentEraHeroes.filter((h) => !busyHeroKeys.has(h.heroKey));
 
   const SUB_TABS: { key: ResearchSubTab; label: string; count?: number }[] = [
     { key: 'projects', label: 'Projects', count: projects.length },
@@ -96,7 +100,7 @@ export function ResearchPanel() {
           Research &amp; Missions
         </h2>
         <span className="text-xs text-[var(--era-text)]/40">
-          {idleHeroes.length} / {unlockedHeroes.length} heroes idle
+          {idleHeroes.length} / {currentEraHeroes.length} heroes idle
         </span>
       </div>
 
@@ -293,6 +297,7 @@ function HeroList({
                     heroState={hero}
                     isBusy={busyHeroKeys.has(hero.heroKey)}
                     assignedActivity={activity?.activityKey}
+                    isPreviousEra={era < currentEra}
                   />
                 );
               })}

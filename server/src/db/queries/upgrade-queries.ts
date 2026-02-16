@@ -1,5 +1,6 @@
-import { getDb } from '../connection.js';
-import { ALL_UPGRADE_KEYS } from '@foundation/shared';
+import { PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { getDocClient, TABLE_NAME } from '../connection.js';
+import { queryItems, userPK } from '../dynamo-utils.js';
 
 export interface UpgradeRow {
   user_id: number;
@@ -7,32 +8,35 @@ export interface UpgradeRow {
   is_purchased: number;
 }
 
-export function getUpgrades(userId: number): UpgradeRow[] {
-  const db = getDb();
-  const stmt = db.prepare('SELECT * FROM upgrades WHERE user_id = ?');
-  return stmt.all(userId) as UpgradeRow[];
+export async function getUpgrades(userId: number): Promise<UpgradeRow[]> {
+  const items = await queryItems(userPK(userId), 'UPGRADE#');
+  return items.map((item) => ({
+    user_id: userId,
+    upgrade_key: item.SK.replace('UPGRADE#', ''),
+    is_purchased: 1, // Only stored if purchased (sparse model)
+  }));
 }
 
-export function purchaseUpgrade(userId: number, key: string): void {
-  const db = getDb();
-  const stmt = db.prepare(`
-    INSERT INTO upgrades (user_id, upgrade_key, is_purchased)
-    VALUES (?, ?, 1)
-    ON CONFLICT(user_id, upgrade_key)
-    DO UPDATE SET is_purchased = 1
-  `);
-  stmt.run(userId, key);
-}
-
-export function initializeUpgrades(userId: number): void {
-  const db = getDb();
-  const stmt = db.prepare(
-    'INSERT OR IGNORE INTO upgrades (user_id, upgrade_key, is_purchased) VALUES (?, ?, 0)'
+export async function purchaseUpgrade(userId: number, key: string): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        PK: userPK(userId),
+        SK: `UPGRADE#${key}`,
+        isPurchased: 1,
+      },
+    })
   );
-  const insertMany = db.transaction((keys: string[]) => {
-    for (const key of keys) {
-      stmt.run(userId, key);
-    }
-  });
-  insertMany(ALL_UPGRADE_KEYS);
+}
+
+export async function unpurchaseUpgrade(userId: number, key: string): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: `UPGRADE#${key}` },
+    })
+  );
 }

@@ -13,22 +13,22 @@ export interface NotificationAreaProps {
 
 const typeStyles: Record<Notification['type'], { bg: string; border: string; icon: string }> = {
   success: {
-    bg: 'bg-green-900/80',
+    bg: 'bg-[var(--era-bg)]/95',
     border: 'border-green-500/50',
     icon: 'text-green-400',
   },
   info: {
-    bg: 'bg-blue-900/80',
-    border: 'border-blue-500/50',
-    icon: 'text-blue-400',
+    bg: 'bg-[var(--era-bg)]/95',
+    border: 'border-[var(--era-accent)]/50',
+    icon: 'text-[var(--era-accent)]',
   },
   warning: {
-    bg: 'bg-amber-900/80',
+    bg: 'bg-[var(--era-bg)]/95',
     border: 'border-amber-500/50',
     icon: 'text-amber-400',
   },
   error: {
-    bg: 'bg-red-900/80',
+    bg: 'bg-[var(--era-bg)]/95',
     border: 'border-red-500/50',
     icon: 'text-red-400',
   },

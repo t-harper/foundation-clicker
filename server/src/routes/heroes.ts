@@ -7,9 +7,9 @@ const router = Router();
 router.get(
   '/api/heroes',
   authMiddleware,
-  (req: AuthRequest, res: Response, next: NextFunction) => {
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const heroes = getHeroes(req.userId!);
+      const heroes = await getHeroes(req.userId!);
       res.json({ heroes });
     } catch (err) {
       next(err);

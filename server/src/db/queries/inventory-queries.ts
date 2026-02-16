@@ -1,4 +1,6 @@
-import { getDb } from '../connection.js';
+import { GetCommand, PutCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { getDocClient, TABLE_NAME } from '../connection.js';
+import { queryItems, userPK } from '../dynamo-utils.js';
 
 export interface InventoryRow {
   user_id: number;
@@ -13,59 +15,105 @@ export interface ActiveConsumableRow {
   expires_at: number;
 }
 
-export function getUserInventory(userId: number): InventoryRow[] {
-  const db = getDb();
-  return db.prepare('SELECT * FROM inventory WHERE user_id = ? AND quantity > 0').all(userId) as InventoryRow[];
+export async function getUserInventory(userId: number): Promise<InventoryRow[]> {
+  const items = await queryItems(userPK(userId), 'INVENTORY#');
+  return items
+    .filter((item) => (item.quantity ?? 0) > 0)
+    .map((item) => ({
+      user_id: userId,
+      item_key: item.SK.replace('INVENTORY#', ''),
+      quantity: item.quantity,
+    }));
 }
 
-export function addItem(userId: number, itemKey: string, quantity: number): void {
-  const db = getDb();
-  db.prepare(`
-    INSERT INTO inventory (user_id, item_key, quantity)
-    VALUES (?, ?, ?)
-    ON CONFLICT(user_id, item_key)
-    DO UPDATE SET quantity = quantity + excluded.quantity
-  `).run(userId, itemKey, quantity);
+export async function addItem(userId: number, itemKey: string, quantity: number): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: `INVENTORY#${itemKey}` },
+      UpdateExpression: 'SET quantity = if_not_exists(quantity, :zero) + :qty',
+      ExpressionAttributeValues: { ':zero': 0, ':qty': quantity },
+    })
+  );
 }
 
-export function removeItem(userId: number, itemKey: string, quantity: number): boolean {
-  const db = getDb();
-  const result = db.prepare(`
-    UPDATE inventory SET quantity = quantity - ?
-    WHERE user_id = ? AND item_key = ? AND quantity >= ?
-  `).run(quantity, userId, itemKey, quantity);
-  return result.changes > 0;
+export async function removeItem(userId: number, itemKey: string, quantity: number): Promise<boolean> {
+  const client = getDocClient();
+  try {
+    await client.send(
+      new UpdateCommand({
+        TableName: TABLE_NAME,
+        Key: { PK: userPK(userId), SK: `INVENTORY#${itemKey}` },
+        UpdateExpression: 'SET quantity = quantity - :qty',
+        ConditionExpression: 'quantity >= :qty',
+        ExpressionAttributeValues: { ':qty': quantity },
+      })
+    );
+    return true;
+  } catch (err: any) {
+    if (err.name === 'ConditionalCheckFailedException') return false;
+    throw err;
+  }
 }
 
-export function getItemQuantity(userId: number, itemKey: string): number {
-  const db = getDb();
-  const row = db.prepare(
-    'SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?'
-  ).get(userId, itemKey) as { quantity: number } | undefined;
-  return row?.quantity ?? 0;
+export async function getItemQuantity(userId: number, itemKey: string): Promise<number> {
+  const client = getDocClient();
+  const result = await client.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: `INVENTORY#${itemKey}` },
+    })
+  );
+  return result.Item?.quantity ?? 0;
 }
 
-export function getActiveConsumable(userId: number): ActiveConsumableRow | undefined {
-  const db = getDb();
-  return db.prepare('SELECT * FROM active_consumable WHERE user_id = ?').get(userId) as ActiveConsumableRow | undefined;
+export async function getActiveConsumable(userId: number): Promise<ActiveConsumableRow | undefined> {
+  const client = getDocClient();
+  const result = await client.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: 'ACTIVE_CONSUMABLE' },
+    })
+  );
+
+  if (!result.Item) return undefined;
+
+  return {
+    user_id: userId,
+    item_key: result.Item.itemKey,
+    started_at: result.Item.startedAt,
+    expires_at: result.Item.expiresAt,
+  };
 }
 
-export function setActiveConsumable(
+export async function setActiveConsumable(
   userId: number,
   itemKey: string,
   startedAt: number,
   expiresAt: number
-): void {
-  const db = getDb();
-  db.prepare(`
-    INSERT INTO active_consumable (user_id, item_key, started_at, expires_at)
-    VALUES (?, ?, ?, ?)
-    ON CONFLICT(user_id)
-    DO UPDATE SET item_key = excluded.item_key, started_at = excluded.started_at, expires_at = excluded.expires_at
-  `).run(userId, itemKey, startedAt, expiresAt);
+): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        PK: userPK(userId),
+        SK: 'ACTIVE_CONSUMABLE',
+        itemKey,
+        startedAt,
+        expiresAt,
+      },
+    })
+  );
 }
 
-export function clearActiveConsumable(userId: number): void {
-  const db = getDb();
-  db.prepare('DELETE FROM active_consumable WHERE user_id = ?').run(userId);
+export async function clearActiveConsumable(userId: number): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: 'ACTIVE_CONSUMABLE' },
+    })
+  );
 }

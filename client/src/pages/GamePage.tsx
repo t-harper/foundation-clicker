@@ -1,19 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { loadGame } from '../api';
+import { loadGame, getMe } from '../api';
 import { useGameStore } from '../store';
 import { useGameEngine, useTutorial, useWebSocketSync } from '../hooks';
 import { GameLayout } from '../components/layout';
-import { EventModal } from '../components/events';
-import { TutorialOverlay } from '../components/tutorial';
 
 export function GamePage() {
   const isLoaded = useGameStore((s) => s.isLoaded);
   const setGameState = useGameStore((s) => s.setGameState);
   const showOfflineEarnings = useGameStore((s) => s.showOfflineEarnings);
-  const showOfflineModal = useGameStore((s) => s.showOfflineModal);
-  const hideOfflineModal = useGameStore((s) => s.hideOfflineModal);
-  const offlineEarnings = useGameStore((s) => s.offlineEarnings);
-  const offlineSeconds = useGameStore((s) => s.offlineSeconds);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Start the game engine, WebSocket sync, and tutorial
@@ -32,6 +26,16 @@ export function GamePage() {
         if (cancelled) return;
 
         setGameState(response.gameState);
+
+        // Check admin status
+        try {
+          const me = await getMe();
+          if (me.user?.isAdmin) {
+            useGameStore.getState().setIsAdmin(true);
+          }
+        } catch {
+          // Non-critical — continue without admin
+        }
 
         // Re-show pending event if player hasn't responded yet
         if (response.pendingEventKey) {
@@ -93,44 +97,5 @@ export function GamePage() {
     );
   }
 
-  return (
-    <>
-      <GameLayout />
-      <EventModal />
-      <TutorialOverlay />
-
-      {/* Offline earnings placeholder */}
-      {showOfflineModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-          onClick={hideOfflineModal}
-        >
-          <div
-            className="bg-[#1a1612] border border-[#c9952e]/30 rounded-lg p-6 max-w-sm text-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-xl font-bold text-[#c9952e] mb-2">
-              Welcome Back!
-            </h2>
-            <p className="text-[#d4a574]/70 text-sm mb-4">
-              You were away for {Math.floor(offlineSeconds / 60)} minutes.
-            </p>
-            {offlineEarnings && (
-              <p className="text-[#f5e6d3] text-sm mb-4">
-                You earned {offlineEarnings.credits.toFixed(0)} credits while
-                offline.
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={hideOfflineModal}
-              className="px-4 py-2 bg-[#c9952e] text-[#1a1612] rounded-md font-semibold hover:bg-[#d4a574] transition-colors"
-            >
-              Collect
-            </button>
-          </div>
-        </div>
-      )}
-    </>
-  );
+  return <GameLayout />;
 }

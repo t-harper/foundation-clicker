@@ -1,4 +1,6 @@
-import { getDb } from '../connection.js';
+import { GetCommand, PutCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { getDocClient, TABLE_NAME } from '../connection.js';
+import { queryItems, userPK } from '../dynamo-utils.js';
 
 export interface ActivityRow {
   user_id: number;
@@ -14,62 +16,112 @@ export interface ActiveActivityRow {
   completes_at: number;
 }
 
-export function getUserActivities(userId: number): ActivityRow[] {
-  const db = getDb();
-  return db.prepare('SELECT * FROM activities WHERE user_id = ?').all(userId) as ActivityRow[];
+export async function getUserActivities(userId: number): Promise<ActivityRow[]> {
+  const items = await queryItems(userPK(userId), 'ACTIVITY#');
+  return items.map((item) => ({
+    user_id: userId,
+    activity_key: item.SK.replace('ACTIVITY#', ''),
+    times_completed: item.timesCompleted ?? 0,
+  }));
 }
 
-export function getActiveActivities(userId: number): ActiveActivityRow[] {
-  const db = getDb();
-  return db.prepare('SELECT * FROM active_activities WHERE user_id = ?').all(userId) as ActiveActivityRow[];
+export async function getActiveActivities(userId: number): Promise<ActiveActivityRow[]> {
+  const items = await queryItems(userPK(userId), 'ACTIVE_ACTIVITY#');
+  return items.map((item) => ({
+    user_id: userId,
+    activity_key: item.SK.replace('ACTIVE_ACTIVITY#', ''),
+    hero_key: item.heroKey,
+    started_at: item.startedAt,
+    completes_at: item.completesAt,
+  }));
 }
 
-export function getActiveActivityByKey(userId: number, activityKey: string): ActiveActivityRow | undefined {
-  const db = getDb();
-  return db.prepare(
-    'SELECT * FROM active_activities WHERE user_id = ? AND activity_key = ?'
-  ).get(userId, activityKey) as ActiveActivityRow | undefined;
+export async function getActiveActivityByKey(userId: number, activityKey: string): Promise<ActiveActivityRow | undefined> {
+  const client = getDocClient();
+  const result = await client.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: `ACTIVE_ACTIVITY#${activityKey}` },
+    })
+  );
+
+  if (!result.Item) return undefined;
+
+  return {
+    user_id: userId,
+    activity_key: activityKey,
+    hero_key: result.Item.heroKey,
+    started_at: result.Item.startedAt,
+    completes_at: result.Item.completesAt,
+  };
 }
 
-export function getActiveActivityByHero(userId: number, heroKey: string): ActiveActivityRow | undefined {
-  const db = getDb();
-  return db.prepare(
-    'SELECT * FROM active_activities WHERE user_id = ? AND hero_key = ?'
-  ).get(userId, heroKey) as ActiveActivityRow | undefined;
+export async function getActiveActivityByHero(userId: number, heroKey: string): Promise<ActiveActivityRow | undefined> {
+  // Query all active activities and filter by heroKey
+  const items = await queryItems(userPK(userId), 'ACTIVE_ACTIVITY#');
+  const match = items.find((item) => item.heroKey === heroKey);
+  if (!match) return undefined;
+
+  return {
+    user_id: userId,
+    activity_key: match.SK.replace('ACTIVE_ACTIVITY#', ''),
+    hero_key: match.heroKey,
+    started_at: match.startedAt,
+    completes_at: match.completesAt,
+  };
 }
 
-export function insertActiveActivity(
+export async function insertActiveActivity(
   userId: number,
   activityKey: string,
   heroKey: string,
   startedAt: number,
   completesAt: number
-): void {
-  const db = getDb();
-  db.prepare(
-    'INSERT INTO active_activities (user_id, activity_key, hero_key, started_at, completes_at) VALUES (?, ?, ?, ?, ?)'
-  ).run(userId, activityKey, heroKey, startedAt, completesAt);
+): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        PK: userPK(userId),
+        SK: `ACTIVE_ACTIVITY#${activityKey}`,
+        heroKey,
+        startedAt,
+        completesAt,
+      },
+    })
+  );
 }
 
-export function removeActiveActivity(userId: number, activityKey: string): void {
-  const db = getDb();
-  db.prepare('DELETE FROM active_activities WHERE user_id = ? AND activity_key = ?').run(userId, activityKey);
+export async function removeActiveActivity(userId: number, activityKey: string): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: `ACTIVE_ACTIVITY#${activityKey}` },
+    })
+  );
 }
 
-export function incrementTimesCompleted(userId: number, activityKey: string): void {
-  const db = getDb();
-  db.prepare(`
-    INSERT INTO activities (user_id, activity_key, times_completed)
-    VALUES (?, ?, 1)
-    ON CONFLICT(user_id, activity_key)
-    DO UPDATE SET times_completed = times_completed + 1
-  `).run(userId, activityKey);
+export async function incrementTimesCompleted(userId: number, activityKey: string): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: `ACTIVITY#${activityKey}` },
+      UpdateExpression: 'SET timesCompleted = if_not_exists(timesCompleted, :zero) + :one',
+      ExpressionAttributeValues: { ':zero': 0, ':one': 1 },
+    })
+  );
 }
 
-export function getTimesCompleted(userId: number, activityKey: string): number {
-  const db = getDb();
-  const row = db.prepare(
-    'SELECT times_completed FROM activities WHERE user_id = ? AND activity_key = ?'
-  ).get(userId, activityKey) as { times_completed: number } | undefined;
-  return row?.times_completed ?? 0;
+export async function getTimesCompleted(userId: number, activityKey: string): Promise<number> {
+  const client = getDocClient();
+  const result = await client.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: `ACTIVITY#${activityKey}` },
+    })
+  );
+  return result.Item?.timesCompleted ?? 0;
 }

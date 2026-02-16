@@ -14,28 +14,27 @@ import {
   NotFoundError,
 } from '../middleware/error-handler.js';
 
-function buildInventory(userId: number): InventoryItem[] {
-  const rows = getUserInventory(userId);
+async function buildInventory(userId: number): Promise<InventoryItem[]> {
+  const rows = await getUserInventory(userId);
   return rows.map((r) => ({
     itemKey: r.item_key,
     quantity: r.quantity,
   }));
 }
 
-function buildActiveConsumable(userId: number): ActiveConsumable | null {
-  const row = getActiveConsumable(userId);
+async function buildActiveConsumable(userId: number): Promise<ActiveConsumable | null> {
+  const row = await getActiveConsumable(userId);
   if (!row) return null;
 
   const now = Math.floor(Date.now() / 1000);
   if (now >= row.expires_at) {
-    // Expired, clean it up
-    clearActiveConsumable(userId);
+    await clearActiveConsumable(userId);
     return null;
   }
 
   const def = ITEM_DEFINITIONS[row.item_key];
   if (!def || def.category !== 'consumable') {
-    clearActiveConsumable(userId);
+    await clearActiveConsumable(userId);
     return null;
   }
 
@@ -47,14 +46,14 @@ function buildActiveConsumable(userId: number): ActiveConsumable | null {
   };
 }
 
-export function getInventory(userId: number): GetInventoryResponse {
+export async function getInventory(userId: number): Promise<GetInventoryResponse> {
   return {
-    inventory: buildInventory(userId),
-    activeConsumable: buildActiveConsumable(userId),
+    inventory: await buildInventory(userId),
+    activeConsumable: await buildActiveConsumable(userId),
   };
 }
 
-export function useConsumable(userId: number, itemKey: string): UseConsumableResponse {
+export async function useConsumable(userId: number, itemKey: string): Promise<UseConsumableResponse> {
   const def = ITEM_DEFINITIONS[itemKey];
   if (!def) {
     throw new NotFoundError(`Item not found: ${itemKey}`);
@@ -64,20 +63,17 @@ export function useConsumable(userId: number, itemKey: string): UseConsumableRes
     throw new ValidationError(`Item ${itemKey} is not a consumable`);
   }
 
-  // Check quantity
-  const quantity = getItemQuantity(userId, itemKey);
+  const quantity = await getItemQuantity(userId, itemKey);
   if (quantity <= 0) {
     throw new ValidationError(`You don't have any ${def.name}`);
   }
 
-  // Check for already-active consumable
-  const existing = buildActiveConsumable(userId);
+  const existing = await buildActiveConsumable(userId);
   if (existing) {
     throw new ValidationError('A consumable is already active. Wait for it to expire.');
   }
 
-  // Deduct item and activate
-  const removed = removeItem(userId, itemKey, 1);
+  const removed = await removeItem(userId, itemKey, 1);
   if (!removed) {
     throw new ValidationError(`Failed to consume ${def.name}`);
   }
@@ -86,7 +82,7 @@ export function useConsumable(userId: number, itemKey: string): UseConsumableRes
   const effect = def.effect as ConsumableEffect;
   const expiresAt = now + effect.durationSeconds;
 
-  setActiveConsumable(userId, itemKey, now, expiresAt);
+  await setActiveConsumable(userId, itemKey, now, expiresAt);
 
   return {
     activeConsumable: {
@@ -95,6 +91,6 @@ export function useConsumable(userId: number, itemKey: string): UseConsumableRes
       expiresAt,
       effect,
     },
-    inventory: buildInventory(userId),
+    inventory: await buildInventory(userId),
   };
 }

@@ -6,9 +6,10 @@ interface HeroCardProps {
   heroState: HeroState;
   isBusy: boolean;
   assignedActivity?: string;
+  isPreviousEra?: boolean;
 }
 
-export function HeroCard({ heroState, isBusy, assignedActivity }: HeroCardProps) {
+export function HeroCard({ heroState, isBusy, assignedActivity, isPreviousEra = false }: HeroCardProps) {
   const def = HERO_DEFINITIONS[heroState.heroKey];
   if (!def) return null;
 
@@ -20,9 +21,11 @@ export function HeroCard({ heroState, isBusy, assignedActivity }: HeroCardProps)
         'p-3 rounded-lg border transition-colors',
         !isUnlocked
           ? 'border-[var(--era-surface)]/20 bg-[var(--era-surface)]/10 opacity-40'
-          : isBusy
-            ? 'border-amber-500/30 bg-[var(--era-surface)]/30'
-            : 'border-[var(--era-primary)]/20 bg-[var(--era-surface)]/30',
+          : isPreviousEra
+            ? 'border-[var(--era-surface)]/20 bg-[var(--era-surface)]/10 opacity-50'
+            : isBusy
+              ? 'border-amber-500/30 bg-[var(--era-surface)]/30'
+              : 'border-[var(--era-primary)]/20 bg-[var(--era-surface)]/30',
       ].join(' ')}
     >
       <div className="flex items-start gap-3">
@@ -64,13 +67,19 @@ export function HeroCard({ heroState, isBusy, assignedActivity }: HeroCardProps)
             </p>
           )}
 
-          {isBusy && assignedActivity && (
+          {isUnlocked && isPreviousEra && (
+            <p className="text-[11px] text-[var(--era-text)]/30 mt-1 italic">
+              Unavailable in current era
+            </p>
+          )}
+
+          {isBusy && assignedActivity && !isPreviousEra && (
             <p className="text-[11px] text-amber-400 mt-1">
               Assigned to activity
             </p>
           )}
 
-          {isUnlocked && !isBusy && (
+          {isUnlocked && !isBusy && !isPreviousEra && (
             <p className="text-[11px] text-green-400/70 mt-1">Idle</p>
           )}
         </div>

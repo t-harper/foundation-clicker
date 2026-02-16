@@ -13,6 +13,7 @@ export function useTutorial() {
     totalClicks,
     lifetimeCredits,
     prestigeCount,
+    currentEra,
     activeTab,
     buildings,
     upgrades,
@@ -26,6 +27,7 @@ export function useTutorial() {
       totalClicks: s.totalClicks,
       lifetimeCredits: s.lifetimeCredits,
       prestigeCount: s.prestigeCount,
+      currentEra: s.currentEra,
       activeTab: s.activeTab,
       buildings: s.buildings,
       upgrades: s.upgrades,
@@ -96,6 +98,9 @@ export function useTutorial() {
           if (upgrade?.isPurchased) advanceTutorial();
         }
         break;
+      case 8: // Meet Hari Seldon: activeTab === 'research'
+        if (activeTab === 'research') advanceTutorial();
+        break;
     }
   }, [
     tutorialStep,
@@ -107,38 +112,47 @@ export function useTutorial() {
     activeTab,
   ]);
 
-  // Milestone notifications (steps 8-10)
+  // Milestone notifications (steps 11-14)
   useEffect(() => {
     if (isDismissed) return;
     // Allow milestones even after active tutorial steps are done
 
     const { addNotification, fireMilestone } = useGameStore.getState();
 
-    // Step 8: approaching prestige (500M lifetime credits)
-    if (!firedMilestones.includes(8) && lifetimeCredits >= 500_000_000) {
-      fireMilestone(8);
+    // Step 11: approaching prestige (500M lifetime credits)
+    if (!firedMilestones.includes(11) && lifetimeCredits >= 500_000_000) {
+      fireMilestone(11);
       addNotification({
-        message: TUTORIAL_STEPS[8].message,
+        message: TUTORIAL_STEPS[11].message,
         type: 'info',
       });
     }
 
-    // Step 9: prestige available (1B lifetime credits)
-    if (!firedMilestones.includes(9) && lifetimeCredits >= 1_000_000_000) {
-      fireMilestone(9);
+    // Step 12: prestige available (1B lifetime credits)
+    if (!firedMilestones.includes(12) && lifetimeCredits >= 1_000_000_000) {
+      fireMilestone(12);
       addNotification({
-        message: TUTORIAL_STEPS[9].message,
+        message: TUTORIAL_STEPS[12].message,
         type: 'info',
       });
     }
 
-    // Step 10: first era change (prestige done)
-    if (!firedMilestones.includes(10) && prestigeCount >= 1) {
-      fireMilestone(10);
+    // Step 13: first era change (prestige done)
+    if (!firedMilestones.includes(13) && prestigeCount >= 1) {
+      fireMilestone(13);
       addNotification({
-        message: TUTORIAL_STEPS[10].message,
+        message: TUTORIAL_STEPS[13].message,
         type: 'success',
       });
     }
-  }, [lifetimeCredits, prestigeCount, firedMilestones, isDismissed]);
+
+    // Step 14: build your fleet (reached trading expansion era)
+    if (!firedMilestones.includes(14) && currentEra >= 1) {
+      fireMilestone(14);
+      addNotification({
+        message: TUTORIAL_STEPS[14].message,
+        type: 'info',
+      });
+    }
+  }, [lifetimeCredits, prestigeCount, currentEra, firedMilestones, isDismissed]);
 }

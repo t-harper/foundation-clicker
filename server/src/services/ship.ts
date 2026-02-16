@@ -6,6 +6,7 @@ import {
   ResourceKey,
   SHIP_DEFINITIONS,
   TRADE_ROUTE_DEFINITIONS,
+  generateShipName,
 } from '@foundation/shared';
 import { canAfford, subtractCost } from '@foundation/shared';
 import {
@@ -21,8 +22,8 @@ import {
 } from '../middleware/error-handler.js';
 import { buildGameState, projectResources } from './game-state.js';
 
-export function getUserShips(userId: number): ShipState[] {
-  const shipRows = getShips(userId);
+export async function getUserShips(userId: number): Promise<ShipState[]> {
+  const shipRows = await getShips(userId);
   return shipRows.map((s) => ({
     id: s.id,
     shipType: s.ship_type as ShipType,
@@ -34,37 +35,34 @@ export function getUserShips(userId: number): ShipState[] {
   }));
 }
 
-export function buildShip(
+export async function buildShip(
   userId: number,
   shipType: ShipType,
   name: string
-): ShipState {
+): Promise<ShipState> {
   const def = SHIP_DEFINITIONS[shipType];
   if (!def) {
     throw new ValidationError(`Invalid ship type: ${shipType}`);
   }
 
-  if (!name || typeof name !== 'string' || name.trim().length === 0) {
-    throw new ValidationError('Ship name is required');
-  }
+  const finalName = (name && typeof name === 'string' && name.trim().length > 0)
+    ? name.trim()
+    : generateShipName();
 
-  if (name.trim().length > 50) {
+  if (finalName.length > 50) {
     throw new ValidationError('Ship name must be 50 characters or fewer');
   }
 
-  const state = buildGameState(userId);
+  const state = await buildGameState(userId);
   const projected = projectResources(state);
 
-  // Check affordability against projected resources
   if (!canAfford(projected.resources, def.buildCost)) {
     throw new ValidationError('Not enough resources to build this ship');
   }
 
-  // Subtract cost from projected resources
   const newResources = subtractCost(projected.resources, def.buildCost);
 
-  // Update resources in DB with projected values
-  updateGameState(userId, {
+  await updateGameState(userId, {
     credits: newResources.credits,
     knowledge: newResources.knowledge,
     influence: newResources.influence,
@@ -74,12 +72,11 @@ export function buildShip(
     lifetime_credits: projected.lifetimeCredits,
   });
 
-  // Create ship with UUID
   const shipId = crypto.randomUUID();
-  const shipRow = createShip(userId, {
+  const shipRow = await createShip(userId, {
     id: shipId,
     shipType,
-    name: name.trim(),
+    name: finalName,
   });
 
   return {
@@ -93,11 +90,11 @@ export function buildShip(
   };
 }
 
-export function sendShip(
+export async function sendShip(
   userId: number,
   shipId: string,
   tradeRouteKey: TradeRouteKey
-): ShipState {
+): Promise<ShipState> {
   if (!shipId) {
     throw new ValidationError('Ship ID is required');
   }
@@ -107,8 +104,7 @@ export function sendShip(
     throw new ValidationError(`Invalid trade route: ${tradeRouteKey}`);
   }
 
-  // Verify ship belongs to user and is docked
-  const shipRows = getShips(userId);
+  const shipRows = await getShips(userId);
   const shipRow = shipRows.find((s) => s.id === shipId);
   if (!shipRow) {
     throw new NotFoundError('Ship not found');
@@ -118,25 +114,22 @@ export function sendShip(
     throw new ValidationError('Ship must be docked to send on a trade route');
   }
 
-  // Verify the trade route is unlocked
-  const tradeRouteRows = getTradeRoutes(userId);
+  const tradeRouteRows = await getTradeRoutes(userId);
   const routeRow = tradeRouteRows.find((t) => t.route_key === tradeRouteKey);
   if (!routeRow || routeRow.is_unlocked !== 1) {
     throw new ValidationError(`Trade route ${tradeRouteKey} is not unlocked`);
   }
 
-  // Check ship type matches route requirement
   if (shipRow.ship_type !== routeDef.requiredShipType) {
     throw new ValidationError(
       `This trade route requires a ${routeDef.requiredShipType}, but this ship is a ${shipRow.ship_type}`
     );
   }
 
-  // Set departure and return times
   const now = Date.now();
   const returnsAt = now + routeDef.duration * 1000;
 
-  updateShipStatus(shipId, 'trading', tradeRouteKey, now, returnsAt);
+  await updateShipStatus(userId, shipId, 'trading', tradeRouteKey, now, returnsAt);
 
   return {
     id: shipRow.id,
@@ -149,13 +142,12 @@ export function sendShip(
   };
 }
 
-export function recallShip(userId: number, shipId: string): ShipState {
+export async function recallShip(userId: number, shipId: string): Promise<ShipState> {
   if (!shipId) {
     throw new ValidationError('Ship ID is required');
   }
 
-  // Verify ship belongs to user
-  const shipRows = getShips(userId);
+  const shipRows = await getShips(userId);
   const shipRow = shipRows.find((s) => s.id === shipId);
   if (!shipRow) {
     throw new NotFoundError('Ship not found');
@@ -165,7 +157,7 @@ export function recallShip(userId: number, shipId: string): ShipState {
     throw new ValidationError('Ship is already docked');
   }
 
-  updateShipStatus(shipId, 'docked', null, null, null);
+  await updateShipStatus(userId, shipId, 'docked', null, null, null);
 
   return {
     id: shipRow.id,

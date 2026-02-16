@@ -18,3 +18,4 @@ export { TimeIcon } from './TimeIcon';
 export { StarIcon } from './StarIcon';
 export { ColonyMapIcon } from './ColonyMapIcon';
 export { ResearchIcon } from './ResearchIcon';
+export { AdminIcon } from './AdminIcon';

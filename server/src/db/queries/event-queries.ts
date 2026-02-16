@@ -1,4 +1,7 @@
-import { getDb } from '../connection.js';
+import { GetCommand, PutCommand, DeleteCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { getDocClient, TABLE_NAME } from '../connection.js';
+import { queryItems, userPK } from '../dynamo-utils.js';
+import { randomUUID } from 'crypto';
 
 export interface EventHistoryRow {
   id: number;
@@ -20,52 +23,84 @@ export interface ActiveEffectRow {
   expires_at: number;
 }
 
-export function getEventHistory(userId: number): EventHistoryRow[] {
-  const db = getDb();
-  return db
-    .prepare('SELECT * FROM event_history WHERE user_id = ? ORDER BY fired_at DESC LIMIT 100')
-    .all(userId) as EventHistoryRow[];
+export async function getEventHistory(userId: number): Promise<EventHistoryRow[]> {
+  const items = await queryItems(userPK(userId), 'EVENT#');
+  return items
+    .map((item, idx) => ({
+      id: idx,
+      user_id: userId,
+      event_key: item.eventKey,
+      choice_index: item.choiceIndex,
+      fired_at: item.firedAt,
+    }))
+    .sort((a, b) => b.fired_at - a.fired_at)
+    .slice(0, 100);
 }
 
-export function getLastEventFiredAt(userId: number, eventKey: string): number | null {
-  const db = getDb();
-  const row = db
-    .prepare('SELECT fired_at FROM event_history WHERE user_id = ? AND event_key = ? ORDER BY fired_at DESC LIMIT 1')
-    .get(userId, eventKey) as { fired_at: number } | undefined;
-  return row?.fired_at ?? null;
+export async function getLastEventFiredAt(userId: number, eventKey: string): Promise<number | null> {
+  // Query all events and filter by eventKey, find most recent
+  const items = await queryItems(userPK(userId), 'EVENT#');
+  let latest: number | null = null;
+  for (const item of items) {
+    if (item.eventKey === eventKey) {
+      if (latest === null || item.firedAt > latest) {
+        latest = item.firedAt;
+      }
+    }
+  }
+  return latest;
 }
 
-export function hasEventFired(userId: number, eventKey: string): boolean {
-  const db = getDb();
-  const row = db
-    .prepare('SELECT 1 FROM event_history WHERE user_id = ? AND event_key = ? LIMIT 1')
-    .get(userId, eventKey);
-  return row !== undefined;
+export async function hasEventFired(userId: number, eventKey: string): Promise<boolean> {
+  const items = await queryItems(userPK(userId), 'EVENT#');
+  return items.some((item) => item.eventKey === eventKey);
 }
 
-export function insertEventHistory(
+export async function insertEventHistory(
   userId: number,
   eventKey: string,
   choiceIndex: number,
   firedAt: number
-): void {
-  const db = getDb();
-  db.prepare(
-    'INSERT INTO event_history (user_id, event_key, choice_index, fired_at) VALUES (?, ?, ?, ?)'
-  ).run(userId, eventKey, choiceIndex, firedAt);
+): Promise<void> {
+  const client = getDocClient();
+  const paddedTs = String(firedAt).padStart(12, '0');
+  const uuid = randomUUID().slice(0, 8);
+
+  await client.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        PK: userPK(userId),
+        SK: `EVENT#${paddedTs}#${uuid}`,
+        eventKey,
+        choiceIndex,
+        firedAt,
+      },
+    })
+  );
 }
 
-export function getActiveEffects(userId: number): ActiveEffectRow[] {
-  const db = getDb();
+export async function getActiveEffects(userId: number): Promise<ActiveEffectRow[]> {
+  const items = await queryItems(userPK(userId), 'EFFECT#');
   const now = Math.floor(Date.now() / 1000);
-  // Delete expired effects and return active ones
-  db.prepare('DELETE FROM active_effects WHERE user_id = ? AND expires_at <= ?').run(userId, now);
-  return db
-    .prepare('SELECT * FROM active_effects WHERE user_id = ?')
-    .all(userId) as ActiveEffectRow[];
+
+  // Filter out expired effects (TTL deletion is eventually consistent)
+  return items
+    .filter((item) => item.expiresAt > now)
+    .map((item) => ({
+      id: item.SK.replace('EFFECT#', ''),
+      user_id: userId,
+      event_key: item.eventKey,
+      choice_index: item.choiceIndex,
+      effect_type: item.effectType,
+      resource: item.resource ?? null,
+      multiplier: item.multiplier,
+      started_at: item.startedAt,
+      expires_at: item.expiresAt,
+    }));
 }
 
-export function insertActiveEffect(
+export async function insertActiveEffect(
   id: string,
   userId: number,
   eventKey: string,
@@ -75,37 +110,75 @@ export function insertActiveEffect(
   multiplier: number,
   startedAt: number,
   expiresAt: number
-): void {
-  const db = getDb();
-  db.prepare(`
-    INSERT INTO active_effects (id, user_id, event_key, choice_index, effect_type, resource, multiplier, started_at, expires_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, userId, eventKey, choiceIndex, effectType, resource, multiplier, startedAt, expiresAt);
+): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        PK: userPK(userId),
+        SK: `EFFECT#${id}`,
+        eventKey,
+        choiceIndex,
+        effectType,
+        resource,
+        multiplier,
+        startedAt,
+        expiresAt,
+        ttl: expiresAt, // DynamoDB TTL auto-deletion
+      },
+    })
+  );
 }
 
-export function clearUserEvents(userId: number): void {
-  const db = getDb();
-  db.prepare('DELETE FROM event_history WHERE user_id = ?').run(userId);
-  db.prepare('DELETE FROM active_effects WHERE user_id = ?').run(userId);
-  db.prepare('DELETE FROM pending_event WHERE user_id = ?').run(userId);
+export async function clearUserEvents(userId: number): Promise<void> {
+  const { deleteItemsByPrefix } = await import('../dynamo-utils.js');
+  await Promise.all([
+    deleteItemsByPrefix(userPK(userId), 'EVENT#'),
+    deleteItemsByPrefix(userPK(userId), 'EFFECT#'),
+    (async () => {
+      const client = getDocClient();
+      await client.send(
+        new DeleteCommand({
+          TableName: TABLE_NAME,
+          Key: { PK: userPK(userId), SK: 'PENDING_EVENT' },
+        })
+      );
+    })(),
+  ]);
 }
 
-export function getPendingEvent(userId: number): string | null {
-  const db = getDb();
-  const row = db
-    .prepare('SELECT event_key FROM pending_event WHERE user_id = ?')
-    .get(userId) as { event_key: string } | undefined;
-  return row?.event_key ?? null;
+export async function getPendingEvent(userId: number): Promise<string | null> {
+  const client = getDocClient();
+  const result = await client.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: 'PENDING_EVENT' },
+    })
+  );
+  return result.Item?.eventKey ?? null;
 }
 
-export function setPendingEvent(userId: number, eventKey: string): void {
-  const db = getDb();
-  db.prepare(
-    'INSERT OR REPLACE INTO pending_event (user_id, event_key) VALUES (?, ?)'
-  ).run(userId, eventKey);
+export async function setPendingEvent(userId: number, eventKey: string): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        PK: userPK(userId),
+        SK: 'PENDING_EVENT',
+        eventKey,
+      },
+    })
+  );
 }
 
-export function clearPendingEvent(userId: number): void {
-  const db = getDb();
-  db.prepare('DELETE FROM pending_event WHERE user_id = ?').run(userId);
+export async function clearPendingEvent(userId: number): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: 'PENDING_EVENT' },
+    })
+  );
 }

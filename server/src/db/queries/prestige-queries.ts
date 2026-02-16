@@ -1,8 +1,6 @@
-import { getDb } from '../connection.js';
-import { initializeBuildings } from './building-queries.js';
-import { initializeUpgrades } from './upgrade-queries.js';
-import { initializeTradeRoutes } from './trade-route-queries.js';
-import { initializeAchievements } from './achievement-queries.js';
+import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { getDocClient, TABLE_NAME } from '../connection.js';
+import { queryItems, deleteItemsByPrefix, userPK } from '../dynamo-utils.js';
 
 export interface PrestigeHistoryRow {
   id: number;
@@ -14,15 +12,22 @@ export interface PrestigeHistoryRow {
   triggered_at: number;
 }
 
-export function getPrestigeHistory(userId: number): PrestigeHistoryRow[] {
-  const db = getDb();
-  const stmt = db.prepare(
-    'SELECT * FROM prestige_history WHERE user_id = ? ORDER BY prestige_number ASC'
-  );
-  return stmt.all(userId) as PrestigeHistoryRow[];
+export async function getPrestigeHistory(userId: number): Promise<PrestigeHistoryRow[]> {
+  const items = await queryItems(userPK(userId), 'PRESTIGE#');
+  return items
+    .map((item, idx) => ({
+      id: idx,
+      user_id: userId,
+      prestige_number: item.prestigeNumber,
+      credits_at_reset: item.creditsAtReset,
+      seldon_points_earned: item.seldonPointsEarned,
+      era_at_reset: item.eraAtReset,
+      triggered_at: item.triggeredAt,
+    }))
+    .sort((a, b) => a.prestige_number - b.prestige_number);
 }
 
-export function addPrestigeEntry(
+export async function addPrestigeEntry(
   userId: number,
   data: {
     prestigeNumber: number;
@@ -30,63 +35,68 @@ export function addPrestigeEntry(
     seldonPointsEarned: number;
     eraAtReset: number;
   }
-): void {
-  const db = getDb();
+): Promise<void> {
+  const client = getDocClient();
   const now = Math.floor(Date.now() / 1000);
-  const stmt = db.prepare(`
-    INSERT INTO prestige_history (user_id, prestige_number, credits_at_reset, seldon_points_earned, era_at_reset, triggered_at)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `);
-  stmt.run(
-    userId,
-    data.prestigeNumber,
-    data.creditsAtReset,
-    data.seldonPointsEarned,
-    data.eraAtReset,
-    now
+  const paddedNumber = String(data.prestigeNumber).padStart(5, '0');
+
+  await client.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        PK: userPK(userId),
+        SK: `PRESTIGE#${paddedNumber}`,
+        prestigeNumber: data.prestigeNumber,
+        creditsAtReset: data.creditsAtReset,
+        seldonPointsEarned: data.seldonPointsEarned,
+        eraAtReset: data.eraAtReset,
+        triggeredAt: now,
+      },
+    })
   );
 }
 
-export function resetForPrestige(
+export async function resetForPrestige(
   userId: number,
   seldonPointsEarned: number
-): void {
-  const db = getDb();
+): Promise<void> {
+  // Parallel batch deletes of buildings, upgrades, ships, trade routes
+  await Promise.all([
+    deleteItemsByPrefix(userPK(userId), 'BUILDING#'),
+    deleteItemsByPrefix(userPK(userId), 'UPGRADE#'),
+    deleteItemsByPrefix(userPK(userId), 'SHIP#'),
+    deleteItemsByPrefix(userPK(userId), 'TRADEROUTE#'),
+  ]);
 
-  db.transaction(() => {
-    // Delete user's buildings, upgrades, ships, trade routes
-    db.prepare('DELETE FROM buildings WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM upgrades WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM ships WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM trade_routes WHERE user_id = ?').run(userId);
+  // Atomic update of game state
+  const client = getDocClient();
+  const now = Math.floor(Date.now() / 1000);
 
-    // Reset game_state resources to 0, increment prestige_count, update seldon_points
-    const now = Math.floor(Date.now() / 1000);
-    db.prepare(`
-      UPDATE game_state SET
-        credits = 0,
-        knowledge = 0,
-        influence = 0,
-        nuclear_tech = 0,
-        raw_materials = 0,
-        click_value = 1,
-        current_era = 0,
-        seldon_points = seldon_points + @seldon_points_earned,
-        total_seldon_points = total_seldon_points + @seldon_points_earned,
-        prestige_count = prestige_count + 1,
-        prestige_multiplier = 1 + (total_seldon_points + @seldon_points_earned) * 0.01,
-        last_tick_at = @now
-      WHERE user_id = @user_id
-    `).run({
-      seldon_points_earned: seldonPointsEarned,
-      now,
-      user_id: userId,
-    });
-
-    // Re-initialize buildings, upgrades, trade routes
-    initializeBuildings(userId);
-    initializeUpgrades(userId);
-    initializeTradeRoutes(userId);
-    // Achievements persist across prestiges, so we don't re-initialize them
-  })();
+  await client.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: 'GAMESTATE' },
+      UpdateExpression: `
+        SET credits = :zero,
+            knowledge = :zero,
+            influence = :zero,
+            nuclearTech = :zero,
+            rawMaterials = :zero,
+            clickValue = :one,
+            currentEra = :zero,
+            seldonPoints = seldonPoints + :sp,
+            totalSeldonPoints = totalSeldonPoints + :sp,
+            prestigeCount = prestigeCount + :one,
+            prestigeMultiplier = :one + (totalSeldonPoints + :sp) * :spRate,
+            lastTickAt = :now
+      `,
+      ExpressionAttributeValues: {
+        ':zero': 0,
+        ':one': 1,
+        ':sp': seldonPointsEarned,
+        ':spRate': 0.001,
+        ':now': now,
+      },
+    })
+  );
 }

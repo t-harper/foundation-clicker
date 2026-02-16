@@ -13,9 +13,11 @@ import { PrestigePanel } from '../prestige/PrestigePanel';
 import { EncyclopediaPanel } from '../encyclopedia/EncyclopediaPanel';
 import { ColonyMapPanel } from '../colony-map';
 import { ResearchPanel } from '../research';
+import { AdminPanel } from '../admin';
 import { SettingsModal } from '../settings/SettingsModal';
 import { NotificationArea } from '../common';
-import { ActiveEffectsBar } from '../events';
+import { ActiveEffectsBar, EventModal } from '../events';
+import { TutorialOverlay } from '../tutorial';
 
 function ActivePanel() {
   const activeTab = useGameStore((s) => s.activeTab);
@@ -37,6 +39,8 @@ function ActivePanel() {
       return <ResearchPanel />;
     case 'encyclopedia':
       return <EncyclopediaPanel />;
+    case 'admin':
+      return <AdminPanel />;
     default:
       return <BuildingPanel />;
   }
@@ -47,6 +51,10 @@ export function GameLayout() {
   const showSettings = useGameStore((s) => s.showSettings);
   const notifications = useGameStore((s) => s.notifications);
   const removeNotification = useGameStore((s) => s.removeNotification);
+  const showOfflineModal = useGameStore((s) => s.showOfflineModal);
+  const hideOfflineModal = useGameStore((s) => s.hideOfflineModal);
+  const offlineEarnings = useGameStore((s) => s.offlineEarnings);
+  const offlineSeconds = useGameStore((s) => s.offlineSeconds);
   const eraDef = ERA_DEFINITIONS[currentEra];
 
   return (
@@ -107,6 +115,45 @@ export function GameLayout() {
           notifications={notifications}
           onDismiss={removeNotification}
         />
+
+        {/* Event modal */}
+        <EventModal />
+
+        {/* Tutorial */}
+        <TutorialOverlay />
+
+        {/* Offline earnings modal */}
+        {showOfflineModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+            onClick={hideOfflineModal}
+          >
+            <div
+              className="bg-[var(--era-bg)] border border-[var(--era-primary)]/30 rounded-lg p-6 max-w-sm text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-xl font-bold text-[var(--era-primary)] mb-2">
+                Welcome Back!
+              </h2>
+              <p className="text-[var(--era-text)]/70 text-sm mb-4">
+                You were away for {Math.floor(offlineSeconds / 60)} minutes.
+              </p>
+              {offlineEarnings && (
+                <p className="text-[var(--era-text)] text-sm mb-4">
+                  You earned {offlineEarnings.credits.toFixed(0)} credits while
+                  offline.
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={hideOfflineModal}
+                className="px-4 py-2 bg-[var(--era-accent)] text-[var(--era-bg)] rounded-md font-semibold hover:opacity-90 transition-opacity"
+              >
+                Collect
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

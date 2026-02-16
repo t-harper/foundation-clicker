@@ -24,3 +24,5 @@ export { chooseEvent, getActiveEffects, getEventHistory } from './events';
 export { getHeroes } from './heroes';
 export { getActivities, startActivity, collectActivity } from './activities';
 export { getInventory, useConsumable } from './inventory';
+
+export * from './admin';

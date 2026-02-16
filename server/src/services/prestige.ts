@@ -21,10 +21,10 @@ import {
 import { buildGameState } from './game-state.js';
 import type { PrestigeResponse } from '@foundation/shared';
 
-export function previewPrestige(userId: number): PrestigePreview {
-  const state = buildGameState(userId);
+export async function previewPrestige(userId: number): Promise<PrestigePreview> {
+  const state = await buildGameState(userId);
 
-  const seldonPointsEarned = calcSeldonPoints(state.lifetimeCredits);
+  const seldonPointsEarned = calcSeldonPoints(state.lifetimeCredits, state.currentEra);
   const newTotal = state.prestige.totalSeldonPoints + seldonPointsEarned;
   const newMultiplier = calcPrestigeMultiplier(newTotal);
 
@@ -36,10 +36,10 @@ export function previewPrestige(userId: number): PrestigePreview {
   };
 }
 
-export function triggerPrestige(userId: number): PrestigeResponse {
-  const state = buildGameState(userId);
+export async function triggerPrestige(userId: number): Promise<PrestigeResponse> {
+  const state = await buildGameState(userId);
 
-  const seldonPointsEarned = calcSeldonPoints(state.lifetimeCredits);
+  const seldonPointsEarned = calcSeldonPoints(state.lifetimeCredits, state.currentEra);
   if (seldonPointsEarned <= 0) {
     throw new ValidationError(
       'You need at least 1 billion lifetime credits to earn Seldon Points'
@@ -48,28 +48,24 @@ export function triggerPrestige(userId: number): PrestigeResponse {
 
   const newPrestigeCount = state.prestige.prestigeCount + 1;
 
-  // Record prestige history
-  addPrestigeEntry(userId, {
+  await addPrestigeEntry(userId, {
     prestigeNumber: newPrestigeCount,
     creditsAtReset: state.resources.credits,
     seldonPointsEarned,
     eraAtReset: state.currentEra,
   });
 
-  // Reset everything and update prestige state
-  resetForPrestige(userId, seldonPointsEarned);
+  await resetForPrestige(userId, seldonPointsEarned);
 
-  // Read back the updated state to get accurate numbers
-  const updatedRow = getGameState(userId);
+  const updatedRow = await getGameState(userId);
   if (!updatedRow) {
     throw new NotFoundError('Game state not found after prestige');
   }
 
   const newTotalSeldonPoints = updatedRow.total_seldon_points;
-  const newEra = calcCurrentEra(updatedRow.prestige_count, newTotalSeldonPoints);
+  const newEra = calcCurrentEra(updatedRow.prestige_count, newTotalSeldonPoints, state.currentEra);
 
-  // Update the era in the DB
-  updateGameState(userId, { current_era: newEra });
+  await updateGameState(userId, { current_era: newEra });
 
   return {
     seldonPointsEarned,
@@ -83,10 +79,10 @@ export function triggerPrestige(userId: number): PrestigeResponse {
   };
 }
 
-export function getPrestigeHistoryForUser(
+export async function getPrestigeHistoryForUser(
   userId: number
-): PrestigeHistoryEntry[] {
-  const rows = getPrestigeHistory(userId);
+): Promise<PrestigeHistoryEntry[]> {
+  const rows = await getPrestigeHistory(userId);
   return rows.map((r) => ({
     prestigeNumber: r.prestige_number,
     creditsAtReset: r.credits_at_reset,

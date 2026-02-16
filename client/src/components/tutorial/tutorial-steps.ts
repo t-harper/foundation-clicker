@@ -107,6 +107,36 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 8,
+    title: 'Meet Hari Seldon',
+    message:
+      'Seldon: I have assigned my finest student as your advisor. Navigate to the Research tab to meet your hero and begin research activities.',
+    type: 'spotlight',
+    target: 'sidebar-research',
+    advanceMode: 'auto',
+    placement: 'right',
+  },
+  {
+    id: 9,
+    title: 'Heroes & Activities',
+    message:
+      'Heroes speed up research and mission activities. Hari Seldon is your starter hero \u2014 assign him to activities to complete them faster. As you progress, story events will unlock new heroes with even stronger abilities.',
+    type: 'spotlight',
+    advanceMode: 'acknowledge',
+    acknowledgeLabel: 'Continue',
+    placement: 'bottom',
+  },
+  {
+    id: 10,
+    title: 'Story Events',
+    message:
+      'Random story events will appear as you build the Foundation. Each presents choices with different rewards and consequences. Some rare events unlock powerful hidden heroes \u2014 the legends of the Foundation saga.',
+    type: 'spotlight',
+    advanceMode: 'acknowledge',
+    acknowledgeLabel: 'I understand',
+    placement: 'bottom',
+  },
+  {
+    id: 11,
     title: 'Approaching Prestige',
     message:
       'Seldon: You are halfway to your first Seldon Crisis. The Plan proceeds as I have foreseen.',
@@ -114,7 +144,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     advanceMode: 'auto',
   },
   {
-    id: 9,
+    id: 12,
     title: 'Prestige Available',
     message:
       'Seldon: The first Seldon Crisis is now available. Open the Prestige tab to advance the Foundation.',
@@ -122,10 +152,18 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     advanceMode: 'auto',
   },
   {
-    id: 10,
+    id: 13,
     title: 'First Era Change',
     message:
       'Seldon: The Foundation enters the Trading Expansion era. My work here is done \u2014 but the Plan continues.',
+    type: 'milestone',
+    advanceMode: 'auto',
+  },
+  {
+    id: 14,
+    title: 'Build Your Fleet',
+    message:
+      'Seldon: The Trading Expansion era brings ships and trade routes. Build your fleet to earn resources from across the galaxy.',
     type: 'milestone',
     advanceMode: 'auto',
   },

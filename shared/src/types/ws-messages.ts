@@ -34,7 +34,7 @@ export type ServerMessage =
   | { type: 'result'; requestId: string; data: unknown }
   | { type: 'error'; requestId: string; message: string }
   // Server-initiated pushes (no requestId)
-  | { type: 'sync'; buildings: BuildingState[]; upgrades: UpgradeState[]; ships: ShipState[] }
+  | { type: 'sync'; buildings?: BuildingState[]; upgrades?: UpgradeState[]; ships?: ShipState[] }
   | { type: 'achievementUnlocked'; achievements: AchievementState[] }
   | { type: 'eventTriggered'; eventKey: string }
   | { type: 'effectsUpdate'; activeEffects: ActiveEffect[] }

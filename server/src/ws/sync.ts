@@ -20,6 +20,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'foundation-dev-secret-key';
 const PING_INTERVAL = 30000;
 const PONG_TIMEOUT = 10000;
 const EFFECTS_CHECK_INTERVAL = 5000;
+const FULL_SYNC_EVERY = 12; // Force full sync every 12 ticks (12 × 5s = 60s)
 
 interface AuthenticatedSocket extends WebSocket {
   userId?: number;
@@ -32,6 +33,12 @@ interface AuthenticatedSocket extends WebSocket {
     ping: ReturnType<typeof setInterval>;
   };
   lastEffectIds?: string;
+  lastSync?: {
+    buildings: string;
+    upgrades: string;
+    ships: string;
+  };
+  syncTickCount?: number;
 }
 
 function sendMessage(ws: WebSocket, msg: ServerMessage): void {
@@ -76,7 +83,7 @@ export function setupWebSocketSync(server: Server): void {
     ws.lastEffectIds = '';
 
     // Handle incoming messages
-    ws.on('message', (raw) => {
+    ws.on('message', async (raw) => {
       let msg: ClientMessage;
       try {
         msg = JSON.parse(raw.toString());
@@ -86,7 +93,7 @@ export function setupWebSocketSync(server: Server): void {
       }
 
       try {
-        const result = handleClientMessage(userId, msg);
+        const result = await handleClientMessage(userId, msg);
 
         // Send response if one exists
         if (result.response) {
@@ -96,7 +103,7 @@ export function setupWebSocketSync(server: Server): void {
         // Check achievements after mutations that warrant it
         if (result.checkAchievements) {
           try {
-            const achResult = checkAchievements(userId);
+            const achResult = await checkAchievements(userId);
             if (achResult.newAchievements.length > 0) {
               sendMessage(ws, {
                 type: 'achievementUnlocked',
@@ -114,65 +121,110 @@ export function setupWebSocketSync(server: Server): void {
       }
     });
 
-    // Periodic sync: push buildings, upgrades, ships
+    // Periodic sync: push only changed categories (delta sync)
     const syncTimer = setInterval(() => {
       if (ws.readyState !== WebSocket.OPEN) return;
-      try {
-        const buildings = getUserBuildings(userId);
-        const upgrades = getUserUpgrades(userId);
-        const ships = getUserShips(userId);
-        sendMessage(ws, { type: 'sync', buildings, upgrades, ships });
-      } catch (err) {
-        console.error('WebSocket sync error:', err);
-      }
+      (async () => {
+        try {
+          ws.syncTickCount = (ws.syncTickCount ?? 0) + 1;
+          const forceFullSync = ws.syncTickCount % FULL_SYNC_EVERY === 0;
+
+          const buildings = await getUserBuildings(userId);
+          const upgrades = await getUserUpgrades(userId);
+          const ships = await getUserShips(userId);
+
+          const buildingsJson = JSON.stringify(buildings);
+          const upgradesJson = JSON.stringify(upgrades);
+          const shipsJson = JSON.stringify(ships);
+
+          if (forceFullSync || !ws.lastSync) {
+            // First tick or periodic full sync
+            sendMessage(ws, { type: 'sync', buildings, upgrades, ships });
+          } else {
+            const msg: ServerMessage & { type: 'sync' } = { type: 'sync' };
+            let hasChanges = false;
+
+            if (buildingsJson !== ws.lastSync.buildings) {
+              msg.buildings = buildings;
+              hasChanges = true;
+            }
+            if (upgradesJson !== ws.lastSync.upgrades) {
+              msg.upgrades = upgrades;
+              hasChanges = true;
+            }
+            if (shipsJson !== ws.lastSync.ships) {
+              msg.ships = ships;
+              hasChanges = true;
+            }
+
+            if (hasChanges) {
+              sendMessage(ws, msg);
+            }
+          }
+
+          ws.lastSync = {
+            buildings: buildingsJson,
+            upgrades: upgradesJson,
+            ships: shipsJson,
+          };
+        } catch (err) {
+          console.error('WebSocket sync error:', err);
+        }
+      })();
     }, WS_SYNC_INTERVAL);
 
     // Periodic achievement check
     const achievementTimer = setInterval(() => {
       if (ws.readyState !== WebSocket.OPEN) return;
-      try {
-        const result = checkAchievements(userId);
-        if (result.newAchievements.length > 0) {
-          sendMessage(ws, {
-            type: 'achievementUnlocked',
-            achievements: result.newAchievements,
-          });
+      (async () => {
+        try {
+          const result = await checkAchievements(userId);
+          if (result.newAchievements.length > 0) {
+            sendMessage(ws, {
+              type: 'achievementUnlocked',
+              achievements: result.newAchievements,
+            });
+          }
+        } catch (err) {
+          console.error('WebSocket achievement check error:', err);
         }
-      } catch (err) {
-        console.error('WebSocket achievement check error:', err);
-      }
+      })();
     }, WS_ACHIEVEMENT_CHECK_INTERVAL);
 
     // Periodic event check
     const eventTimer = setInterval(() => {
       if (ws.readyState !== WebSocket.OPEN) return;
-      try {
-        const result = checkForEvent(userId);
-        if (result.event) {
-          sendMessage(ws, {
-            type: 'eventTriggered',
-            eventKey: result.event.eventKey,
-          });
+      (async () => {
+        try {
+          const result = await checkForEvent(userId);
+          if (result.event) {
+            sendMessage(ws, {
+              type: 'eventTriggered',
+              eventKey: result.event.eventKey,
+            });
+          }
+        } catch (err) {
+          console.error('WebSocket event check error:', err);
         }
-      } catch (err) {
-        console.error('WebSocket event check error:', err);
-      }
+      })();
     }, WS_EVENT_CHECK_INTERVAL);
 
     // Periodic effects cleanup + push
     const effectsTimer = setInterval(() => {
       if (ws.readyState !== WebSocket.OPEN) return;
-      try {
-        const effects = getUserActiveEffects(userId);
-        // Only push if the set of effects has changed
-        const effectIds = effects.map((e) => e.id).sort().join(',');
-        if (effectIds !== ws.lastEffectIds) {
-          ws.lastEffectIds = effectIds;
-          sendMessage(ws, { type: 'effectsUpdate', activeEffects: effects });
+      (async () => {
+        try {
+          const effects = await getUserActiveEffects(userId);
+          // Only push if the set of effects has changed
+          const effectIds = effects.map((e) => e.id).sort().join(',');
+          if (effectIds !== ws.lastEffectIds) {
+            ws.lastEffectIds = effectIds;
+            sendMessage(ws, { type: 'effectsUpdate', activeEffects: effects });
+          }
+        } catch (err) {
+          console.error('WebSocket effects check error:', err);
         }
-      } catch (err) {
-        console.error('WebSocket effects check error:', err);
-      }
+      })();
     }, EFFECTS_CHECK_INTERVAL);
 
     // Ping/pong for keepalive

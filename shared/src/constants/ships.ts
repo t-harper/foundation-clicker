@@ -22,6 +22,16 @@ export const SHIP_DEFINITIONS: Record<ShipType, ShipDefinition> = {
     cargoCapacity: 50,
     speed: 2,
   },
+  armedMerchant: {
+    type: 'armedMerchant',
+    name: 'Armed Merchant',
+    description: 'Heavily modified Free Trader with weapon pods and reinforced cargo bays for dangerous trade routes.',
+    era: Era.TradingExpansion,
+    buildCost: { credits: 50000, rawMaterials: 2500, nuclearTech: 500 },
+    buildTime: 90,
+    cargoCapacity: 200,
+    speed: 1.2,
+  },
   whisperShip: {
     type: 'whisperShip',
     name: 'Whisper Ship',
@@ -32,6 +42,16 @@ export const SHIP_DEFINITIONS: Record<ShipType, ShipDefinition> = {
     cargoCapacity: 200,
     speed: 1.5,
   },
+  foundationCruiser: {
+    type: 'foundationCruiser',
+    name: 'Foundation Cruiser',
+    description: 'Sleek military vessel with advanced shield arrays and long-range capabilities, designed for deep-space operations.',
+    era: Era.PsychologicalInfluence,
+    buildCost: { credits: 2000000, rawMaterials: 50000, nuclearTech: 25000 },
+    buildTime: 180,
+    cargoCapacity: 500,
+    speed: 2,
+  },
   graviticShip: {
     type: 'graviticShip',
     name: 'Gravitic Ship',
@@ -41,6 +61,16 @@ export const SHIP_DEFINITIONS: Record<ShipType, ShipDefinition> = {
     buildTime: 300,
     cargoCapacity: 1000,
     speed: 5,
+  },
+  solarianYacht: {
+    type: 'solarianYacht',
+    name: 'Solarian Yacht',
+    description: 'Elegant alien craft reverse-engineered from Solarian technology, with energy fins that harness stellar radiation for propulsion.',
+    era: Era.GalacticReunification,
+    buildCost: { credits: 20000000, rawMaterials: 500000, nuclearTech: 200000 },
+    buildTime: 600,
+    cargoCapacity: 2000,
+    speed: 8,
   },
 };
 
@@ -85,6 +115,16 @@ export const TRADE_ROUTE_DEFINITIONS: Record<string, TradeRouteDefinition> = {
     unlockCost: { credits: 50000, knowledge: 5000 },
     requiredShipType: 'scoutShip',
   },
+  siwennaRun: {
+    key: 'siwennaRun',
+    name: 'Siwenna Run',
+    description: 'A dangerous but profitable route through Siwennan space, trading Foundation technology for rare resources under Imperial noses.',
+    era: Era.TradingExpansion,
+    duration: 450,
+    reward: { credits: 100000, knowledge: 5000, influence: 2000 },
+    unlockCost: { credits: 75000, influence: 2000 },
+    requiredShipType: 'armedMerchant',
+  },
   imperialRemnant: {
     key: 'imperialRemnant',
     name: 'Imperial Remnant',
@@ -105,6 +145,16 @@ export const TRADE_ROUTE_DEFINITIONS: Record<string, TradeRouteDefinition> = {
     unlockCost: { credits: 5000000, knowledge: 100000 },
     requiredShipType: 'whisperShip',
   },
+  kalganReconnaissance: {
+    key: 'kalganReconnaissance',
+    name: 'Kalgan Reconnaissance',
+    description: 'Deep reconnaissance mission to the former seat of the Mule\'s empire, now a fractured collection of warlord states ripe for Foundation influence.',
+    era: Era.PsychologicalInfluence,
+    duration: 1500,
+    reward: { credits: 2000000, knowledge: 100000, influence: 20000, nuclearTech: 50000 },
+    unlockCost: { credits: 3000000, nuclearTech: 50000 },
+    requiredShipType: 'foundationCruiser',
+  },
   gaiaExpedition: {
     key: 'gaiaExpedition',
     name: 'Gaia Expedition',
@@ -114,6 +164,16 @@ export const TRADE_ROUTE_DEFINITIONS: Record<string, TradeRouteDefinition> = {
     reward: { credits: 50000000, knowledge: 1000000, influence: 500000, nuclearTech: 100000 },
     unlockCost: { credits: 100000000, influence: 1000000 },
     requiredShipType: 'graviticShip',
+  },
+  earthExpedition: {
+    key: 'earthExpedition',
+    name: 'Earth Expedition',
+    description: 'The ultimate voyage: a journey to find the legendary origin world of humanity. Myths say Earth is radioactive, hidden, or simply lost — but the Solarian Yacht\'s advanced sensors may succeed where all others have failed.',
+    era: Era.GalacticReunification,
+    duration: 3600,
+    reward: { credits: 200000000, knowledge: 5000000, influence: 2000000, nuclearTech: 500000 },
+    unlockCost: { credits: 500000000, knowledge: 5000000 },
+    requiredShipType: 'solarianYacht',
   },
 };
 

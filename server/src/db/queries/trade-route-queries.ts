@@ -1,5 +1,6 @@
-import { getDb } from '../connection.js';
-import { ALL_TRADE_ROUTE_KEYS } from '@foundation/shared';
+import { PutCommand } from '@aws-sdk/lib-dynamodb';
+import { getDocClient, TABLE_NAME } from '../connection.js';
+import { queryItems, userPK } from '../dynamo-utils.js';
 
 export interface TradeRouteRow {
   user_id: number;
@@ -7,32 +8,25 @@ export interface TradeRouteRow {
   is_unlocked: number;
 }
 
-export function getTradeRoutes(userId: number): TradeRouteRow[] {
-  const db = getDb();
-  const stmt = db.prepare('SELECT * FROM trade_routes WHERE user_id = ?');
-  return stmt.all(userId) as TradeRouteRow[];
+export async function getTradeRoutes(userId: number): Promise<TradeRouteRow[]> {
+  const items = await queryItems(userPK(userId), 'TRADEROUTE#');
+  return items.map((item) => ({
+    user_id: userId,
+    route_key: item.SK.replace('TRADEROUTE#', ''),
+    is_unlocked: 1, // Only stored if unlocked (sparse model)
+  }));
 }
 
-export function unlockTradeRoute(userId: number, key: string): void {
-  const db = getDb();
-  const stmt = db.prepare(`
-    INSERT INTO trade_routes (user_id, route_key, is_unlocked)
-    VALUES (?, ?, 1)
-    ON CONFLICT(user_id, route_key)
-    DO UPDATE SET is_unlocked = 1
-  `);
-  stmt.run(userId, key);
-}
-
-export function initializeTradeRoutes(userId: number): void {
-  const db = getDb();
-  const stmt = db.prepare(
-    'INSERT OR IGNORE INTO trade_routes (user_id, route_key, is_unlocked) VALUES (?, ?, 0)'
+export async function unlockTradeRoute(userId: number, key: string): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        PK: userPK(userId),
+        SK: `TRADEROUTE#${key}`,
+        isUnlocked: 1,
+      },
+    })
   );
-  const insertMany = db.transaction((keys: string[]) => {
-    for (const key of keys) {
-      stmt.run(userId, key);
-    }
-  });
-  insertMany(ALL_TRADE_ROUTE_KEYS);
 }

@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  dynamodb-local:
+    image: docker.io/amazon/dynamodb-local:latest
+    container_name: foundation-dynamodb
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /data"
+    volumes:
+      - dynamodb-data:/data
+    restart: unless-stopped
+volumes:
+  dynamodb-data:

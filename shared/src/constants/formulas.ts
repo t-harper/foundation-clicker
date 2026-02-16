@@ -20,15 +20,19 @@ export function calcMaxAffordable(baseCost: number, owned: number, budget: numbe
   return Math.max(0, Math.floor(n));
 }
 
-/** Calculate Seldon Points earned from total lifetime credits */
-export function calcSeldonPoints(totalLifetimeCredits: number): number {
-  if (totalLifetimeCredits < 1e9) return 0;
-  return Math.floor(150 * Math.sqrt(totalLifetimeCredits / 1e9));
+/** Minimum lifetime credits required to earn Seldon Points, per era */
+export const ERA_SELDON_THRESHOLDS = [1e9, 1e12, 1e15, 1e18] as const;
+
+/** Calculate Seldon Points earned from total lifetime credits (threshold scales by era) */
+export function calcSeldonPoints(totalLifetimeCredits: number, currentEra: number = 0): number {
+  const threshold = ERA_SELDON_THRESHOLDS[currentEra] ?? ERA_SELDON_THRESHOLDS[ERA_SELDON_THRESHOLDS.length - 1];
+  if (totalLifetimeCredits < threshold) return 0;
+  return Math.floor(150 * Math.sqrt(totalLifetimeCredits / threshold));
 }
 
 /** Calculate prestige multiplier from total Seldon Points */
 export function calcPrestigeMultiplier(totalSeldonPoints: number): number {
-  return 1 + totalSeldonPoints * 0.02;
+  return 1 + totalSeldonPoints * 0.001;
 }
 
 /** Calculate offline earnings */

@@ -1,20 +1,25 @@
-import Database from 'better-sqlite3';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
-let db: Database.Database | null = null;
+export const TABLE_NAME = process.env.DYNAMODB_TABLE ?? 'FoundationGame';
 
-export function getDb(): Database.Database {
-  if (!db) {
-    const dbPath = process.env.DB_PATH ?? './foundation.db';
-    db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
+let docClient: DynamoDBDocumentClient | null = null;
+
+export function getDocClient(): DynamoDBDocumentClient {
+  if (!docClient) {
+    const endpoint = process.env.DYNAMODB_ENDPOINT;
+    const region = process.env.AWS_REGION ?? 'us-east-1';
+
+    const client = new DynamoDBClient({
+      region,
+      ...(endpoint ? { endpoint } : {}),
+    });
+
+    docClient = DynamoDBDocumentClient.from(client, {
+      marshallOptions: {
+        removeUndefinedValues: true,
+      },
+    });
   }
-  return db;
-}
-
-export function closeDb(): void {
-  if (db) {
-    db.close();
-    db = null;
-  }
+  return docClient;
 }

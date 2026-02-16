@@ -29,6 +29,10 @@ export function isEventConditionMet(condition: EventCondition, state: GameState)
     }
     case 'lifetimeCredits':
       return state.lifetimeCredits >= condition.amount;
+    case 'heroOwned': {
+      const hero = state.heroes.find(h => h.heroKey === condition.hero);
+      return hero?.unlockedAt != null;
+    }
     default:
       return false;
   }

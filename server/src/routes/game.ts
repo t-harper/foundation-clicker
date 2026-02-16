@@ -7,9 +7,9 @@ const router = Router();
 router.get(
   '/api/game/load',
   authMiddleware,
-  (req: AuthRequest, res: Response, next: NextFunction) => {
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const result = loadGameState(req.userId!);
+      const result = await loadGameState(req.userId!);
       res.json(result);
     } catch (err) {
       next(err);

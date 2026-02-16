@@ -2,8 +2,8 @@ import { HERO_DEFINITIONS, HeroState } from '@foundation/shared';
 import { getUserHeroes, unlockHero as dbUnlockHero, hasHero } from '../db/queries/hero-queries.js';
 import { ValidationError } from '../middleware/error-handler.js';
 
-export function getHeroes(userId: number): HeroState[] {
-  const rows = getUserHeroes(userId);
+export async function getHeroes(userId: number): Promise<HeroState[]> {
+  const rows = await getUserHeroes(userId);
   const heroMap = new Map(rows.map((r) => [r.hero_key, r]));
 
   return Object.keys(HERO_DEFINITIONS).map((key) => {
@@ -15,16 +15,16 @@ export function getHeroes(userId: number): HeroState[] {
   });
 }
 
-export function unlockHero(userId: number, heroKey: string): void {
+export async function unlockHero(userId: number, heroKey: string): Promise<void> {
   const def = HERO_DEFINITIONS[heroKey];
   if (!def) {
     throw new ValidationError(`Invalid hero key: ${heroKey}`);
   }
 
-  if (hasHero(userId, heroKey)) {
-    return; // Already unlocked, no-op
+  if (await hasHero(userId, heroKey)) {
+    return;
   }
 
   const now = Math.floor(Date.now() / 1000);
-  dbUnlockHero(userId, heroKey, now);
+  await dbUnlockHero(userId, heroKey, now);
 }

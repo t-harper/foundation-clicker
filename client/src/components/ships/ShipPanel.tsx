@@ -43,7 +43,7 @@ export function ShipPanel() {
   );
 
   const handleBuild = useCallback(async () => {
-    if (!canAffordShip || building || !shipName.trim()) return;
+    if (!canAffordShip || building) return;
     setBuilding(true);
     try {
       const newShip = await buildShip(selectedType, shipName.trim());
@@ -56,11 +56,11 @@ export function ShipPanel() {
         }
       }
       setResources(newResources);
-      setShipName('');
       addNotification({
-        message: `Built ${selectedDef.name}: ${shipName.trim()}`,
+        message: `Built ${selectedDef.name}: ${newShip.name}`,
         type: 'success',
       });
+      setShipName('');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to build ship';
       addNotification({ message, type: 'error' });
@@ -192,14 +192,14 @@ export function ShipPanel() {
                 type="text"
                 value={shipName}
                 onChange={(e) => setShipName(e.target.value)}
-                placeholder="Name your ship..."
+                placeholder="Name your ship (optional)..."
                 maxLength={30}
                 className="flex-1 px-3 py-2 text-sm bg-[var(--era-bg)] border border-[var(--era-primary)]/30 rounded-md text-[var(--era-text)] placeholder-[var(--era-text)]/30 focus:outline-none focus:ring-1 focus:ring-[var(--era-accent)]"
               />
               <Button
                 variant="primary"
                 size="md"
-                disabled={!canAffordShip || !shipName.trim()}
+                disabled={!canAffordShip}
                 loading={building}
                 onClick={handleBuild}
               >

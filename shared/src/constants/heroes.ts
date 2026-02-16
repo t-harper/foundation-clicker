@@ -4,6 +4,15 @@ import { HeroDefinition } from '../types/heroes.js';
 export const HERO_DEFINITIONS: Record<string, HeroDefinition> = {
   // ─── Era 0: Religious Dominance ──────────────────────────────────────
 
+  hariSeldon: {
+    key: 'hariSeldon',
+    name: 'Hari Seldon',
+    title: 'Father of Psychohistory',
+    description: 'The mathematician who foresaw the fall of the Galactic Empire and created the Seldon Plan to shorten thirty thousand years of darkness to a single millennium.',
+    era: Era.ReligiousDominance,
+    specialization: 'research',
+    durationBonus: 0.80,
+  },
   salvorHardin: {
     key: 'salvorHardin',
     name: 'Salvor Hardin',
@@ -39,6 +48,24 @@ export const HERO_DEFINITIONS: Record<string, HeroDefinition> = {
     era: Era.ReligiousDominance,
     specialization: 'mission',
     durationBonus: 0.85,
+  },
+  gaalDornick: {
+    key: 'gaalDornick',
+    name: 'Gaal Dornick',
+    title: 'The First Witness',
+    description: 'A young mathematician from Synnax who witnessed the trial of Hari Seldon and became the first chronicler of the Foundation. His keen observations preserved crucial early history.',
+    era: Era.ReligiousDominance,
+    specialization: 'research',
+    durationBonus: 0.75,
+  },
+  emperorCleon: {
+    key: 'emperorCleon',
+    name: 'Emperor Cleon I',
+    title: 'The Last Enlightened Emperor',
+    description: 'The final Emperor who understood the Empire\'s decline. His decision to allow the Foundation\'s creation on Terminus shaped the course of galactic history.',
+    era: Era.ReligiousDominance,
+    specialization: 'mission',
+    durationBonus: 0.75,
   },
 
   // ─── Era 1: Trading Expansion ────────────────────────────────────────
@@ -79,6 +106,24 @@ export const HERO_DEFINITIONS: Record<string, HeroDefinition> = {
     specialization: 'research',
     durationBonus: 0.85,
   },
+  belRiose: {
+    key: 'belRiose',
+    name: 'Bel Riose',
+    title: 'The Last Imperial General',
+    description: 'The only Imperial general capable of threatening the Foundation. His brilliance was ultimately undone by the Emperor\'s jealousy, proving Seldon\'s prediction that the Empire\'s own rot would protect the Foundation.',
+    era: Era.TradingExpansion,
+    specialization: 'mission',
+    durationBonus: 0.75,
+  },
+  lathanDevers: {
+    key: 'lathanDevers',
+    name: 'Lathan Devers',
+    title: 'The Reluctant Hero',
+    description: 'A trader who stumbled into the heart of Imperial politics. His daring escape from Trantor with critical intelligence helped turn the tide against Bel Riose\'s invasion.',
+    era: Era.TradingExpansion,
+    specialization: 'research',
+    durationBonus: 0.75,
+  },
 
   // ─── Era 2: Psychological Influence ──────────────────────────────────
 
@@ -118,6 +163,24 @@ export const HERO_DEFINITIONS: Record<string, HeroDefinition> = {
     specialization: 'research',
     durationBonus: 0.85,
   },
+  theMule: {
+    key: 'theMule',
+    name: 'The Mule',
+    title: 'The Unconverted',
+    description: 'The mutant warlord whose emotional conversion powers nearly destroyed the Seldon Plan. After his defeat, his understanding of mentalics proved invaluable to Foundation psychologists.',
+    era: Era.PsychologicalInfluence,
+    specialization: 'mission',
+    durationBonus: 0.75,
+  },
+  arkadyDarell: {
+    key: 'arkadyDarell',
+    name: 'Arkady Darell',
+    title: 'The 14-Year-Old Heroine',
+    description: 'Granddaughter of Bayta, Arkady\'s precocious intelligence and daring journey to Trantor helped expose the Second Foundation\'s location \u2014 or so everyone believed.',
+    era: Era.PsychologicalInfluence,
+    specialization: 'research',
+    durationBonus: 0.75,
+  },
 
   // ─── Era 3: Galactic Reunification ───────────────────────────────────
 
@@ -156,6 +219,24 @@ export const HERO_DEFINITIONS: Record<string, HeroDefinition> = {
     era: Era.GalacticReunification,
     specialization: 'research',
     durationBonus: 0.85,
+  },
+  storGendibal: {
+    key: 'storGendibal',
+    name: 'Stor Gendibal',
+    title: 'Second Foundation Speaker',
+    description: 'A young and ambitious Speaker of the Second Foundation. His confrontation with Gaia forced him to reconsider everything he knew about mentalics and the nature of consciousness.',
+    era: Era.GalacticReunification,
+    specialization: 'research',
+    durationBonus: 0.75,
+  },
+  fallom: {
+    key: 'fallom',
+    name: 'Fallom',
+    title: 'Child of Solaria',
+    description: 'A Solarian hermaphrodite child with extraordinary transducer abilities. Fallom\'s unique biology held the key to merging organic and robotic consciousness for the Galaxia project.',
+    era: Era.GalacticReunification,
+    specialization: 'mission',
+    durationBonus: 0.75,
   },
 };
 

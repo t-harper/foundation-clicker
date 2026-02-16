@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 
 import { register, login } from '../services/auth.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { findUserById } from '../db/queries/user-queries.js';
 
 const router = Router();
 
@@ -34,12 +35,14 @@ router.post(
 router.get(
   '/api/auth/me',
   authMiddleware,
-  (req: AuthRequest, res: Response, next: NextFunction) => {
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      const user = await findUserById(req.userId!);
       res.json({
         user: {
           id: req.userId,
           username: req.username,
+          isAdmin: user ? user.is_admin === 1 : false,
         },
       });
     } catch (err) {

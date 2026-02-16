@@ -1,7 +1,7 @@
 import { Era } from './eras.js';
 import { ResourceKey } from './resources.js';
 
-export type ShipType = 'freeTrader' | 'scoutShip' | 'whisperShip' | 'graviticShip';
+export type ShipType = 'freeTrader' | 'scoutShip' | 'armedMerchant' | 'whisperShip' | 'foundationCruiser' | 'graviticShip' | 'solarianYacht';
 
 export type ShipStatus = 'docked' | 'trading' | 'exploring' | 'returning';
 

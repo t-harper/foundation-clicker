@@ -10,6 +10,7 @@ import {
   PrestigeIcon,
   EncyclopediaIcon,
   ResearchIcon,
+  AdminIcon,
 } from '../../assets/svg/icons';
 
 interface SidebarTab {
@@ -32,6 +33,7 @@ const SIDEBAR_TABS: SidebarTab[] = [
 export function Sidebar() {
   const activeTab = useGameStore((s) => s.activeTab);
   const setActiveTab = useGameStore((s) => s.setActiveTab);
+  const isAdmin = useGameStore((s) => s.isAdmin);
 
   return (
     <nav className="flex flex-col w-56 shrink-0 border-r border-[var(--era-surface)] bg-[var(--era-bg)]/80">
@@ -59,6 +61,28 @@ export function Sidebar() {
             </button>
           );
         })}
+
+        {isAdmin && (
+          <>
+            <div className="my-2 border-t border-[var(--era-surface)]/30" />
+            <button
+              type="button"
+              onClick={() => setActiveTab('admin')}
+              className={[
+                'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium',
+                'transition-all duration-150',
+                'focus:outline-none focus:ring-1 focus:ring-[var(--era-accent)] focus:ring-inset',
+                activeTab === 'admin'
+                  ? 'bg-red-500/15 text-red-400 border-l-2 border-red-400 sidebar-glow-active'
+                  : 'text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border-l-2 border-transparent',
+              ].join(' ')}
+              aria-current={activeTab === 'admin' ? 'page' : undefined}
+            >
+              <span className="shrink-0"><AdminIcon className="w-5 h-5" /></span>
+              <span>Admin</span>
+            </button>
+          </>
+        )}
       </div>
     </nav>
   );

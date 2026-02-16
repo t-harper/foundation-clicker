@@ -4,10 +4,7 @@ import dotenv from 'dotenv';
 
 import { createUser, findUserByUsername } from '../db/queries/user-queries.js';
 import { createGameState } from '../db/queries/game-state-queries.js';
-import { initializeBuildings } from '../db/queries/building-queries.js';
-import { initializeUpgrades } from '../db/queries/upgrade-queries.js';
-import { initializeTradeRoutes } from '../db/queries/trade-route-queries.js';
-import { initializeAchievements } from '../db/queries/achievement-queries.js';
+import { unlockHero } from '../db/queries/hero-queries.js';
 import {
   ValidationError,
   AuthenticationError,
@@ -69,21 +66,22 @@ export async function register(
 
   const trimmedUsername = username.trim();
 
-  const existingUser = findUserByUsername(trimmedUsername);
-  if (existingUser) {
-    throw new ValidationError('Username is already taken');
-  }
-
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
-  const user = createUser(trimmedUsername, passwordHash);
+  let user;
+  try {
+    user = await createUser(trimmedUsername, passwordHash);
+  } catch (err: any) {
+    // TransactWriteItems fails if username reservation already exists
+    if (err.name === 'TransactionCanceledException') {
+      throw new ValidationError('Username is already taken');
+    }
+    throw err;
+  }
 
-  // Initialize all game state for the new user
-  createGameState(user.id);
-  initializeBuildings(user.id);
-  initializeUpgrades(user.id);
-  initializeTradeRoutes(user.id);
-  initializeAchievements(user.id);
+  // Initialize game state and grant starter hero (no bulk init needed - sparse model)
+  await createGameState(user.id);
+  await unlockHero(user.id, 'hariSeldon', Math.floor(Date.now() / 1000));
 
   const token = generateToken(user.id, user.username);
 
@@ -104,7 +102,7 @@ export async function login(
     throw new ValidationError('Username and password are required');
   }
 
-  const user = findUserByUsername(username.trim());
+  const user = await findUserByUsername(username.trim());
   if (!user) {
     throw new AuthenticationError('Invalid username or password');
   }

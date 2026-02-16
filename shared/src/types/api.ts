@@ -180,6 +180,16 @@ export interface UseConsumableResponse {
   inventory: import('./items.js').InventoryItem[];
 }
 
+// Admin
+export interface AdminUserSummary {
+  id: number;
+  username: string;
+  isAdmin: boolean;
+  createdAt: number;
+  currentEra: number;
+  prestigeCount: number;
+}
+
 // Generic
 export interface ApiError {
   error: string;
