@@ -8,7 +8,7 @@ An incremental/idle game themed around Isaac Asimov's Foundation series. Players
 
 - **Monorepo**: npm workspaces (`shared`, `server`, `client`)
 - **Frontend**: React 18, TypeScript, Vite 5, Tailwind CSS 3, Zustand 5, React Router 6
-- **Backend**: Node.js, Express 4, better-sqlite3, JWT auth (jsonwebtoken), bcrypt
+- **Backend**: Node.js, Express 4, better-sqlite3, JWT auth (jsonwebtoken), bcrypt, ws (WebSocket)
 - **Shared**: Pure TypeScript game engine (types, constants, formulas, tick logic) -- no runtime deps
 - **Dev tooling**: tsx (server watch), Vite (client HMR), TypeScript 5.6 strict mode
 
@@ -24,18 +24,18 @@ foundation-game/
       types/
         game-state.ts       # GameState, GameStats interfaces
         resources.ts        # ResourceKey union, Resources interface, EMPTY_RESOURCES
-        buildings.ts        # BuildingKey union, BuildingDefinition, BuildingState
-        upgrades.ts         # UpgradeEffect discriminated union, UpgradeDefinition, UpgradeState
+        buildings.ts        # BuildingKey union (56 keys), BuildingDefinition, BuildingState
+        upgrades.ts         # UpgradeEffect discriminated union (8 types), UpgradeDefinition, UpgradeState
         ships.ts            # ShipType, ShipStatus, ShipDefinition, ShipState, TradeRoute types
-        achievements.ts     # AchievementDefinition, AchievementState
+        achievements.ts     # AchievementCondition (8 types), AchievementDefinition, AchievementState
         eras.ts             # Era enum (0-3), EraDefinition with theme colors
         prestige.ts         # PrestigeState, PrestigePreview, PrestigeHistoryEntry
-        api.ts              # API request/response types
+        api.ts              # API request/response types (12 interfaces)
       constants/
-        buildings.ts        # BUILDING_DEFINITIONS -- 14 buildings across 4 eras
-        upgrades.ts         # UPGRADE_DEFINITIONS -- 18 upgrades with effects/prerequisites
+        buildings.ts        # BUILDING_DEFINITIONS -- 56 buildings across 4 eras (14 per era)
+        upgrades.ts         # UPGRADE_DEFINITIONS -- 178 upgrades with effects/prerequisites
         ships.ts            # SHIP_DEFINITIONS (4 types), TRADE_ROUTE_DEFINITIONS (7 routes)
-        achievements.ts     # ACHIEVEMENT_DEFINITIONS -- ~20 achievements (milestones/clicks/eras)
+        achievements.ts     # ACHIEVEMENT_DEFINITIONS -- 19 achievements (milestones/clicks/eras)
         eras.ts             # ERA_DEFINITIONS with theme colors, ERA_UNLOCK_THRESHOLDS
         formulas.ts         # Cost scaling, Seldon Points, prestige multiplier, offline calc
       engine/
@@ -44,9 +44,11 @@ foundation-game/
         offline.ts          # calculateOfflineEarnings(), applyOfflineEarnings()
   server/
     src/
+      app.ts                # Express app setup, CORS, route mounting, error handler
+      index.ts              # Entry point: runs migrations, creates HTTP server, attaches WS
       db/
         connection.ts       # better-sqlite3 singleton (WAL mode, FK enforcement)
-        migrate.ts          # Migration runner
+        migrate.ts          # Migration runner (manual registration pattern)
         migrations/
           001_initial_schema.ts
         queries/             # Raw SQL query functions per entity
@@ -60,7 +62,7 @@ foundation-game/
           prestige-queries.ts
       middleware/
         auth.ts             # JWT Bearer token extraction and verification
-        error-handler.ts    # Express error middleware
+        error-handler.ts    # Express error middleware (ValidationError, AuthenticationError, NotFoundError)
       routes/               # Express route handlers (thin -- delegate to services)
         auth.ts
         game.ts
@@ -71,14 +73,16 @@ foundation-game/
         prestige.ts
         achievements.ts
       services/             # Business logic layer
-        auth.ts
-        game-state.ts
-        building.ts
-        upgrade.ts
-        ship.ts
-        trade.ts
-        prestige.ts
-        achievement.ts
+        auth.ts             # register (bcrypt 10 rounds), login, JWT (7-day expiry)
+        game-state.ts       # buildGameState, loadGameState, saveGameState, handleClick, projectResources
+        building.ts         # buyBuilding (with resource projection), sellBuilding (50% refund)
+        upgrade.ts          # buyUpgrade (prerequisite + affordability validation)
+        ship.ts             # buildShip, sendShip, recallShip
+        trade.ts            # unlockTradeRoute (with affordability check)
+        prestige.ts         # previewPrestige, triggerPrestige, getPrestigeHistory
+        achievement.ts      # checkAchievements (evaluates all condition types)
+      ws/
+        sync.ts             # WebSocket server -- pushes buildings/upgrades at 2 Hz
   client/
     src/
       api/                  # Typed fetch wrappers per domain
@@ -91,30 +95,32 @@ foundation-game/
         prestige.ts
         achievements.ts
       assets/svg/
-        buildings/          # 14 building art SVG components (NuclearPlantArt, etc.)
+        buildings/          # 56 building art SVG components + GenericBuildingArt fallback
         ships/              # 4 ship art SVG components
-        icons/              # UI icon SVG components (resources, tabs, actions)
-        backgrounds/        # GalaxyMap, StarField, TerminusSkyline
+        icons/              # 19 UI icon SVG components (resources, tabs, actions)
+        backgrounds/        # GalaxyMap, StarField, TerminusSkyline, SeldonHologram
       components/
         buildings/          # BuildingCard, BuildingPanel, BuyAmountSelector
         upgrades/           # UpgradeCard, UpgradePanel
         ships/              # ShipCard, ShipPanel, TradeRouteManager
         achievements/       # AchievementCard, AchievementPanel
-        prestige/           # PrestigePanel
-        resources/          # ClickTarget, ResourceBar
-        encyclopedia/       # EncyclopediaPanel
-        layout/             # GameLayout, Header, Sidebar
+        prestige/           # PrestigePanel (preview, two-stage confirm, history)
+        resources/          # ClickTarget, ResourceBar, OfflineEarningsModal
+        encyclopedia/       # EncyclopediaPanel (About, Eras, Buildings, Figures tabs)
+        colony-map/         # ColonyMapPanel (pan/zoom SVG), MapBuildingSlot, SeldonVaultCenter
+        layout/             # GameLayout, Header, Sidebar, EraTransition
         common/             # Button, Modal, NotificationArea, NumberDisplay, ProgressBar, TabGroup, Tooltip
-        settings/           # SettingsModal
+        settings/           # SettingsModal (stats, export/import save, hard reset)
       hooks/
         useGameEngine.ts    # RAF loop -- runs shared tick() each frame
         useAutoSave.ts      # Interval-based save to server (30s default)
-        useAchievementChecker.ts
-        useKeyboard.ts
-        useNotifications.ts
+        useAchievementChecker.ts  # Polls /achievements/check every 5s
+        useKeyboard.ts      # Tab shortcuts (b/u/s/a/p/e), buy amounts (1/2/3/4/m), Esc
+        useNotifications.ts # Auto-dismiss (3s) notification wrapper
+        useWebSocketSync.ts # WebSocket sync with exponential backoff reconnection
       pages/
-        GamePage.tsx
-        LoginPage.tsx
+        GamePage.tsx        # Initializes hooks, loads game state, offline modal
+        LoginPage.tsx       # Dual-mode (login/register) form
       store/                # Zustand store with slice pattern
         index.ts            # Combined store creation, type exports, selector re-exports
         game-slice.ts       # Resources, era, click value, play time, lifetime stats
@@ -125,8 +131,9 @@ foundation-game/
         prestige-slice.ts   # Seldon points, prestige count/multiplier
         ui-slice.ts         # Active tab, buy amount, settings modal, notifications, save state
         selectors.ts        # selectGameState(), selectProductionRates(), selectClickValue(), etc.
-      styles/               # Tailwind config / global CSS
-      utils/                # Utility functions
+      styles/
+        index.css           # Tailwind base + era theming CSS vars + animations (506 lines)
+      utils/                # Utility functions (number formatting, etc.)
 ```
 
 ## Development Commands
@@ -141,21 +148,25 @@ npm run build:client      # Build only client
 npm run typecheck         # Type-check all packages sequentially
 ```
 
+**Important**: Shared must be built first (`npm run build:shared`) before server/client can type-check, because `shared/tsconfig.json` has `"composite": true` for project references.
+
 ## Architecture
 
 ### Client-Server Split
 
 - **Client-authoritative ticking**: The RAF loop (`useGameEngine`) runs the shared `tick()` function every frame on the client, applying production rates * deltaTime to resources. This gives smooth, responsive resource counters.
 - **Server-authoritative mutations**: All state-changing actions (buy building, purchase upgrade, build ship, prestige) go through REST API calls. The server validates affordability, applies the mutation to the DB, and returns updated state.
+- **Resource projection**: Before validating any mutation, the server calls `projectResources()` to fast-forward resources from `last_tick_at` to the current time using shared engine math. This closes the gap between the 30-second auto-save interval and real-time state.
 - **Shared engine**: `@foundation/shared` contains all game logic (production calculations, cost formulas, unlock checks) used identically by client and server. No game balance data lives outside `shared/`.
 
 ### Data Flow
 
 1. On login, client calls `GET /api/game/load` to hydrate the Zustand store.
 2. The RAF loop ticks resources locally using shared engine math.
-3. Mutations (buy, sell, prestige) are POST requests; server validates and returns new state.
+3. Mutations (buy, sell, prestige) are POST requests; server validates against projected resources and returns new state.
 4. Auto-save (`useAutoSave`) sends resource snapshots to the server every 30 seconds.
 5. On reconnect, the server calculates offline earnings using `calculateOfflineEarnings()`.
+6. WebSocket sync pushes building/upgrade state from server to client at 2 Hz.
 
 ### Game Data Philosophy
 
@@ -166,20 +177,23 @@ All game content (buildings, upgrades, ships, trade routes, achievements, eras) 
 | File | Purpose |
 |------|---------|
 | `shared/src/constants/formulas.ts` | Cost scaling (1.15^n), Seldon Point formula, prestige multiplier, offline caps |
-| `shared/src/engine/calculator.ts` | Core engine: production rates, click value, affordability, unlock checks |
+| `shared/src/engine/calculator.ts` | Core engine: production rates, click value, affordability, unlock checks, efficiency analysis |
 | `shared/src/engine/tick.ts` | Per-frame tick function, click application, trade ship processing |
 | `shared/src/engine/offline.ts` | Offline earnings calculation (capped at 24h, 50% multiplier) |
-| `shared/src/constants/buildings.ts` | All 14 building definitions with costs, production, unlock requirements |
-| `shared/src/constants/upgrades.ts` | All 18 upgrade definitions with effects and prerequisites |
+| `shared/src/constants/buildings.ts` | All 56 building definitions with costs, production, unlock requirements |
+| `shared/src/constants/upgrades.ts` | All 178 upgrade definitions with effects and prerequisites |
 | `shared/src/constants/ships.ts` | Ship types + trade route definitions |
 | `shared/src/types/game-state.ts` | `GameState` interface -- the canonical shape of all player state |
 | `server/src/db/migrations/001_initial_schema.ts` | Full DB schema |
+| `server/src/services/game-state.ts` | Server game logic: load, save, click, reset, resource projection |
 | `server/src/middleware/auth.ts` | JWT verification middleware |
-| `client/src/store/index.ts` | Zustand store assembly from all slices |
-| `client/src/store/selectors.ts` | Derived state: `selectGameState()` assembles slices into a `GameState` |
+| `server/src/ws/sync.ts` | WebSocket server for real-time state push |
+| `client/src/store/index.ts` | Zustand store assembly from all 7 slices |
+| `client/src/store/selectors.ts` | Derived state: `selectGameState()`, production rates, click value, ROI analysis |
 | `client/src/hooks/useGameEngine.ts` | RAF loop driving the client-side tick |
 | `client/src/hooks/useAutoSave.ts` | 30-second auto-save interval |
 | `client/src/api/client.ts` | `ApiClient` class handling auth tokens and error redirects |
+| `client/src/styles/index.css` | Era theming CSS variables, animations, background effects |
 
 ## Database
 
@@ -198,24 +212,30 @@ SQLite via better-sqlite3. File at `./foundation.db` (configurable via `DB_PATH`
 | `achievements` | Per-user unlocked achievements. Composite PK `(user_id, achievement_key)`. Stores `unlocked_at`. |
 | `prestige_history` | Audit log of prestige events with credits/SP/era at reset time. |
 
+### Conventions
+
+- DB queries use **snake_case** column names; TypeScript types use **camelCase**
+- `game_state.last_tick_at` stores seconds (Unix timestamp)
+- Ship `departed_at` / `returns_at` store milliseconds (`Date.now()`)
+
 ## API Endpoints
 
-All endpoints except auth require a `Bearer` token in the `Authorization` header.
+All endpoints except auth require a `Bearer` token in the `Authorization` header. Responses return data directly (not wrapped in an envelope).
 
 ### Auth
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/auth/register` | Create account (username, password) |
-| POST | `/api/auth/login` | Login, returns JWT |
+| POST | `/api/auth/register` | Create account (username 3-20 alphanumeric, password 6+ chars) |
+| POST | `/api/auth/login` | Login, returns JWT (7-day expiry) |
 | GET | `/api/auth/me` | Get current user info |
 
 ### Game State
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/game/load` | Load full game state (with offline earnings) |
-| POST | `/api/game/save` | Save resource snapshot |
-| POST | `/api/game/click` | Register clicks (body: `{ clicks }`) |
-| POST | `/api/game/reset` | Hard reset game state |
+| POST | `/api/game/save` | Save resource snapshot (returns 204) |
+| POST | `/api/game/click` | Register clicks (body: `{ clicks }`, max 100) |
+| POST | `/api/game/reset` | Hard reset game state (returns 204) |
 | GET | `/api/game/stats` | Get game statistics |
 
 ### Buildings
@@ -223,7 +243,7 @@ All endpoints except auth require a `Bearer` token in the `Authorization` header
 |--------|------|-------------|
 | GET | `/api/buildings` | List user buildings |
 | POST | `/api/buildings/buy` | Buy building(s) (body: `{ buildingKey, amount }`) |
-| POST | `/api/buildings/sell` | Sell building(s) (body: `{ buildingKey, amount }`) |
+| POST | `/api/buildings/sell` | Sell building(s) (body: `{ buildingKey, amount }`, 50% refund) |
 
 ### Upgrades
 | Method | Path | Description |
@@ -235,7 +255,7 @@ All endpoints except auth require a `Bearer` token in the `Authorization` header
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/ships` | List user ships |
-| POST | `/api/ships/build` | Build a ship (body: `{ shipType, name }`) |
+| POST | `/api/ships/build` | Build a ship (body: `{ shipType, name }`, name max 50 chars) |
 | POST | `/api/ships/send` | Send ship on trade route (body: `{ shipId, tradeRouteKey }`) |
 | POST | `/api/ships/recall` | Recall a trading ship (body: `{ shipId }`) |
 
@@ -258,6 +278,11 @@ All endpoints except auth require a `Bearer` token in the `Authorization` header
 | GET | `/api/achievements` | List user achievements |
 | POST | `/api/achievements/check` | Check and unlock new achievements |
 
+### WebSocket
+| Path | Description |
+|------|-------------|
+| `/ws?token=<jwt>` | Server-push sync of buildings/upgrades at 2 Hz |
+
 ## Game Engine
 
 ### Tick System
@@ -271,8 +296,8 @@ The client runs `useGameEngine`, a React hook that starts a `requestAnimationFra
 
 ### Production Rate Calculation (`calcProductionRates`)
 
-For each building owned, sum `count * baseProduction` per resource. Then apply:
-1. **Building multipliers** from purchased upgrades (per-building)
+For each building owned, sum `count * baseProduction` per resource. Then apply a 5-layer multiplier chain:
+1. **Building multipliers** from purchased upgrades (per-building, e.g. "Efficient Farming" doubles hydroponicsFarm output)
 2. **Resource multipliers** from upgrades (per-resource-type, e.g. all credits +50%)
 3. **Achievement multipliers** (global or per-resource)
 4. **Prestige multiplier** (`1 + totalSeldonPoints * 0.02`)
@@ -288,20 +313,43 @@ Final rate = `baseRate * buildingMult * resourceMult * achievementMult * prestig
 - **Seldon Points**: `floor(150 * sqrt(lifetimeCredits / 1e9))` -- requires 1B credits minimum
 - **Prestige multiplier**: `1 + totalSeldonPoints * 0.02` -- 2% per SP
 
+### Click System
+
+Base click value = 1 credit, modified by 4 upgrade effect types:
+1. **`clickMultiplier`**: Flat multiplier on click value
+2. **`clickPerBuilding`**: Fixed credits added per building owned
+3. **`clickBuildingScale`**: Multiplier that scales with a specific building's count
+4. **`clickTotalBuildingScale`**: Multiplier that scales with total building count
+
+Additionally, `clickResourceYield` upgrades grant bonus non-credit resources per click (as a fraction of the credit click value). All click values are further multiplied by the prestige multiplier and achievement click multipliers.
+
+### Upgrade Effect Types
+
+The 8 discriminated union types in `UpgradeEffect`:
+- `clickMultiplier` -- flat multiplier on click value
+- `clickPerBuilding` -- fixed credits per building owned
+- `clickBuildingScale` -- scales with specific building count
+- `clickTotalBuildingScale` -- scales with total buildings
+- `clickResourceYield` -- bonus resources from clicking
+- `buildingMultiplier` -- per-building production multiplier
+- `resourceMultiplier` -- per-resource production multiplier
+- `globalMultiplier` -- universal production multiplier
+- `unlockFeature` -- feature gate (for future use)
+
 ### Offline Earnings (`offline.ts`)
 
 When a player returns after being away:
 - Production rates are calculated from current state.
 - Earnings = `rates * min(elapsed, 86400) * 0.5` (50% of normal, capped at 24 hours).
-- Trade ships that completed their routes during offline time have their rewards collected.
+- Trade ships that completed their routes during offline time are docked.
 - The server computes this on `GET /api/game/load`.
 
-### Click System
+### Era Progression
 
-- Base click value = 1 credit.
-- Modified by click multiplier upgrades and achievements.
-- Further multiplied by prestige multiplier.
-- Formula: `BASE_CLICK_VALUE * clickMult * prestigeMultiplier`
+- **Era 0 (Religious Dominance)**: Always available
+- **Era 1 (Trading Expansion)**: Requires first prestige (`prestigeCount >= 1`)
+- **Era 2 (Psychological Influence)**: Requires 100 Seldon Points
+- **Era 3 (Galactic Reunification)**: Requires 10,000 Seldon Points
 
 ## State Management
 
@@ -311,27 +359,30 @@ The store uses the **slice pattern** -- each domain has its own `StateCreator` f
 
 | Slice | State | Key Actions |
 |-------|-------|-------------|
-| `game-slice` | resources, clickValue, currentEra, lastTickAt, totalPlayTime, totalClicks, lifetimeCredits, isLoaded | setResources, addClick, setGameState, incrementPlayTime |
-| `building-slice` | buildings (BuildingState[]) | setBuildings, buyBuilding, sellBuilding |
-| `upgrade-slice` | upgrades (UpgradeState[]) | setUpgrades, buyUpgrade |
-| `ship-slice` | ships (ShipState[]), tradeRoutes (TradeRouteState[]) | setShips, buildShip, sendShip, recallShip |
+| `game-slice` | resources, clickValue, currentEra, lastTickAt, totalPlayTime, totalClicks, lifetimeCredits, isLoaded | setResources, updateResource, addClick, setGameState, incrementPlayTime, setLastTickAt |
+| `building-slice` | buildings (BuildingState[]) | setBuildings, updateBuilding, unlockBuilding |
+| `upgrade-slice` | upgrades (UpgradeState[]) | setUpgrades, purchaseUpgrade |
+| `ship-slice` | ships (ShipState[]), tradeRoutes (TradeRouteState[]) | setShips, addShip, updateShip, removeShip, setTradeRoutes, unlockTradeRoute |
 | `achievement-slice` | achievements (AchievementState[]) | setAchievements, unlockAchievement |
-| `prestige-slice` | seldonPoints, totalSeldonPoints, prestigeCount, prestigeMultiplier | setPrestigeState, triggerPrestige |
-| `ui-slice` | activeTab, buyAmount, showSettings, notifications, offlineEarnings, isSaving | setActiveTab, setBuyAmount, toggleSettings, addNotification |
+| `prestige-slice` | seldonPoints, totalSeldonPoints, prestigeCount, prestigeMultiplier | setPrestige, applyPrestige |
+| `ui-slice` | activeTab, buyAmount, showSettings, showOfflineModal, offlineEarnings, notifications, isSaving | setActiveTab, setBuyAmount, toggleSettings, showOfflineEarnings, addNotification, setIsSaving |
 
 ### Selectors (`selectors.ts`)
 
 - `selectGameState(state)`: Assembles all slices into a canonical `GameState` object for engine functions.
 - `selectProductionRates(state)`: Calls shared `calcProductionRates()` on assembled state.
 - `selectClickValue(state)`: Calls shared `calcClickValue()` on assembled state.
+- `selectClickResourceYields(state)`: Bonus resource yields from clicking.
 - `selectTotalBuildings(state)`: Sum of all building counts.
 - `selectGameStats(state)`: Summary stats object for display.
+- `selectBestCreditROIBuilding(state)`: Most cost-efficient building for credits.
+- `selectBestCreditROIUpgrade(state)`: Most cost-efficient unpurchased upgrade for credits.
 
 ## SVG Components
 
 ### Conventions
 
-All SVG art is in `client/src/assets/svg/` organized by category (`buildings/`, `ships/`, `icons/`, `backgrounds/`). Each is a React functional component with barrel exports via `index.ts`.
+All SVG art is in `client/src/assets/svg/` organized by category (`buildings/`, `ships/`, `icons/`, `backgrounds/`). Each is a React functional component with barrel exports via `index.ts`. Art maps (`BUILDING_ART_MAP`, `SHIP_ART_MAP`) map game keys to components.
 
 **Building/Ship Art Props**:
 ```ts
@@ -343,13 +394,38 @@ interface BuildingArtProps {
 ```
 
 **Conventions**:
-- ViewBox is `0 0 64 64` for buildings, varies for ships/icons.
-- Use `currentColor` for fills and strokes (inherits text color from parent).
-- Use `opacity` values for depth (0.1-0.6 for fills, 0.3-0.7 for accents).
+- ViewBox is `0 0 64 64` for buildings and ships, `0 0 24 24` for icons.
+- Use `currentColor` for fills and strokes (inherits text color from parent for era theming).
+- Use `opacity` values for depth (0.08-0.25 for fills, 0.2-0.7 for strokes).
 - `level` prop gates visual complexity: level 1 = base, level 2 = extra structures, level 3 = energy effects/particles.
+- Building level is derived from count: 1-9 = Lv1, 10-49 = Lv2, 50+ = Lv3.
 - Always include `role="img"` and `aria-label` for accessibility.
+- Icon components are simpler -- typically just `className` and `size` props, no level gating.
+- Background components use variable viewBoxes and may include embedded CSS animations (e.g. SeldonHologram).
 
-**Icon components** are simpler -- typically just `className` and `size` props, no level gating.
+### Asset Inventory
+
+| Category | Count | Notes |
+|----------|-------|-------|
+| Building art | 56 + 1 fallback + 2 legacy | All 56 BuildingKeys have custom art |
+| Ship art | 4 | All 4 ShipTypes have custom art |
+| Icons | 19 | 5 resource, 8 navigation, 6 utility |
+| Backgrounds | 4 | StarField, TerminusSkyline, GalaxyMap, SeldonHologram |
+
+## Era Theming
+
+Era-specific colors are applied via CSS custom properties set on `GameLayout`:
+- `--era-primary`, `--era-secondary`, `--era-accent`, `--era-bg`, `--era-surface`, `--era-text`
+- Defined per era via `[data-era="N"]` selectors in `client/src/styles/index.css`
+- All SVGs inherit colors via `currentColor`, so era changes cascade automatically
+- Background effects (starfield parallax, tech-grid, scanlines) are layered behind content
+
+| Era | Palette |
+|-----|---------|
+| 0 - Religious Dominance | Warm gold / cream / dark brown |
+| 1 - Trading Expansion | Teal / cyan / dark teal-grey |
+| 2 - Psychological Influence | Purple / lavender / dark purple |
+| 3 - Galactic Reunification | Cyan / ice-blue / dark cyan-grey |
 
 ## Adding New Content
 
@@ -357,20 +433,20 @@ interface BuildingArtProps {
 
 1. **Type**: Add the key to the `BuildingKey` union in `shared/src/types/buildings.ts`.
 2. **Definition**: Add an entry to `BUILDING_DEFINITIONS` in `shared/src/constants/buildings.ts` with key, name, description, era, baseCost, production rates, costMultiplier (1.15), and unlockRequirement.
-3. **SVG Art**: Create `client/src/assets/svg/buildings/YourBuildingArt.tsx` following the existing pattern (64x64 viewBox, currentColor, level prop). Export from the barrel `index.ts`.
+3. **SVG Art**: Create `client/src/assets/svg/buildings/YourBuildingArt.tsx` following the existing pattern (64x64 viewBox, currentColor, level prop). Export from the barrel `index.ts` and add to `BUILDING_ART_MAP`.
 4. **No DB changes needed** -- building state rows are created dynamically per building_key.
 
 ### Adding a New Upgrade
 
 1. **Definition**: Add an entry to `UPGRADE_DEFINITIONS` in `shared/src/constants/upgrades.ts` with key, name, description, era, cost, effects array, and optionally prerequisites/requiredBuilding.
-2. **Effect types**: `clickMultiplier`, `buildingMultiplier`, `resourceMultiplier`, `globalMultiplier`, `unlockFeature`.
+2. **Effect types**: `clickMultiplier`, `clickPerBuilding`, `clickBuildingScale`, `clickTotalBuildingScale`, `clickResourceYield`, `buildingMultiplier`, `resourceMultiplier`, `globalMultiplier`, `unlockFeature`.
 3. **No other changes needed** -- the calculator iterates all purchased upgrades dynamically.
 
 ### Adding a New Ship Type
 
 1. **Type**: Add to `ShipType` union in `shared/src/types/ships.ts`.
 2. **Definition**: Add to `SHIP_DEFINITIONS` in `shared/src/constants/ships.ts`.
-3. **SVG Art**: Create `client/src/assets/svg/ships/YourShipArt.tsx`, export from barrel.
+3. **SVG Art**: Create `client/src/assets/svg/ships/YourShipArt.tsx`, export from barrel, add to `SHIP_ART_MAP`.
 
 ### Adding a New Trade Route
 
@@ -379,7 +455,7 @@ interface BuildingArtProps {
 ### Adding a New Achievement
 
 1. **Definition**: Add to `ACHIEVEMENT_DEFINITIONS` in `shared/src/constants/achievements.ts`.
-2. **Condition types**: `resourceTotal`, `totalClicks`, `totalBuildings`, `prestigeCount`, `eraReached`, `shipCount`, `playTime`.
+2. **Condition types**: `resourceTotal`, `buildingCount`, `totalBuildings`, `totalClicks`, `prestigeCount`, `eraReached`, `shipCount`, `playTime`.
 3. **Reward types** (optional): `clickMultiplier`, `globalMultiplier`, `resourceMultiplier`.
 4. **Icon**: Reference an existing icon key or add a new one.
 
@@ -390,20 +466,32 @@ This is a larger change:
 2. Add definition to `ERA_DEFINITIONS` and threshold to `ERA_UNLOCK_THRESHOLDS` in `shared/src/constants/eras.ts` (include theme colors).
 3. Update `calcCurrentEra()` in `shared/src/engine/calculator.ts`.
 4. Add buildings, upgrades, ships, and trade routes for the new era.
+5. Add era CSS variables in `client/src/styles/index.css` under a new `[data-era="N"]` selector.
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `JWT_SECRET` | `foundation-dev-secret-key` | Secret for signing JWTs |
+| `PORT` | `3001` | Server port |
 | `DB_PATH` | `./foundation.db` | Path to SQLite database file |
 
 ## Conventions
 
-- All packages use ESM (`"type": "module"`) with `.js` extensions in imports.
+- All packages use ESM (`"type": "module"`) with `.js` extensions in server imports (Vite handles client imports without extensions).
 - TypeScript strict mode everywhere; target ES2022.
 - Server uses `tsx watch` for development (auto-restart on changes).
-- API responses follow `{ success: boolean, data: T }` envelope pattern.
+- API responses return data directly (no envelope wrapper).
 - Auth token stored in `localStorage` under key `foundation_token`.
 - `ApiClient` auto-redirects to `/login` on 401 responses.
 - Auto-save interval is 30 seconds (`AUTO_SAVE_INTERVAL` in formulas.ts).
+- `Resources` type has no index signature -- use `resources[key as ResourceKey]` for dynamic access.
+- DB queries use snake_case column names; TypeScript types use camelCase.
+- Routes define their full paths (e.g. `/api/auth/login`) and are mounted at root in `app.ts`.
+
+## Known Issues
+
+- **Prestige multiplier mismatch**: `shared/formulas.ts` uses `0.02` per SP but `server/prestige-queries.ts` SQL uses `0.01` per SP in the reset calculation.
+- **Trade route rewards not collected**: Ships dock when their route completes, but the reward resources defined in `TRADE_ROUTE_DEFINITIONS` are never applied to the player's account.
+- **Ship timestamp units**: Ship `departed_at`/`returns_at` use milliseconds (`Date.now()`) while `game_state.last_tick_at` uses seconds, requiring care when comparing.
+- **Legacy SVG components**: `VaultOfKnowledgeArt` and `HyperspaceRelayArt` exist in the buildings directory but are not in `BUILDING_ART_MAP` (dead code).
