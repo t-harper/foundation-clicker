@@ -46,6 +46,8 @@ export interface EventDefinition {
   repeatable: boolean;
   cooldownSeconds: number;
   weight: number;
+  /** Hero key unlocked when this event is resolved (any choice) */
+  heroReward?: string;
 }
 
 export interface ActiveEffect {

@@ -7,7 +7,9 @@ import {
   Era,
   ALL_BUILDING_KEYS,
   ALL_UPGRADE_KEYS,
+  ITEM_DEFINITIONS,
 } from '@foundation/shared';
+import type { ConsumableEffect } from '@foundation/shared';
 import {
   calcProductionRates,
   calcClickValue,
@@ -28,6 +30,9 @@ import { getShips, updateShipStatus } from '../db/queries/ship-queries.js';
 import { getTradeRoutes, initializeTradeRoutes } from '../db/queries/trade-route-queries.js';
 import { getAchievements, initializeAchievements } from '../db/queries/achievement-queries.js';
 import { getActiveEffects, getPendingEvent } from '../db/queries/event-queries.js';
+import { getUserHeroes } from '../db/queries/hero-queries.js';
+import { getUserActivities, getActiveActivities } from '../db/queries/activity-queries.js';
+import { getUserInventory, getActiveConsumable, clearActiveConsumable } from '../db/queries/inventory-queries.js';
 import { getDb } from '../db/connection.js';
 import {
   ValidationError,
@@ -54,6 +59,11 @@ function buildGameState(userId: number): GameState {
   const tradeRouteRows = getTradeRoutes(userId);
   const achievementRows = getAchievements(userId);
   const activeEffectRows = getActiveEffects(userId);
+  const heroRows = getUserHeroes(userId);
+  const activityRows = getUserActivities(userId);
+  const activeActivityRows = getActiveActivities(userId);
+  const inventoryRows = getUserInventory(userId);
+  const activeConsumableRow = getActiveConsumable(userId);
 
   const resources: Resources = {
     credits: row.credits,
@@ -116,6 +126,40 @@ function buildGameState(userId: number): GameState {
       startedAt: e.started_at,
       expiresAt: e.expires_at,
     })),
+    heroes: heroRows.map((h) => ({
+      heroKey: h.hero_key,
+      unlockedAt: h.unlocked_at,
+    })),
+    activities: activityRows.map((a) => ({
+      activityKey: a.activity_key,
+      timesCompleted: a.times_completed,
+    })),
+    activeActivities: activeActivityRows.map((a) => ({
+      activityKey: a.activity_key,
+      heroKey: a.hero_key,
+      startedAt: a.started_at,
+      completesAt: a.completes_at,
+    })),
+    inventory: inventoryRows.map((i) => ({
+      itemKey: i.item_key,
+      quantity: i.quantity,
+    })),
+    activeConsumable: (() => {
+      if (!activeConsumableRow) return null;
+      const now = Math.floor(Date.now() / 1000);
+      if (now >= activeConsumableRow.expires_at) {
+        clearActiveConsumable(userId);
+        return null;
+      }
+      const itemDef = ITEM_DEFINITIONS[activeConsumableRow.item_key];
+      if (!itemDef || itemDef.category !== 'consumable') return null;
+      return {
+        itemKey: activeConsumableRow.item_key,
+        startedAt: activeConsumableRow.started_at,
+        expiresAt: activeConsumableRow.expires_at,
+        effect: itemDef.effect as ConsumableEffect,
+      };
+    })(),
     lastTickAt: row.last_tick_at ?? Math.floor(Date.now() / 1000),
     totalPlayTime: row.total_play_time,
     totalClicks: row.total_clicks,
@@ -291,6 +335,11 @@ export function resetGame(userId: number): void {
     db.prepare('DELETE FROM event_history WHERE user_id = ?').run(userId);
     db.prepare('DELETE FROM active_effects WHERE user_id = ?').run(userId);
     db.prepare('DELETE FROM pending_event WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM heroes WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM activities WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM active_activities WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM inventory WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM active_consumable WHERE user_id = ?').run(userId);
 
     // Reset game_state to initial values
     const now = Math.floor(Date.now() / 1000);

@@ -134,6 +134,52 @@ export interface GetEventHistoryResponse {
   history: EventHistoryEntry[];
 }
 
+// Heroes
+export interface GetHeroesResponse {
+  heroes: import('./heroes.js').HeroState[];
+}
+
+// Activities
+export interface GetActivitiesResponse {
+  activities: import('./activities.js').ActivityState[];
+  activeActivities: import('./activities.js').ActiveActivity[];
+}
+
+export interface StartActivityRequest {
+  activityKey: string;
+  heroKey: string;
+}
+
+export interface StartActivityResponse {
+  activeActivity: import('./activities.js').ActiveActivity;
+  resources: Resources;
+}
+
+export interface CollectActivityRequest {
+  activityKey: string;
+}
+
+export interface CollectActivityResponse {
+  rewards: { itemKey: string; quantity: number }[];
+  activity: import('./activities.js').ActivityState;
+  inventory: import('./items.js').InventoryItem[];
+}
+
+// Inventory
+export interface GetInventoryResponse {
+  inventory: import('./items.js').InventoryItem[];
+  activeConsumable: import('./items.js').ActiveConsumable | null;
+}
+
+export interface UseConsumableRequest {
+  itemKey: string;
+}
+
+export interface UseConsumableResponse {
+  activeConsumable: import('./items.js').ActiveConsumable;
+  inventory: import('./items.js').InventoryItem[];
+}
+
 // Generic
 export interface ApiError {
   error: string;

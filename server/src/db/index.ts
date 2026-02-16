@@ -5,6 +5,7 @@ export { runMigrations, registerMigration } from './migrate.js';
 import './migrations/001_initial_schema.js';
 import './migrations/002_events.js';
 import './migrations/003_pending_event.js';
+import './migrations/004_heroes_activities_inventory.js';
 
 export * from './queries/user-queries.js';
 export * from './queries/game-state-queries.js';
@@ -15,3 +16,6 @@ export * from './queries/trade-route-queries.js';
 export * from './queries/achievement-queries.js';
 export * from './queries/prestige-queries.js';
 export * from './queries/event-queries.js';
+export * from './queries/hero-queries.js';
+export * from './queries/activity-queries.js';
+export * from './queries/inventory-queries.js';

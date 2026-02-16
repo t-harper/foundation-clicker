@@ -12,6 +12,7 @@ import { AchievementPanel } from '../achievements/AchievementPanel';
 import { PrestigePanel } from '../prestige/PrestigePanel';
 import { EncyclopediaPanel } from '../encyclopedia/EncyclopediaPanel';
 import { ColonyMapPanel } from '../colony-map';
+import { ResearchPanel } from '../research';
 import { SettingsModal } from '../settings/SettingsModal';
 import { NotificationArea } from '../common';
 import { ActiveEffectsBar } from '../events';
@@ -32,6 +33,8 @@ function ActivePanel() {
       return <AchievementPanel />;
     case 'prestige':
       return <PrestigePanel />;
+    case 'research':
+      return <ResearchPanel />;
     case 'encyclopedia':
       return <EncyclopediaPanel />;
     default:

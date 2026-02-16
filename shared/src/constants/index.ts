@@ -4,4 +4,7 @@ export * from './upgrades.js';
 export * from './ships.js';
 export * from './achievements.js';
 export * from './events.js';
+export * from './heroes.js';
+export * from './activities.js';
+export * from './items.js';
 export * from './formulas.js';

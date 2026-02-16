@@ -38,13 +38,16 @@ You start with nothing on the planet Terminus. Click to earn credits. Build stru
 | Psychological Influence | Second Foundation and mentalics | 100 Seldon Points |
 | Galactic Reunification | Galaxia and the final plan | 10,000 Seldon Points |
 
-Each era adds 14 buildings, ~42 upgrades, new ship types, and new trade routes. The entire UI re-themes with era-specific colors.
+Each era adds 14 buildings, ~42 upgrades, new ship types, new trade routes, 4 heroes, 10 activities, and 10 items. The entire UI re-themes with era-specific colors.
 
 ### Content Scale
 
 - 56 buildings with custom SVG art
 - 178 upgrades across 8 effect types
 - 4 ship types and 7 trade routes
+- 16 heroes (Foundation characters unlocked through story events)
+- 40 activities (20 research projects + 20 missions)
+- 40 items (20 permanent artifacts + 20 timed consumables)
 - 19 achievements
 - Colony map with pan/zoom visualization
 - In-game encyclopedia with Foundation lore
@@ -117,7 +120,7 @@ Copy `.env.example` to `server/.env` and customize as needed.
 
 ### Production
 
-Each building produces resources per second. Production is multiplied through a 5-layer chain: building upgrades, resource upgrades, achievement bonuses, prestige multiplier (2% per Seldon Point), and global multipliers.
+Each building produces resources per second. Production is multiplied through a 7-layer chain: building upgrades, resource upgrades, achievement bonuses, prestige multiplier (2% per Seldon Point), global multipliers, artifact bonuses (permanent), and active consumable boosts (timed).
 
 ### Costs
 
@@ -127,9 +130,18 @@ Building costs scale exponentially: `baseCost * 1.15^owned`. Bulk purchases use 
 
 Base value is 1 credit per click. Upgrades can add flat multipliers, per-building bonuses, building-scaling multipliers, and bonus resource yields. All modified by prestige multiplier.
 
+### Heroes & Research
+
+Heroes are Foundation characters (Salvor Hardin, Hober Mallow, Bayta Darell, Golan Trevize, etc.) unlocked through story events. Each hero can be assigned to one research project or mission at a time, spending non-credit resources (knowledge, influence, rawMaterials, nuclearTech) and returning inventory items after a timer completes.
+
+- **Research projects** produce **artifacts** -- permanent passive bonuses (e.g. +5% knowledge production, +3% global multiplier)
+- **Missions** produce **consumables** -- timed boosts you activate manually (e.g. 2x click value for 5 min, +50% credits for 10 min)
+- Heroes with matching specialization (research hero on research project) get a 15% duration reduction
+- Only one consumable can be active at a time; artifacts stack by quantity
+
 ### Prestige
 
-Once you've earned 1 billion lifetime credits, you can trigger a Seldon Crisis. This resets your buildings, upgrades, ships, and trade routes, but you earn Seldon Points (`150 * sqrt(lifetimeCredits / 1e9)`) that permanently boost all production. Achievements are preserved across prestiges.
+Once you've earned 1 billion lifetime credits, you can trigger a Seldon Crisis. This resets your buildings, upgrades, ships, trade routes, heroes, activities, and inventory, but you earn Seldon Points (`150 * sqrt(lifetimeCredits / 1e9)`) that permanently boost all production. Achievements are preserved across prestiges.
 
 ## License
 

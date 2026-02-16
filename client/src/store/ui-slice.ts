@@ -9,7 +9,8 @@ export type ActiveTab =
   | 'ships'
   | 'achievements'
   | 'encyclopedia'
-  | 'prestige';
+  | 'prestige'
+  | 'research';
 
 export type BuyAmount = 1 | 10 | 50 | 100 | 'max';
 

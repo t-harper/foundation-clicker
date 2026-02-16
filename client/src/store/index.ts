@@ -8,6 +8,10 @@ import { type AchievementSlice, createAchievementSlice } from './achievement-sli
 import { type PrestigeSlice, createPrestigeSlice } from './prestige-slice.js';
 import { type UISlice, createUISlice } from './ui-slice.js';
 import { type EventSlice, createEventSlice } from './event-slice.js';
+import { type TutorialSlice, createTutorialSlice } from './tutorial-slice.js';
+import { type HeroSlice, createHeroSlice } from './hero-slice.js';
+import { type ActivitySlice, createActivitySlice } from './activity-slice.js';
+import { type InventorySlice, createInventorySlice } from './inventory-slice.js';
 
 export type StoreState =
   & GameSlice
@@ -17,7 +21,11 @@ export type StoreState =
   & AchievementSlice
   & PrestigeSlice
   & UISlice
-  & EventSlice;
+  & EventSlice
+  & TutorialSlice
+  & HeroSlice
+  & ActivitySlice
+  & InventorySlice;
 
 export const useGameStore = create<StoreState>()((...a) => ({
   ...createGameSlice(...a),
@@ -28,6 +36,10 @@ export const useGameStore = create<StoreState>()((...a) => ({
   ...createPrestigeSlice(...a),
   ...createUISlice(...a),
   ...createEventSlice(...a),
+  ...createTutorialSlice(...a),
+  ...createHeroSlice(...a),
+  ...createActivitySlice(...a),
+  ...createInventorySlice(...a),
 }));
 
 // Re-export selectors for convenience
@@ -51,3 +63,7 @@ export type { AchievementSlice } from './achievement-slice.js';
 export type { PrestigeSlice } from './prestige-slice.js';
 export type { UISlice, ActiveTab, BuyAmount, Notification } from './ui-slice.js';
 export type { EventSlice } from './event-slice.js';
+export type { TutorialSlice } from './tutorial-slice.js';
+export type { HeroSlice } from './hero-slice.js';
+export type { ActivitySlice } from './activity-slice.js';
+export type { InventorySlice } from './inventory-slice.js';

@@ -9,6 +9,7 @@ import {
   AchievementsIcon,
   PrestigeIcon,
   EncyclopediaIcon,
+  ResearchIcon,
 } from '../../assets/svg/icons';
 
 interface SidebarTab {
@@ -22,6 +23,7 @@ const SIDEBAR_TABS: SidebarTab[] = [
   { key: 'colonyMap', label: 'Colony Map', icon: <ColonyMapIcon className="w-5 h-5" /> },
   { key: 'upgrades', label: 'Upgrades', icon: <UpgradesIcon className="w-5 h-5" /> },
   { key: 'ships', label: 'Ships', icon: <ShipsIcon className="w-5 h-5" /> },
+  { key: 'research', label: 'Research', icon: <ResearchIcon className="w-5 h-5" /> },
   { key: 'achievements', label: 'Achievements', icon: <AchievementsIcon className="w-5 h-5" /> },
   { key: 'prestige', label: 'Prestige', icon: <PrestigeIcon className="w-5 h-5" /> },
   { key: 'encyclopedia', label: 'Encyclopedia', icon: <EncyclopediaIcon className="w-5 h-5" /> },
@@ -40,6 +42,7 @@ export function Sidebar() {
             <button
               key={tab.key}
               type="button"
+              data-tutorial={`sidebar-${tab.key}`}
               onClick={() => setActiveTab(tab.key)}
               className={[
                 'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium',

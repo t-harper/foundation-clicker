@@ -98,7 +98,7 @@ function ResourceItem({ config }: { config: ResourceConfig }) {
       }
       position="bottom"
     >
-      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--era-surface)]/50 hover:bg-[var(--era-surface)] transition-colors cursor-default neon-border-subtle ${
+      <div data-tutorial={config.key === 'credits' ? 'resource-credits' : undefined} className={`flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--era-surface)]/50 hover:bg-[var(--era-surface)] transition-colors cursor-default neon-border-subtle ${
         buffStatus === 'buff' ? 'ring-1 ring-green-500/30' : ''
       }${buffStatus === 'debuff' ? 'ring-1 ring-red-500/30' : ''}`}>
         <span className={config.colorClass}>{config.icon}</span>
@@ -131,7 +131,7 @@ function ResourceItem({ config }: { config: ResourceConfig }) {
 
 export function ResourceBar() {
   return (
-    <div className="flex items-center gap-2 px-5 py-2 border-b border-[var(--era-surface)] bg-[var(--era-bg)]/90 overflow-x-auto">
+    <div data-tutorial="resource-bar" className="flex items-center gap-2 px-5 py-2 border-b border-[var(--era-surface)] bg-[var(--era-bg)]/90 overflow-x-auto">
       {RESOURCE_CONFIGS.map((config) => (
         <ResourceItem key={config.key} config={config} />
       ))}

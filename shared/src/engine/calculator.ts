@@ -2,6 +2,7 @@ import { GameState, Resources, ResourceKey, ResourceRate, BuildingState, EMPTY_R
 import { BUILDING_DEFINITIONS } from '../constants/buildings.js';
 import { UPGRADE_DEFINITIONS } from '../constants/upgrades.js';
 import { ACHIEVEMENT_DEFINITIONS } from '../constants/achievements.js';
+import { ITEM_DEFINITIONS } from '../constants/items.js';
 import { Era } from '../types/eras.js';
 import { ERA_UNLOCK_THRESHOLDS } from '../constants/eras.js';
 import { calcBuildingCost, calcBulkCost, calcMaxAffordable, BASE_CLICK_VALUE } from '../constants/formulas.js';
@@ -11,6 +12,7 @@ interface MultiplierSet {
   resourceMultipliers: Partial<Record<ResourceKey, number>>;
   globalMultiplier: number;
   achievementMultiplier: number;
+  artifactClickMultiplier: number;
 }
 
 function collectMultipliers(state: GameState): MultiplierSet {
@@ -69,7 +71,46 @@ function collectMultipliers(state: GameState): MultiplierSet {
     }
   }
 
-  return { buildingMultipliers, resourceMultipliers, globalMultiplier, achievementMultiplier };
+  // Inventory artifact bonuses (permanent, stacking by quantity)
+  let artifactClickMultiplier = 1;
+  if (state.inventory) {
+    for (const item of state.inventory) {
+      if (item.quantity <= 0) continue;
+      const def = ITEM_DEFINITIONS[item.itemKey];
+      if (!def || def.category !== 'artifact') continue;
+      const effect = def.effect;
+      for (let i = 0; i < item.quantity; i++) {
+        switch (effect.type) {
+          case 'resourceMultiplier':
+            resourceMultipliers[effect.resource] = (resourceMultipliers[effect.resource] ?? 1) * effect.multiplier;
+            break;
+          case 'globalMultiplier':
+            globalMultiplier *= effect.multiplier;
+            break;
+          case 'clickMultiplier':
+            artifactClickMultiplier *= effect.multiplier;
+            break;
+        }
+      }
+    }
+  }
+
+  // Active consumable effect (timed boost)
+  if (state.activeConsumable) {
+    if (now < state.activeConsumable.expiresAt) {
+      const effect = state.activeConsumable.effect;
+      switch (effect.type) {
+        case 'productionBuff':
+          resourceMultipliers[effect.resource] = (resourceMultipliers[effect.resource] ?? 1) * effect.multiplier;
+          break;
+        case 'globalProductionBuff':
+          globalMultiplier *= effect.multiplier;
+          break;
+      }
+    }
+  }
+
+  return { buildingMultipliers, resourceMultipliers, globalMultiplier, achievementMultiplier, artifactClickMultiplier };
 }
 
 /** Calculate total production rates per second for all resources */
@@ -257,6 +298,27 @@ export function calcClickValue(state: GameState): number {
       if (effect.effectType === 'clickBuff' || effect.effectType === 'clickDebuff') {
         clickMult *= effect.multiplier;
       }
+    }
+  }
+
+  // Artifact click multipliers (permanent, from inventory)
+  if (state.inventory) {
+    for (const item of state.inventory) {
+      if (item.quantity <= 0) continue;
+      const def = ITEM_DEFINITIONS[item.itemKey];
+      if (!def || def.category !== 'artifact') continue;
+      if (def.effect.type === 'clickMultiplier') {
+        for (let i = 0; i < item.quantity; i++) {
+          clickMult *= def.effect.multiplier;
+        }
+      }
+    }
+  }
+
+  // Active consumable click buff
+  if (state.activeConsumable && now < state.activeConsumable.expiresAt) {
+    if (state.activeConsumable.effect.type === 'clickBuff') {
+      clickMult *= state.activeConsumable.effect.multiplier;
     }
   }
 

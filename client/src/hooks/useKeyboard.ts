@@ -9,6 +9,7 @@ const TAB_SHORTCUTS: Record<string, ActiveTab> = {
   a: 'achievements',
   p: 'prestige',
   e: 'encyclopedia',
+  r: 'research',
 };
 
 const AMOUNT_SHORTCUTS: Record<string, BuyAmount> = {

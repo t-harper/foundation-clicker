@@ -148,6 +148,7 @@ export function ClickTarget() {
       <div className="relative">
         <button
           type="button"
+          data-tutorial="click-target"
           onClick={handleClick}
           className={[
             'relative w-40 h-40 rounded-full',

@@ -30,17 +30,24 @@ foundation-game/
         achievements.ts     # AchievementCondition (8 types), AchievementDefinition, AchievementState
         eras.ts             # Era enum (0-3), EraDefinition with theme colors
         prestige.ts         # PrestigeState, PrestigePreview, PrestigeHistoryEntry
-        api.ts              # API request/response types (12 interfaces)
+        heroes.ts           # HeroKey, HeroSpecialization, HeroDefinition, HeroState
+        activities.ts       # ActivityKey, ActivityType, ActivityDefinition, ActiveActivity, ActivityState
+        items.ts            # ItemKey, ItemCategory, ArtifactEffect, ConsumableEffect, ItemDefinition, InventoryItem, ActiveConsumable
+        events.ts           # EventDefinition (with heroReward), EventCondition, EventEffect, ActiveEffect
+        api.ts              # API request/response types (~20 interfaces)
       constants/
         buildings.ts        # BUILDING_DEFINITIONS -- 56 buildings across 4 eras (14 per era)
         upgrades.ts         # UPGRADE_DEFINITIONS -- 178 upgrades with effects/prerequisites
         ships.ts            # SHIP_DEFINITIONS (4 types), TRADE_ROUTE_DEFINITIONS (7 routes)
         achievements.ts     # ACHIEVEMENT_DEFINITIONS -- 19 achievements (milestones/clicks/eras)
         eras.ts             # ERA_DEFINITIONS with theme colors, ERA_UNLOCK_THRESHOLDS
+        heroes.ts           # HERO_DEFINITIONS -- 16 heroes across 4 eras (4 per era)
+        activities.ts       # ACTIVITY_DEFINITIONS -- 40 activities (5 research + 5 missions per era)
+        items.ts            # ITEM_DEFINITIONS -- 40 items (20 artifacts + 20 consumables)
         formulas.ts         # Cost scaling, Seldon Points, prestige multiplier, offline calc
       engine/
         tick.ts             # tick(), applyClick(), processTradeShips()
-        calculator.ts       # calcProductionRates(), calcClickValue(), canAfford(), etc.
+        calculator.ts       # calcProductionRates(), calcClickValue(), canAfford(), etc. + artifact/consumable bonuses
         offline.ts          # calculateOfflineEarnings(), applyOfflineEarnings()
   server/
     src/
@@ -51,6 +58,9 @@ foundation-game/
         migrate.ts          # Migration runner (manual registration pattern)
         migrations/
           001_initial_schema.ts
+          002_events.ts
+          003_pending_event.ts
+          004_heroes_activities_inventory.ts
         queries/             # Raw SQL query functions per entity
           user-queries.ts
           game-state-queries.ts
@@ -60,6 +70,10 @@ foundation-game/
           trade-route-queries.ts
           achievement-queries.ts
           prestige-queries.ts
+          event-queries.ts
+          hero-queries.ts
+          activity-queries.ts
+          inventory-queries.ts
       middleware/
         auth.ts             # JWT Bearer token extraction and verification
         error-handler.ts    # Express error middleware (ValidationError, AuthenticationError, NotFoundError)
@@ -72,6 +86,9 @@ foundation-game/
         trade.ts
         prestige.ts
         achievements.ts
+        heroes.ts           # GET /api/heroes
+        activities.ts       # GET, POST start, POST collect
+        inventory.ts        # GET, POST use consumable
       services/             # Business logic layer
         auth.ts             # register (bcrypt 10 rounds), login, JWT (7-day expiry)
         game-state.ts       # buildGameState, loadGameState, saveGameState, handleClick, projectResources
@@ -81,6 +98,9 @@ foundation-game/
         trade.ts            # unlockTradeRoute (with affordability check)
         prestige.ts         # previewPrestige, triggerPrestige, getPrestigeHistory
         achievement.ts      # checkAchievements (evaluates all condition types)
+        hero.ts             # getHeroes, unlockHero
+        activity.ts         # getActivities, startActivity, collectActivity
+        inventory.ts        # getInventory, useConsumable
       ws/
         sync.ts             # WebSocket server -- pushes buildings/upgrades at 2 Hz
   client/
@@ -94,10 +114,13 @@ foundation-game/
         ships.ts
         prestige.ts
         achievements.ts
+        heroes.ts           # getHeroes
+        activities.ts       # getActivities, startActivity, collectActivity
+        inventory.ts        # getInventory, useConsumable
       assets/svg/
         buildings/          # 56 building art SVG components + GenericBuildingArt fallback
         ships/              # 4 ship art SVG components
-        icons/              # 19 UI icon SVG components (resources, tabs, actions)
+        icons/              # 20 UI icon SVG components (resources, tabs, actions)
         backgrounds/        # GalaxyMap, StarField, TerminusSkyline, SeldonHologram
       components/
         buildings/          # BuildingCard, BuildingPanel, BuyAmountSelector
@@ -110,12 +133,13 @@ foundation-game/
         colony-map/         # ColonyMapPanel (pan/zoom SVG), MapBuildingSlot, SeldonVaultCenter
         layout/             # GameLayout, Header, Sidebar, EraTransition
         common/             # Button, Modal, NotificationArea, NumberDisplay, ProgressBar, TabGroup, Tooltip
+        research/           # ResearchPanel, ActivityCard, HeroCard, InventoryPanel, ItemCard
         settings/           # SettingsModal (stats, export/import save, hard reset)
       hooks/
         useGameEngine.ts    # RAF loop -- runs shared tick() each frame
         useAutoSave.ts      # Interval-based save to server (30s default)
         useAchievementChecker.ts  # Polls /achievements/check every 5s
-        useKeyboard.ts      # Tab shortcuts (b/u/s/a/p/e), buy amounts (1/2/3/4/m), Esc
+        useKeyboard.ts      # Tab shortcuts (b/u/s/a/p/e/r), buy amounts (1/2/3/4/m), Esc
         useNotifications.ts # Auto-dismiss (3s) notification wrapper
         useWebSocketSync.ts # WebSocket sync with exponential backoff reconnection
       pages/
@@ -129,6 +153,9 @@ foundation-game/
         ship-slice.ts       # Ship state array + build/send/recall actions
         achievement-slice.ts
         prestige-slice.ts   # Seldon points, prestige count/multiplier
+        hero-slice.ts       # Hero state array + setHeroes, unlockHero
+        activity-slice.ts   # Activity state/active arrays + start/collect actions
+        inventory-slice.ts  # Inventory items, active consumable + use/clear actions
         ui-slice.ts         # Active tab, buy amount, settings modal, notifications, save state
         selectors.ts        # selectGameState(), selectProductionRates(), selectClickValue(), etc.
       styles/
@@ -170,7 +197,7 @@ npm run typecheck         # Type-check all packages sequentially
 
 ### Game Data Philosophy
 
-All game content (buildings, upgrades, ships, trade routes, achievements, eras) is defined as TypeScript constants in `shared/src/constants/`. The database only stores player-specific state (counts, purchase flags, timestamps). There are no content tables in the DB.
+All game content (buildings, upgrades, ships, trade routes, achievements, eras, heroes, activities, items) is defined as TypeScript constants in `shared/src/constants/`. The database only stores player-specific state (counts, purchase flags, timestamps). There are no content tables in the DB.
 
 ## Key Files
 
@@ -188,7 +215,11 @@ All game content (buildings, upgrades, ships, trade routes, achievements, eras) 
 | `server/src/services/game-state.ts` | Server game logic: load, save, click, reset, resource projection |
 | `server/src/middleware/auth.ts` | JWT verification middleware |
 | `server/src/ws/sync.ts` | WebSocket server for real-time state push |
-| `client/src/store/index.ts` | Zustand store assembly from all 7 slices |
+| `shared/src/constants/heroes.ts` | 16 hero definitions (4 per era) with specialization and duration bonuses |
+| `shared/src/constants/activities.ts` | 40 activity definitions (5 research + 5 missions per era) |
+| `shared/src/constants/items.ts` | 40 item definitions (20 artifacts + 20 consumables) |
+| `server/src/services/activity.ts` | Activity start/collect logic with hero assignment, cost deduction, timer validation |
+| `client/src/store/index.ts` | Zustand store assembly from all 10 slices |
 | `client/src/store/selectors.ts` | Derived state: `selectGameState()`, production rates, click value, ROI analysis |
 | `client/src/hooks/useGameEngine.ts` | RAF loop driving the client-side tick |
 | `client/src/hooks/useAutoSave.ts` | 30-second auto-save interval |
@@ -211,6 +242,12 @@ SQLite via better-sqlite3. File at `./foundation.db` (configurable via `DB_PATH`
 | `trade_routes` | Per-user unlocked trade routes. Composite PK `(user_id, route_key)`. |
 | `achievements` | Per-user unlocked achievements. Composite PK `(user_id, achievement_key)`. Stores `unlocked_at`. |
 | `prestige_history` | Audit log of prestige events with credits/SP/era at reset time. |
+| `events` | Per-user event state. Composite PK `(user_id, event_key)`. Stores `times_seen`, `last_choice`. |
+| `heroes` | Per-user hero unlocks. Composite PK `(user_id, hero_key)`. Stores `unlocked_at`. |
+| `activities` | Per-user activity completion counts. Composite PK `(user_id, activity_key)`. Stores `times_completed`. |
+| `active_activities` | Currently running hero assignments. Composite PK `(user_id, activity_key)`. Stores hero, start/complete times. |
+| `inventory` | Per-user item quantities. Composite PK `(user_id, item_key)`. Stores `quantity`. |
+| `active_consumable` | At most one active consumable per user. PK = `user_id`. Stores item key, start/expire times. |
 
 ### Conventions
 
@@ -278,6 +315,24 @@ All endpoints except auth require a `Bearer` token in the `Authorization` header
 | GET | `/api/achievements` | List user achievements |
 | POST | `/api/achievements/check` | Check and unlock new achievements |
 
+### Heroes
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/heroes` | List user heroes (with unlock state) |
+
+### Activities
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/activities` | List activity states + active activities |
+| POST | `/api/activities/start` | Start activity (body: `{ activityKey, heroKey }`) |
+| POST | `/api/activities/collect` | Collect completed activity (body: `{ activityKey }`) |
+
+### Inventory
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/inventory` | List inventory items + active consumable |
+| POST | `/api/inventory/use` | Use a consumable (body: `{ itemKey }`) |
+
 ### WebSocket
 | Path | Description |
 |------|-------------|
@@ -296,14 +351,16 @@ The client runs `useGameEngine`, a React hook that starts a `requestAnimationFra
 
 ### Production Rate Calculation (`calcProductionRates`)
 
-For each building owned, sum `count * baseProduction` per resource. Then apply a 5-layer multiplier chain:
+For each building owned, sum `count * baseProduction` per resource. Then apply a 7-layer multiplier chain:
 1. **Building multipliers** from purchased upgrades (per-building, e.g. "Efficient Farming" doubles hydroponicsFarm output)
 2. **Resource multipliers** from upgrades (per-resource-type, e.g. all credits +50%)
 3. **Achievement multipliers** (global or per-resource)
 4. **Prestige multiplier** (`1 + totalSeldonPoints * 0.02`)
 5. **Global multiplier** from upgrades (e.g. "Second Foundation Revealed" = 2x all)
+6. **Artifact bonuses** from inventory items (permanent per-resource or global multipliers, stacking by quantity)
+7. **Active consumable** timed buffs (per-resource or global production boosts with expiry)
 
-Final rate = `baseRate * buildingMult * resourceMult * achievementMult * prestigeMult * globalMult`
+Final rate = `baseRate * buildingMult * resourceMult * achievementMult * prestigeMult * globalMult * artifactMult * consumableMult`
 
 ### Cost Formulas (`formulas.ts`)
 
@@ -321,7 +378,7 @@ Base click value = 1 credit, modified by 4 upgrade effect types:
 3. **`clickBuildingScale`**: Multiplier that scales with a specific building's count
 4. **`clickTotalBuildingScale`**: Multiplier that scales with total building count
 
-Additionally, `clickResourceYield` upgrades grant bonus non-credit resources per click (as a fraction of the credit click value). All click values are further multiplied by the prestige multiplier and achievement click multipliers.
+Additionally, `clickResourceYield` upgrades grant bonus non-credit resources per click (as a fraction of the credit click value). All click values are further multiplied by the prestige multiplier, achievement click multipliers, artifact `clickMultiplier` bonuses, and active consumable `clickBuff` effects.
 
 ### Upgrade Effect Types
 
@@ -366,6 +423,9 @@ The store uses the **slice pattern** -- each domain has its own `StateCreator` f
 | `achievement-slice` | achievements (AchievementState[]) | setAchievements, unlockAchievement |
 | `prestige-slice` | seldonPoints, totalSeldonPoints, prestigeCount, prestigeMultiplier | setPrestige, applyPrestige |
 | `ui-slice` | activeTab, buyAmount, showSettings, showOfflineModal, offlineEarnings, notifications, isSaving | setActiveTab, setBuyAmount, toggleSettings, showOfflineEarnings, addNotification, setIsSaving |
+| `hero-slice` | heroes (HeroState[]) | setHeroes, unlockHero |
+| `activity-slice` | activities (ActivityState[]), activeActivities (ActiveActivity[]) | setActivities, setActiveActivities, addActiveActivity, removeActiveActivity, updateActivityCompletion |
+| `inventory-slice` | inventory (InventoryItem[]), activeConsumable (ActiveConsumable \| null) | setInventory, setActiveConsumable, clearExpiredConsumable |
 
 ### Selectors (`selectors.ts`)
 
@@ -409,7 +469,7 @@ interface BuildingArtProps {
 |----------|-------|-------|
 | Building art | 56 + 1 fallback + 2 legacy | All 56 BuildingKeys have custom art |
 | Ship art | 4 | All 4 ShipTypes have custom art |
-| Icons | 19 | 5 resource, 8 navigation, 6 utility |
+| Icons | 20 | 5 resource, 9 navigation, 6 utility |
 | Backgrounds | 4 | StarField, TerminusSkyline, GalaxyMap, SeldonHologram |
 
 ## Era Theming
@@ -459,13 +519,32 @@ Era-specific colors are applied via CSS custom properties set on `GameLayout`:
 3. **Reward types** (optional): `clickMultiplier`, `globalMultiplier`, `resourceMultiplier`.
 4. **Icon**: Reference an existing icon key or add a new one.
 
+### Adding a New Hero
+
+1. **Definition**: Add an entry to `HERO_DEFINITIONS` in `shared/src/constants/heroes.ts` with key, name, title, description, era, specialization (`research` | `mission`), and durationBonus (e.g. 0.85 = 15% faster).
+2. **Event link**: Add `heroReward: 'yourHeroKey'` to the triggering event in `shared/src/constants/events.ts`. The hero unlocks when the player makes their choice in that event.
+3. **No DB changes needed** -- hero rows are created via `unlockHero()` when the event fires.
+
+### Adding a New Activity
+
+1. **Definition**: Add an entry to `ACTIVITY_DEFINITIONS` in `shared/src/constants/activities.ts` with key, name, description, era, type (`research` | `mission`), cost (`Partial<Resources>`), durationSeconds, rewards (`ItemReward[]`), repeatable, and maxCompletions.
+2. **Item rewards**: Reference item keys from `ITEM_DEFINITIONS`. Each reward has `{ itemKey, quantity }`.
+3. **No other changes needed** -- the Research panel displays all activities dynamically.
+
+### Adding a New Item
+
+1. **Definition**: Add an entry to `ITEM_DEFINITIONS` in `shared/src/constants/items.ts` with key, name, description, era, category (`artifact` | `consumable`), and effect.
+2. **Artifact effects**: `resourceMultiplier` (per-resource), `globalMultiplier`, `clickMultiplier` -- permanent, stacking by quantity.
+3. **Consumable effects**: `productionBuff` (per-resource), `globalProductionBuff`, `clickBuff` -- timed, with `durationSeconds`.
+4. **No other changes needed** -- calculator.ts iterates all inventory items dynamically.
+
 ### Adding a New Era
 
 This is a larger change:
 1. Add value to `Era` enum in `shared/src/types/eras.ts`.
 2. Add definition to `ERA_DEFINITIONS` and threshold to `ERA_UNLOCK_THRESHOLDS` in `shared/src/constants/eras.ts` (include theme colors).
 3. Update `calcCurrentEra()` in `shared/src/engine/calculator.ts`.
-4. Add buildings, upgrades, ships, and trade routes for the new era.
+4. Add buildings, upgrades, ships, trade routes, heroes, activities, and items for the new era.
 5. Add era CSS variables in `client/src/styles/index.css` under a new `[data-era="N"]` selector.
 
 ## Environment Variables

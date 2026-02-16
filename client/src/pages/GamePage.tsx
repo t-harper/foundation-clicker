@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { loadGame } from '../api';
 import { useGameStore } from '../store';
-import { useGameEngine, useWebSocketSync } from '../hooks';
+import { useGameEngine, useTutorial, useWebSocketSync } from '../hooks';
 import { GameLayout } from '../components/layout';
 import { EventModal } from '../components/events';
+import { TutorialOverlay } from '../components/tutorial';
 
 export function GamePage() {
   const isLoaded = useGameStore((s) => s.isLoaded);
@@ -15,9 +16,10 @@ export function GamePage() {
   const offlineSeconds = useGameStore((s) => s.offlineSeconds);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Start the game engine and WebSocket sync
+  // Start the game engine, WebSocket sync, and tutorial
   useGameEngine();
   useWebSocketSync();
+  useTutorial();
 
   // Load game state on mount
   useEffect(() => {
@@ -95,6 +97,7 @@ export function GamePage() {
     <>
       <GameLayout />
       <EventModal />
+      <TutorialOverlay />
 
       {/* Offline earnings placeholder */}
       {showOfflineModal && (

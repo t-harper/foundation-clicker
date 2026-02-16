@@ -1,0 +1,132 @@
+import type { ActiveTab } from '../../store';
+
+export type TutorialStepType = 'spotlight' | 'milestone';
+export type AdvanceMode = 'auto' | 'acknowledge';
+
+export interface TutorialStep {
+  id: number;
+  title: string;
+  message: string;
+  type: TutorialStepType;
+  /** data-tutorial attribute value on the target element (for spotlight positioning) */
+  target?: string;
+  /** Which tab to auto-navigate to before showing this step */
+  requiredTab?: ActiveTab;
+  advanceMode: AdvanceMode;
+  /** Label for the acknowledge button (only for acknowledge steps) */
+  acknowledgeLabel?: string;
+  /** Tooltip placement relative to target */
+  placement?: 'top' | 'bottom' | 'left' | 'right';
+}
+
+export const TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    id: 0,
+    title: 'Welcome to Terminus',
+    message:
+      'I am Hari Seldon. I have foreseen what is to come \u2014 the fall of the Galactic Empire and thirty thousand years of darkness. But there is hope. Here, on Terminus, you will build the Foundation. Click the Vault to begin generating credits.',
+    type: 'spotlight',
+    target: 'click-target',
+    advanceMode: 'auto',
+    placement: 'right',
+  },
+  {
+    id: 1,
+    title: 'Your Resources',
+    message:
+      'Good. You can see your credits accumulating here. Each resource type shows its current total and production rate. Keep clicking \u2014 you\u2019ll need credits to construct your first building.',
+    type: 'spotlight',
+    target: 'resource-bar',
+    advanceMode: 'acknowledge',
+    acknowledgeLabel: 'Continue',
+    placement: 'bottom',
+  },
+  {
+    id: 2,
+    title: 'Build a Shelter',
+    message:
+      'Now, construct a Survival Shelter. Buildings generate resources passively \u2014 even when you are not clicking. Open the Buildings tab if you haven\u2019t already.',
+    type: 'spotlight',
+    target: 'building-survivalShelter',
+    requiredTab: 'buildings',
+    advanceMode: 'auto',
+    placement: 'left',
+  },
+  {
+    id: 3,
+    title: 'Passive Income',
+    message:
+      'Excellent. Notice the +/s rate next to your credits \u2014 that is passive income from your Shelter. The Foundation must be self-sustaining. Buy more buildings to increase it.',
+    type: 'spotlight',
+    target: 'resource-credits',
+    advanceMode: 'acknowledge',
+    acknowledgeLabel: 'Continue',
+    placement: 'bottom',
+  },
+  {
+    id: 4,
+    title: 'Unlock New Buildings',
+    message:
+      'Each building type unlocks when you own enough of the previous one. Build 3 Survival Shelters to unlock new structures for the colony.',
+    type: 'spotlight',
+    target: 'building-survivalShelter',
+    requiredTab: 'buildings',
+    advanceMode: 'auto',
+    placement: 'left',
+  },
+  {
+    id: 5,
+    title: 'Discover Upgrades',
+    message:
+      'New buildings are available. Now, explore Upgrades \u2014 permanent enhancements to your production and clicking power. Every credit spent on upgrades pays for itself many times over.',
+    type: 'spotlight',
+    target: 'sidebar-upgrades',
+    advanceMode: 'auto',
+    placement: 'right',
+  },
+  {
+    id: 6,
+    title: 'Buy an Upgrade',
+    message:
+      'Purchase \u201CImproved Tools\u201D to double your click value. Upgrades are one-time investments with powerful, lasting effects. This is the Foundation\u2019s way \u2014 technology as power.',
+    type: 'spotlight',
+    target: 'upgrade-improvedTools',
+    requiredTab: 'upgrades',
+    advanceMode: 'auto',
+    placement: 'left',
+  },
+  {
+    id: 7,
+    title: 'The Path Forward',
+    message:
+      'You are on the right path. Continue building, upgrading, and expanding. When you have accumulated enough lifetime credits, the first Seldon Crisis will become available on the Prestige tab. It will reset your progress \u2014 but grant permanent Seldon Points that multiply all future production. That is how the Foundation endures.',
+    type: 'spotlight',
+    advanceMode: 'acknowledge',
+    acknowledgeLabel: 'I understand',
+    placement: 'bottom',
+  },
+  {
+    id: 8,
+    title: 'Approaching Prestige',
+    message:
+      'Seldon: You are halfway to your first Seldon Crisis. The Plan proceeds as I have foreseen.',
+    type: 'milestone',
+    advanceMode: 'auto',
+  },
+  {
+    id: 9,
+    title: 'Prestige Available',
+    message:
+      'Seldon: The first Seldon Crisis is now available. Open the Prestige tab to advance the Foundation.',
+    type: 'milestone',
+    advanceMode: 'auto',
+  },
+  {
+    id: 10,
+    title: 'First Era Change',
+    message:
+      'Seldon: The Foundation enters the Trading Expansion era. My work here is done \u2014 but the Plan continues.',
+    type: 'milestone',
+    advanceMode: 'auto',
+  },
+];

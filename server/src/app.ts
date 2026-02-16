@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import authRouter from './routes/auth.js';
 import gameRouter from './routes/game.js';
+import heroesRouter from './routes/heroes.js';
+import activitiesRouter from './routes/activities.js';
+import inventoryRouter from './routes/inventory.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 const app = express();
@@ -17,6 +20,9 @@ app.use(express.json());
 // Routes already define their full paths (e.g. /api/auth/login)
 app.use(authRouter);
 app.use(gameRouter);
+app.use(heroesRouter);
+app.use(activitiesRouter);
+app.use(inventoryRouter);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

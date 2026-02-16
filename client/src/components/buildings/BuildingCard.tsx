@@ -113,7 +113,7 @@ export function BuildingCard({ buildingState, isBestValue = false }: BuildingCar
   if (!buildingState.isUnlocked) return null;
 
   return (
-    <div className={[
+    <div data-tutorial={`building-${buildingState.buildingKey}`} className={[
       'holo-card neon-border-hover flex items-start gap-4 p-4 rounded-lg border transition-colors',
       isBestValue
         ? 'border-[var(--era-accent)]/40 bg-[var(--era-surface)]/40 neon-border-best-value'

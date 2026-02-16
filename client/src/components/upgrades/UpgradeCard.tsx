@@ -116,6 +116,7 @@ export function UpgradeCard({ upgradeState, isBestValue = false }: UpgradeCardPr
 
   return (
     <div
+      data-tutorial={`upgrade-${upgradeState.upgradeKey}`}
       className={[
         'p-4 rounded-lg border transition-colors',
         isPurchased

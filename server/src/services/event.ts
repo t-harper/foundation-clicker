@@ -21,6 +21,7 @@ import {
 } from '../db/queries/event-queries.js';
 import { buildGameState, projectResources } from './game-state.js';
 import { updateGameState } from '../db/queries/game-state-queries.js';
+import { unlockHero } from './hero.js';
 import {
   ValidationError,
   NotFoundError,
@@ -213,6 +214,11 @@ export function handleEventChoice(
         expiresAt,
       });
     }
+  }
+
+  // Unlock hero if this event has a heroReward
+  if (def.heroReward) {
+    unlockHero(userId, def.heroReward);
   }
 
   return { resources, newEffects };
