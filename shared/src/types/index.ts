@@ -8,3 +8,4 @@ export * from './prestige.js';
 export * from './events.js';
 export * from './game-state.js';
 export * from './api.js';
+export * from './ws-messages.js';

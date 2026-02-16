@@ -1,24 +1,20 @@
 import type {
-  CheckEventsResponse,
-  ChooseEventRequest,
   ChooseEventResponse,
   GetActiveEffectsResponse,
   GetEventHistoryResponse,
 } from '@foundation/shared';
-import { apiClient } from './client';
+import { wsManager } from '../ws';
 
-export async function checkEvents(): Promise<CheckEventsResponse> {
-  return apiClient.post<CheckEventsResponse>('/events/check');
-}
-
-export async function chooseEvent(data: ChooseEventRequest): Promise<ChooseEventResponse> {
-  return apiClient.post<ChooseEventResponse>('/events/choose', data);
+// Event checking is now server-pushed via WebSocket.
+// chooseEvent is still used when the player makes a choice.
+export async function chooseEvent(data: { eventKey: string; choiceIndex: number }): Promise<ChooseEventResponse> {
+  return wsManager.send<ChooseEventResponse>({ type: 'chooseEvent', eventKey: data.eventKey, choiceIndex: data.choiceIndex });
 }
 
 export async function getActiveEffects(): Promise<GetActiveEffectsResponse> {
-  return apiClient.get<GetActiveEffectsResponse>('/events/active-effects');
+  return wsManager.send<GetActiveEffectsResponse>({ type: 'getActiveEffects' });
 }
 
 export async function getEventHistory(): Promise<GetEventHistoryResponse> {
-  return apiClient.get<GetEventHistoryResponse>('/events/history');
+  return wsManager.send<GetEventHistoryResponse>({ type: 'getEventHistory' });
 }

@@ -1,10 +1,7 @@
-import type { AchievementState, CheckAchievementsResponse } from '@foundation/shared';
-import { apiClient } from './client.js';
+import type { CheckAchievementsResponse } from '@foundation/shared';
 
-export async function getAchievements(): Promise<AchievementState[]> {
-  return apiClient.get<AchievementState[]>('/achievements');
-}
-
+// Achievements are now server-pushed via WebSocket.
+// This function is kept for API surface compatibility but should not be called.
 export async function checkAchievements(): Promise<CheckAchievementsResponse> {
-  return apiClient.post<CheckAchievementsResponse>('/achievements/check');
+  return { newAchievements: [] };
 }

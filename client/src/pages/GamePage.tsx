@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { loadGame } from '../api';
 import { useGameStore } from '../store';
-import { useGameEngine, useAutoSave, useAchievementChecker, useWebSocketSync, useEventChecker } from '../hooks';
+import { useGameEngine, useWebSocketSync } from '../hooks';
 import { GameLayout } from '../components/layout';
 import { EventModal } from '../components/events';
 
@@ -15,12 +15,9 @@ export function GamePage() {
   const offlineSeconds = useGameStore((s) => s.offlineSeconds);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Start the game engine, auto-save, achievement checker, WebSocket sync, and event checker
+  // Start the game engine and WebSocket sync
   useGameEngine();
-  useAutoSave();
-  useAchievementChecker();
   useWebSocketSync();
-  useEventChecker();
 
   // Load game state on mount
   useEffect(() => {

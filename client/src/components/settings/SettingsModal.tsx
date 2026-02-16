@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useGameStore, selectGameStats, selectGameState } from '../../store';
-import { resetGame, saveGame, loadGame, getStats } from '../../api';
+import { resetGame, getStats } from '../../api';
+import { wsManager } from '../../ws';
 import type { GameStats } from '@foundation/shared';
 import { Modal, Button } from '../common';
 import { formatNumber, formatDuration } from '../../utils/format';
@@ -46,7 +47,8 @@ export function SettingsModal({ isOpen }: SettingsModalProps) {
     setIsSaving(true);
     try {
       const state = useGameStore.getState();
-      await saveGame({
+      wsManager.fire({
+        type: 'saveState',
         resources: state.resources,
         lastTickAt: state.lastTickAt,
         totalPlayTime: state.totalPlayTime,
@@ -67,10 +69,8 @@ export function SettingsModal({ isOpen }: SettingsModalProps) {
     if (resetting) return;
     setResetting(true);
     try {
-      await resetGame();
-      // Reload game state from server
-      const gameData = await loadGame();
-      setGameState(gameData.gameState);
+      const result = await resetGame();
+      setGameState(result.gameState);
       setShowResetConfirm(false);
       toggleSettings();
       addNotification({

@@ -1,24 +1,22 @@
-export { apiClient } from './client.js';
+export { apiClient } from './client';
 
-export { register, login, getMe } from './auth.js';
+export { register, login, getMe } from './auth';
 
-export { loadGame, saveGame, click, resetGame, getStats } from './game.js';
+export { loadGame, click, saveGame, resetGame, getStats } from './game';
 
-export { getBuildings, buyBuilding, sellBuilding } from './buildings.js';
+export { buyBuilding, sellBuilding } from './buildings';
 
-export { getUpgrades, buyUpgrade } from './upgrades.js';
+export { buyUpgrade } from './upgrades';
 
 export {
-  getShips,
   buildShip,
   sendShip,
   recallShip,
-  getTradeRoutes,
   unlockTradeRoute,
-} from './ships.js';
+} from './ships';
 
-export { getAchievements, checkAchievements } from './achievements.js';
+export { checkAchievements } from './achievements';
 
-export { previewPrestige, triggerPrestige, getPrestigeHistory } from './prestige.js';
+export { previewPrestige, triggerPrestige, getPrestigeHistory } from './prestige';
 
-export { checkEvents, chooseEvent, getActiveEffects, getEventHistory } from './events.js';
+export { chooseEvent, getActiveEffects, getEventHistory } from './events';

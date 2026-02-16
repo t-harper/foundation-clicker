@@ -215,6 +215,16 @@ export function saveGameState(userId: number, data: SaveGameRequest): void {
     throw new ValidationError('Resources are required');
   }
 
+  // Stale-save guard: if a mutation has updated resources more recently
+  // than this save's tick timestamp, only save counters (not resources)
+  if (row.last_tick_at != null && data.lastTickAt < row.last_tick_at) {
+    updateGameState(userId, {
+      total_play_time: data.totalPlayTime,
+      total_clicks: data.totalClicks,
+    });
+    return;
+  }
+
   saveResources(userId, data.resources);
   updateGameState(userId, {
     last_tick_at: data.lastTickAt,

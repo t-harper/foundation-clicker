@@ -1,36 +1,18 @@
 import type { ShipState, TradeRouteState } from '@foundation/shared';
-import { apiClient } from './client.js';
-
-export async function getShips(): Promise<ShipState[]> {
-  return apiClient.get<ShipState[]>('/ships');
-}
+import { wsManager } from '../ws';
 
 export async function buildShip(shipType: string, name: string): Promise<ShipState> {
-  return apiClient.post<ShipState>('/ships/build', {
-    shipType,
-    name,
-  });
+  return wsManager.send<ShipState>({ type: 'buildShip', shipType, name });
 }
 
 export async function sendShip(shipId: string, tradeRouteKey: string): Promise<ShipState> {
-  return apiClient.post<ShipState>('/ships/send', {
-    shipId,
-    tradeRouteKey,
-  });
+  return wsManager.send<ShipState>({ type: 'sendShip', shipId, tradeRouteKey });
 }
 
 export async function recallShip(shipId: string): Promise<ShipState> {
-  return apiClient.post<ShipState>('/ships/recall', {
-    shipId,
-  });
-}
-
-export async function getTradeRoutes(): Promise<TradeRouteState[]> {
-  return apiClient.get<TradeRouteState[]>('/trade-routes');
+  return wsManager.send<ShipState>({ type: 'recallShip', shipId });
 }
 
 export async function unlockTradeRoute(routeKey: string): Promise<TradeRouteState> {
-  return apiClient.post<TradeRouteState>('/trade-routes/unlock', {
-    routeKey,
-  });
+  return wsManager.send<TradeRouteState>({ type: 'unlockTradeRoute', routeKey });
 }

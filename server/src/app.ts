@@ -2,13 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import authRouter from './routes/auth.js';
 import gameRouter from './routes/game.js';
-import buildingsRouter from './routes/buildings.js';
-import upgradesRouter from './routes/upgrades.js';
-import shipsRouter from './routes/ships.js';
-import tradeRouter from './routes/trade.js';
-import prestigeRouter from './routes/prestige.js';
-import achievementsRouter from './routes/achievements.js';
-import eventsRouter from './routes/events.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 const app = express();
@@ -24,13 +17,6 @@ app.use(express.json());
 // Routes already define their full paths (e.g. /api/auth/login)
 app.use(authRouter);
 app.use(gameRouter);
-app.use(buildingsRouter);
-app.use(upgradesRouter);
-app.use(shipsRouter);
-app.use(tradeRouter);
-app.use(prestigeRouter);
-app.use(achievementsRouter);
-app.use(eventsRouter);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

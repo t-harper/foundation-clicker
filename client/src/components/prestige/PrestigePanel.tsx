@@ -57,10 +57,7 @@ export function PrestigePanel() {
     setLoadingPrestige(true);
     try {
       const result = await triggerPrestige();
-      // Reload game state from the server after prestige
-      const { loadGame } = await import('../../api');
-      const gameData = await loadGame();
-      setGameState(gameData.gameState);
+      setGameState(result.gameState);
 
       setShowConfirm(false);
       addNotification({

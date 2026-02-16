@@ -2,17 +2,18 @@ import type {
   PrestigePreview,
   PrestigeResponse,
   PrestigeHistoryEntry,
+  GameState,
 } from '@foundation/shared';
-import { apiClient } from './client.js';
+import { wsManager } from '../ws';
 
 export async function previewPrestige(): Promise<PrestigePreview> {
-  return apiClient.get<PrestigePreview>('/prestige/preview');
+  return wsManager.send<PrestigePreview>({ type: 'getPrestigePreview' });
 }
 
-export async function triggerPrestige(): Promise<PrestigeResponse> {
-  return apiClient.post<PrestigeResponse>('/prestige/trigger');
+export async function triggerPrestige(): Promise<PrestigeResponse & { gameState: GameState }> {
+  return wsManager.send<PrestigeResponse & { gameState: GameState }>({ type: 'triggerPrestige' });
 }
 
 export async function getPrestigeHistory(): Promise<PrestigeHistoryEntry[]> {
-  return apiClient.get<PrestigeHistoryEntry[]>('/prestige/history');
+  return wsManager.send<PrestigeHistoryEntry[]>({ type: 'getPrestigeHistory' });
 }

@@ -51,5 +51,17 @@ export const OFFLINE_MULTIPLIER = 0.5;
 /** Max offline time in seconds (24 hours) */
 export const MAX_OFFLINE_SECONDS = 86400;
 
-/** Auto-save interval in milliseconds */
+/** Auto-save interval in milliseconds (legacy REST, kept for reference) */
 export const AUTO_SAVE_INTERVAL = 30000;
+
+/** WebSocket save interval in milliseconds */
+export const WS_SAVE_INTERVAL = 2000;
+
+/** WebSocket sync interval in milliseconds (server push of buildings/upgrades/ships) */
+export const WS_SYNC_INTERVAL = 5000;
+
+/** WebSocket achievement check interval in milliseconds */
+export const WS_ACHIEVEMENT_CHECK_INTERVAL = 5000;
+
+/** WebSocket event check interval in milliseconds */
+export const WS_EVENT_CHECK_INTERVAL = 10000;
