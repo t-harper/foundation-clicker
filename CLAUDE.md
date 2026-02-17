@@ -57,13 +57,14 @@ foundation-game/
         heroes.ts           # HeroKey, HeroSpecialization, HeroDefinition, HeroState
         activities.ts       # ActivityKey, ActivityType, ActivityDefinition, ActiveActivity, ActivityState
         items.ts            # ItemKey, ItemCategory, ArtifactEffect, ConsumableEffect, ItemDefinition, InventoryItem, ActiveConsumable
-        events.ts           # EventDefinition (with heroReward), EventCondition, EventEffect, ActiveEffect
+        events.ts           # EventDefinition (with heroReward, guaranteed), EventCondition, EventEffect, ActiveEffect, EventChainDefinition
         api.ts              # API request/response types (~20 interfaces)
       constants/
         buildings.ts        # BUILDING_DEFINITIONS -- 56 buildings across 4 eras (14 per era)
         upgrades.ts         # UPGRADE_DEFINITIONS -- 178 upgrades with effects/prerequisites
         ships.ts            # SHIP_DEFINITIONS (4 types), TRADE_ROUTE_DEFINITIONS (7 routes)
-        achievements.ts     # ACHIEVEMENT_DEFINITIONS -- 19 achievements (milestones/clicks/eras)
+        achievements.ts     # ACHIEVEMENT_DEFINITIONS -- 19+ achievements (milestones/clicks/eras/chronicles)
+        events.ts           # EVENT_DEFINITIONS -- ~246 events (206 probabilistic + 40 chronicle), EVENT_CHAIN_DEFINITIONS
         eras.ts             # ERA_DEFINITIONS with theme colors, ERA_UNLOCK_THRESHOLDS
         heroes.ts           # HERO_DEFINITIONS -- 16 heroes across 4 eras (4 per era)
         activities.ts       # ACTIVITY_DEFINITIONS -- 40 activities (5 research + 5 missions per era)
@@ -154,7 +155,8 @@ foundation-game/
         upgrades/           # UpgradeCard, UpgradePanel
         ships/              # ShipCard, ShipPanel, TradeRouteManager
         achievements/       # AchievementCard, AchievementPanel
-        prestige/           # PrestigePanel (preview, two-stage confirm, history)
+        prestige/           # PrestigePanel (preview, two-stage confirm, history), ChainProgressSection (era chronicle tracking)
+        events/             # EventModal (event choice UI with chronicle chain indicator)
         resources/          # ClickTarget, ResourceBar, OfflineEarningsModal
         encyclopedia/       # EncyclopediaPanel (About, Eras, Buildings, Figures tabs)
         colony-map/         # ColonyMapPanel (pan/zoom SVG), MapBuildingSlot, SeldonVaultCenter
@@ -184,6 +186,7 @@ foundation-game/
         hero-slice.ts       # Hero state array + setHeroes, unlockHero
         activity-slice.ts   # Activity state/active arrays + start/collect actions
         inventory-slice.ts  # Inventory items, active consumable + use/clear actions
+        event-slice.ts      # Event history, active effects, pending event modal + addEventHistoryEntry
         ui-slice.ts         # Active tab, buy amount, settings modal, notifications, save state
         selectors.ts        # selectGameState(), selectProductionRates(), selectClickValue(), etc.
       styles/
@@ -258,6 +261,11 @@ All game content (buildings, upgrades, ships, trade routes, achievements, eras, 
 | `shared/src/constants/activities.ts` | 40 activity definitions (5 research + 5 missions per era) |
 | `shared/src/constants/items.ts` | 40 item definitions (20 artifacts + 20 consumables) |
 | `server/src/services/activity.ts` | Activity start/collect logic with hero assignment, cost deduction, timer validation |
+| `server/src/services/event.ts` | Event checking (guaranteed vs probabilistic), choice handling, effect application |
+| `shared/src/constants/events.ts` | ~246 event definitions + `EVENT_CHAIN_DEFINITIONS` (4 chronicle chains) |
+| `client/src/components/events/EventModal.tsx` | Event choice modal with chronicle chain indicator ("Main Story" banner) |
+| `client/src/components/prestige/ChainProgressSection.tsx` | Era chronicle progress tracking in prestige tab |
+| `client/src/store/event-slice.ts` | Event history, active effects, pending event state + `addEventHistoryEntry` |
 | `client/src/store/index.ts` | Zustand store assembly from all 10 slices |
 | `client/src/store/selectors.ts` | Derived state: `selectGameState()`, production rates, click value, ROI analysis |
 | `client/src/hooks/useGameEngine.ts` | RAF loop driving the client-side tick |
@@ -463,6 +471,34 @@ When a player returns after being away:
 - **Era 2 (Psychological Influence)**: Requires 100 Seldon Points
 - **Era 3 (Galactic Reunification)**: Requires 10,000 Seldon Points
 
+### Event System
+
+The game has two kinds of events:
+
+**Probabilistic events** (~206 events): On each 10-second check, eligible events have a 15% base chance to fire, then one is selected via weighted random. These include standalone events and 4 shorter story chains (7 events each).
+
+**Guaranteed (chronicle) events** (40 events): Set `guaranteed: true` on the `EventDefinition`. These bypass the 15% RNG check — when conditions are met, they fire immediately on the next poll. The server's `checkForEvent()` splits eligible events into `guaranteed[]` and `regular[]` arrays; guaranteed events take priority (highest weight first).
+
+**Era Chronicle Chains** — 4 chains of 10 events each (one per era), defined in `EVENT_CHAIN_DEFINITIONS` (`shared/src/constants/events.ts`). Each chain fires at 10% lifetime credit increments toward that era's Seldon threshold (`ERA_SELDON_THRESHOLDS`):
+
+| Era | Threshold | Chain Name | Milestones |
+|-----|-----------|------------|------------|
+| 0 | 1B | The Seldon Prophecy | 100M → 1B |
+| 1 | 1T | The Merchant Princes | 100B → 1T |
+| 2 | 1Q | The Mule's Shadow | 100T → 1Q |
+| 3 | 1Qi | The Final Answer | 100Q → 1Qi |
+
+Event naming convention: `era0Chronicle01` through `era3Chronicle10`.
+
+Sequencing uses conditions: `eraReached` + `lifetimeCredits` + `anyEventCompleted` (previous event in chain). Each chain has a completion achievement (`era0ChronicleComplete` through `era3ChronicleComplete`).
+
+**No DB changes for chronicles** — chain progress is derived from existing `eventHistory`. The `EventChainDefinition` type holds `eventKeys[]` for ordered lookup and `achievementKey` for completion tracking.
+
+**UI integration**:
+- `EventModal` (`client/src/components/events/EventModal.tsx`) shows a "Main Story" banner with chain name and step progress (e.g. "3/10") for chronicle events via `findChainInfo()`.
+- `ChainProgressSection` (`client/src/components/prestige/ChainProgressSection.tsx`) renders in the prestige tab with expandable chain cards showing progress bars, next milestone, and completed event stories with choice highlights.
+- `EventModal` calls `addEventHistoryEntry()` on the Zustand store after a successful choice so the prestige tab updates immediately (without waiting for a full game reload).
+
 ## State Management
 
 ### Zustand Store Structure
@@ -481,6 +517,7 @@ The store uses the **slice pattern** -- each domain has its own `StateCreator` f
 | `hero-slice` | heroes (HeroState[]) | setHeroes, unlockHero |
 | `activity-slice` | activities (ActivityState[]), activeActivities (ActiveActivity[]) | setActivities, setActiveActivities, addActiveActivity, removeActiveActivity, updateActivityCompletion |
 | `inventory-slice` | inventory (InventoryItem[]), activeConsumable (ActiveConsumable \| null) | setInventory, setActiveConsumable, clearExpiredConsumable |
+| `event-slice` | activeEffects (ActiveEffect[]), eventHistory (EventHistoryEntry[]), pendingEvent, showEventModal | setActiveEffects, addActiveEffects, setEventHistory, addEventHistoryEntry, showEvent, hideEventModal |
 
 ### Selectors (`selectors.ts`)
 
@@ -592,6 +629,18 @@ Era-specific colors are applied via CSS custom properties set on `GameLayout`:
 2. **Artifact effects**: `resourceMultiplier` (per-resource), `globalMultiplier`, `clickMultiplier` -- permanent, stacking by quantity.
 3. **Consumable effects**: `productionBuff` (per-resource), `globalProductionBuff`, `clickBuff` -- timed, with `durationSeconds`.
 4. **No other changes needed** -- calculator.ts iterates all inventory items dynamically.
+
+### Adding a New Event Chain
+
+1. **Events**: Add N event definitions to `EVENT_DEFINITIONS` in `shared/src/constants/events.ts`. Each event needs:
+   - `guaranteed: true` to bypass the 15% RNG check
+   - `repeatable: false`, `cooldownSeconds: 0`, `weight: 100`
+   - Conditions: `eraReached` + `lifetimeCredits` + `anyEventCompleted` (referencing the previous event, except for the first)
+   - 2+ choices with meaningful effects (resource grants, timed buffs)
+   - Naming convention: `<prefix>01` through `<prefix>NN`
+2. **Chain definition**: Add an `EventChainDefinition` entry to `EVENT_CHAIN_DEFINITIONS` with `chainKey`, `name`, `description`, `era`, ordered `eventKeys[]`, and `achievementKey`.
+3. **Achievement**: Add a completion achievement to `ACHIEVEMENT_DEFINITIONS` in `shared/src/constants/achievements.ts` with condition `{ type: 'eventCompleted', eventKey: '<lastEventKey>' }`.
+4. **No other changes needed** -- `EventModal` auto-detects chain membership via `findChainInfo()`, and `ChainProgressSection` iterates `EVENT_CHAIN_DEFINITIONS` dynamically.
 
 ### Adding a New Era
 
