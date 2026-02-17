@@ -7,6 +7,7 @@ import {
   UpgradesIcon,
   ShipsIcon,
   AchievementsIcon,
+  EventsIcon,
   PrestigeIcon,
   EncyclopediaIcon,
   ResearchIcon,
@@ -26,6 +27,7 @@ const SIDEBAR_TABS: SidebarTab[] = [
   { key: 'ships', label: 'Ships', icon: <ShipsIcon className="w-5 h-5" /> },
   { key: 'research', label: 'Research', icon: <ResearchIcon className="w-5 h-5" /> },
   { key: 'achievements', label: 'Achievements', icon: <AchievementsIcon className="w-5 h-5" /> },
+  { key: 'events', label: 'Events', icon: <EventsIcon className="w-5 h-5" /> },
   { key: 'prestige', label: 'Prestige', icon: <PrestigeIcon className="w-5 h-5" /> },
   { key: 'encyclopedia', label: 'Encyclopedia', icon: <EncyclopediaIcon className="w-5 h-5" /> },
 ];

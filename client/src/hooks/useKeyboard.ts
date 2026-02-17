@@ -7,6 +7,7 @@ const TAB_SHORTCUTS: Record<string, ActiveTab> = {
   u: 'upgrades',
   s: 'ships',
   a: 'achievements',
+  h: 'events',
   p: 'prestige',
   e: 'encyclopedia',
   r: 'research',

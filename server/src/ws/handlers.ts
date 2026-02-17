@@ -15,7 +15,7 @@ import {
   triggerPrestige,
   getPrestigeHistoryForUser,
 } from '../services/prestige.js';
-import { handleEventChoice, getUserActiveEffects, getUserEventHistory, checkForEvent } from '../services/event.js';
+import { handleEventChoice, getUserActiveEffects, getUserEventHistory, getUserEventHistoryPage, checkForEvent } from '../services/event.js';
 import { checkAchievements } from '../services/achievement.js';
 import { getUserBuildings } from '../services/building.js';
 import { getUserUpgrades } from '../services/upgrade.js';
@@ -159,6 +159,13 @@ export async function handleClientMessage(userId: number, msg: ClientMessage): P
       const result = await getUserEventHistory(userId);
       return {
         response: { type: 'result', requestId: msg.requestId, data: { history: result } },
+      };
+    }
+
+    case 'getEventHistoryPage': {
+      const result = await getUserEventHistoryPage(userId, msg.limit ?? 10, msg.cursor);
+      return {
+        response: { type: 'result', requestId: msg.requestId, data: result },
       };
     }
 

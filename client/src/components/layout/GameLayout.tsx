@@ -16,7 +16,7 @@ import { ResearchPanel } from '../research';
 import { AdminPanel } from '../admin';
 import { SettingsModal } from '../settings/SettingsModal';
 import { NotificationArea } from '../common';
-import { ActiveEffectsBar, EventModal } from '../events';
+import { ActiveEffectsBar, EventModal, EventHistoryPanel } from '../events';
 import { TutorialOverlay } from '../tutorial';
 
 function ActivePanel() {
@@ -33,6 +33,8 @@ function ActivePanel() {
       return <ShipPanel />;
     case 'achievements':
       return <AchievementPanel />;
+    case 'events':
+      return <EventHistoryPanel />;
     case 'prestige':
       return <PrestigePanel />;
     case 'research':

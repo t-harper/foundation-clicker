@@ -2,6 +2,7 @@ import type {
   ChooseEventResponse,
   GetActiveEffectsResponse,
   GetEventHistoryResponse,
+  GetEventHistoryPageResponse,
 } from '@foundation/shared';
 import { wsManager } from '../ws';
 
@@ -17,4 +18,8 @@ export async function getActiveEffects(): Promise<GetActiveEffectsResponse> {
 
 export async function getEventHistory(): Promise<GetEventHistoryResponse> {
   return wsManager.send<GetEventHistoryResponse>({ type: 'getEventHistory' });
+}
+
+export async function getEventHistoryPage(limit?: number, cursor?: string): Promise<GetEventHistoryPageResponse> {
+  return wsManager.send<GetEventHistoryPageResponse>({ type: 'getEventHistoryPage', limit, cursor });
 }
