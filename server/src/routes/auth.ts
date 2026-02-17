@@ -42,7 +42,7 @@ router.get(
         user: {
           id: req.userId,
           username: req.username,
-          isAdmin: user ? user.is_admin === 1 : false,
+          isAdmin: user ? !!user.is_admin : false,
         },
       });
     } catch (err) {

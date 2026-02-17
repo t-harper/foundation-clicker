@@ -10,7 +10,7 @@ export async function adminMiddleware(
 ): Promise<void> {
   try {
     const user = await findUserById(req.userId!);
-    if (!user || user.is_admin !== 1) {
+    if (!user || !user.is_admin) {
       throw new ForbiddenError('Admin access required');
     }
     next();
