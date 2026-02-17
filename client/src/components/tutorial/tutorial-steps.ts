@@ -130,7 +130,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: 10,
     title: 'Try a Mission',
     message:
-      'Missions work the same way but are found on the Missions sub-tab. Try \u201CTerminus Perimeter Scan\u201D \u2014 another quick 5-second activity. Assign a hero, start it, wait, and collect.',
+      'Missions work the same way but are found on the Missions sub-tab. Try \u201CTerminus Perimeter Scan\u201D \u2014 another quick 5-second activity. You\u2019ll earn an Encyclopedia Volume, a different artifact from the one you just got. Assign a hero, start it, wait, and collect.',
     type: 'spotlight',
     requiredTab: 'research',
     advanceMode: 'acknowledge',
@@ -139,6 +139,18 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 11,
+    title: 'Check Your Inventory',
+    message:
+      'Your earned artifacts live in the Inventory tab. Artifacts give permanent passive bonuses that stack with quantity \u2014 the Prime Radiant boosts global production by 5%, while the Encyclopedia Volume adds 2%. Consumables are single-use timed buffs. Check your collection here anytime.',
+    type: 'spotlight',
+    target: 'research-inventory-tab',
+    requiredTab: 'research',
+    advanceMode: 'acknowledge',
+    acknowledgeLabel: 'Got it',
+    placement: 'bottom',
+  },
+  {
+    id: 12,
     title: 'Heroes & Activities',
     message:
       'Heroes speed up research and mission activities. Hari Seldon is your starter hero \u2014 assign him to activities to complete them faster. As you progress, story events will unlock new heroes with even stronger abilities.',
@@ -148,7 +160,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     placement: 'bottom',
   },
   {
-    id: 12,
+    id: 13,
     title: 'Story Events',
     message:
       'Random story events will appear as you build the Foundation. Each presents choices with different rewards and consequences. Some rare events unlock powerful hidden heroes \u2014 the legends of the Foundation saga.',
@@ -158,7 +170,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     placement: 'bottom',
   },
   {
-    id: 13,
+    id: 14,
     title: 'Approaching Prestige',
     message:
       'Seldon: You are halfway to your first Seldon Crisis. The Plan proceeds as I have foreseen.',
@@ -166,7 +178,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     advanceMode: 'auto',
   },
   {
-    id: 14,
+    id: 15,
     title: 'Prestige Available',
     message:
       'Seldon: The first Seldon Crisis is now available. Open the Prestige tab to advance the Foundation.',
@@ -174,7 +186,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     advanceMode: 'auto',
   },
   {
-    id: 15,
+    id: 16,
     title: 'First Era Change',
     message:
       'Seldon: The Foundation enters the Trading Expansion era. My work here is done \u2014 but the Plan continues.',
@@ -182,7 +194,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     advanceMode: 'auto',
   },
   {
-    id: 16,
+    id: 17,
     title: 'Build Your Fleet',
     message:
       'Seldon: The Trading Expansion era brings ships and trade routes. Build your fleet to earn resources from across the galaxy.',

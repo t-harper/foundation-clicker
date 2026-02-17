@@ -119,17 +119,8 @@ export function useTutorial() {
 
     const { addNotification, fireMilestone } = useGameStore.getState();
 
-    // Step 13: approaching prestige (500M lifetime credits)
-    if (!firedMilestones.includes(13) && lifetimeCredits >= 500_000_000) {
-      fireMilestone(13);
-      addNotification({
-        message: TUTORIAL_STEPS[13].message,
-        type: 'info',
-      });
-    }
-
-    // Step 14: prestige available (1B lifetime credits)
-    if (!firedMilestones.includes(14) && lifetimeCredits >= 1_000_000_000) {
+    // Step 14: approaching prestige (500M lifetime credits)
+    if (!firedMilestones.includes(14) && lifetimeCredits >= 500_000_000) {
       fireMilestone(14);
       addNotification({
         message: TUTORIAL_STEPS[14].message,
@@ -137,20 +128,29 @@ export function useTutorial() {
       });
     }
 
-    // Step 15: first era change (prestige done)
-    if (!firedMilestones.includes(15) && prestigeCount >= 1) {
+    // Step 15: prestige available (1B lifetime credits)
+    if (!firedMilestones.includes(15) && lifetimeCredits >= 1_000_000_000) {
       fireMilestone(15);
       addNotification({
         message: TUTORIAL_STEPS[15].message,
+        type: 'info',
+      });
+    }
+
+    // Step 16: first era change (prestige done)
+    if (!firedMilestones.includes(16) && prestigeCount >= 1) {
+      fireMilestone(16);
+      addNotification({
+        message: TUTORIAL_STEPS[16].message,
         type: 'success',
       });
     }
 
-    // Step 16: build your fleet (reached trading expansion era)
-    if (!firedMilestones.includes(16) && currentEra >= 1) {
-      fireMilestone(16);
+    // Step 17: build your fleet (reached trading expansion era)
+    if (!firedMilestones.includes(17) && currentEra >= 1) {
+      fireMilestone(17);
       addNotification({
-        message: TUTORIAL_STEPS[16].message,
+        message: TUTORIAL_STEPS[17].message,
         type: 'info',
       });
     }

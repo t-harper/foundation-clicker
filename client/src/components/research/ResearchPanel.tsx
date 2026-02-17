@@ -111,6 +111,7 @@ export function ResearchPanel() {
             key={tab.key}
             type="button"
             onClick={() => setSubTab(tab.key)}
+            {...(tab.key === 'inventory' ? { 'data-tutorial': 'research-inventory-tab' } : {})}
             className={[
               'px-3 py-1.5 text-sm font-medium rounded-t transition-colors',
               subTab === tab.key
