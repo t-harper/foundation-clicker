@@ -26,6 +26,7 @@ export function selectGameState(state: StoreState): GameState {
     activeActivities: state.activeActivities,
     inventory: state.inventory,
     activeConsumable: state.activeConsumable,
+    eventHistory: state.eventHistory,
     lastTickAt: state.lastTickAt,
     totalPlayTime: state.totalPlayTime,
     totalClicks: state.totalClicks,

@@ -11,8 +11,6 @@ import { areAllConditionsMet } from '@foundation/shared';
 import {
   getEventHistory,
   getEventHistoryPage,
-  getLastEventFiredAt,
-  hasEventFired,
   insertEventHistory,
   getActiveEffects,
   insertActiveEffect,
@@ -88,11 +86,11 @@ export async function checkForEvent(userId: number): Promise<CheckEventsResponse
   for (const [key, def] of Object.entries(EVENT_DEFINITIONS)) {
     if (state.currentEra < def.era) continue;
 
-    if (!def.repeatable && await hasEventFired(userId, key)) continue;
+    if (!def.repeatable && state.eventHistory.some(e => e.eventKey === key)) continue;
 
     if (def.repeatable && def.cooldownSeconds > 0) {
-      const lastFired = await getLastEventFiredAt(userId, key);
-      if (lastFired !== null && now - lastFired < def.cooldownSeconds) continue;
+      const lastEntry = state.eventHistory.find(e => e.eventKey === key);
+      if (lastEntry && now - lastEntry.firedAt < def.cooldownSeconds) continue;
     }
 
     if (!areAllConditionsMet(def.conditions, state)) continue;

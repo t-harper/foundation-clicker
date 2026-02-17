@@ -19,7 +19,8 @@ export type AchievementCondition =
   | { type: 'totalActivityCompletions'; count: number }
   | { type: 'upgradesPurchased'; count: number }
   | { type: 'tradeRoutesUnlocked'; count: number }
-  | { type: 'seldonPoints'; amount: number };
+  | { type: 'seldonPoints'; amount: number }
+  | { type: 'eventCompleted'; eventKey: string };
 
 export interface AchievementDefinition {
   key: AchievementKey;

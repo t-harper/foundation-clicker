@@ -29,7 +29,7 @@ import { getUpgrades } from '../db/queries/upgrade-queries.js';
 import { getShips, updateShipStatus } from '../db/queries/ship-queries.js';
 import { getTradeRoutes } from '../db/queries/trade-route-queries.js';
 import { getAchievements } from '../db/queries/achievement-queries.js';
-import { getActiveEffects, getPendingEvent } from '../db/queries/event-queries.js';
+import { getActiveEffects, getEventHistory, getPendingEvent } from '../db/queries/event-queries.js';
 import { getUserHeroes, hasHero, unlockHero } from '../db/queries/hero-queries.js';
 import { getUserActivities, getActiveActivities } from '../db/queries/activity-queries.js';
 import { getUserInventory, getActiveConsumable, clearActiveConsumable } from '../db/queries/inventory-queries.js';
@@ -63,6 +63,7 @@ async function buildGameState(userId: number): Promise<GameState> {
     activeActivityRows,
     inventoryRows,
     activeConsumableRow,
+    eventHistoryRows,
   ] = await Promise.all([
     getBuildings(userId),
     getUpgrades(userId),
@@ -75,6 +76,7 @@ async function buildGameState(userId: number): Promise<GameState> {
     getActiveActivities(userId),
     getUserInventory(userId),
     getActiveConsumable(userId),
+    getEventHistory(userId),
   ]);
 
   const buildingRowMap = new Map(buildingRows.map((b) => [b.building_key, b]));
@@ -178,6 +180,11 @@ async function buildGameState(userId: number): Promise<GameState> {
       quantity: i.quantity,
     })),
     activeConsumable,
+    eventHistory: eventHistoryRows.map((e) => ({
+      eventKey: e.event_key,
+      choiceIndex: e.choice_index,
+      firedAt: e.fired_at,
+    })),
     lastTickAt: row.last_tick_at ?? Math.floor(Date.now() / 1000),
     totalPlayTime: row.total_play_time,
     totalClicks: row.total_clicks,

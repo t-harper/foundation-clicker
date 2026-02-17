@@ -16,7 +16,10 @@ export type EventCondition =
   | { type: 'playTime'; seconds: number }
   | { type: 'upgradeOwned'; upgrade: string }
   | { type: 'lifetimeCredits'; amount: number }
-  | { type: 'heroOwned'; hero: string };
+  | { type: 'heroOwned'; hero: string }
+  | { type: 'activityCompleted'; activityKey: string; count: number }
+  | { type: 'eventChoiceMade'; eventKey: string; choiceIndex: number }
+  | { type: 'anyEventCompleted'; eventKeys: string[] };
 
 // What happens when a choice is picked
 export type EventEffect =

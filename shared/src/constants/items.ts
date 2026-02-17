@@ -525,6 +525,111 @@ export const ITEM_DEFINITIONS: Record<string, ItemDefinition> = {
     category: 'consumable',
     effect: { type: 'productionBuff', resource: 'rawMaterials', multiplier: 4.0, durationSeconds: 600 },
   },
+  // ─── Story Mission Consumables ──────────────────────────────────────
+
+  // Era 0 Story Missions
+  vaultFragment: {
+    key: 'vaultFragment',
+    name: 'Vault Fragment',
+    description: 'A fragment of Seldon\'s Vault recordings that temporarily energizes all Foundation operations.',
+    era: Era.ReligiousDominance,
+    category: 'consumable',
+    effect: { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 300 },
+  },
+  conversionTally: {
+    key: 'conversionTally',
+    name: 'Conversion Tally',
+    description: 'A record of successful conversions in the outer provinces that boosts influence.',
+    era: Era.ReligiousDominance,
+    category: 'consumable',
+    effect: { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 300 },
+  },
+  decryptedCipher: {
+    key: 'decryptedCipher',
+    name: 'Decrypted Cipher',
+    description: 'Imperial cipher codes that reveal forgotten knowledge caches.',
+    era: Era.ReligiousDominance,
+    category: 'consumable',
+    effect: { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 300 },
+  },
+
+  // Era 1 Story Missions
+  askonianTradePact: {
+    key: 'askonianTradePact',
+    name: 'Askonian Trade Pact',
+    description: 'A signed trade agreement with the Askonian merchants that boosts credit production.',
+    era: Era.TradingExpansion,
+    category: 'consumable',
+    effect: { type: 'productionBuff', resource: 'credits', multiplier: 1.5, durationSeconds: 600 },
+  },
+  siwennianDossier: {
+    key: 'siwennianDossier',
+    name: 'Siwennian Dossier',
+    description: 'Intelligence files from Siwenna that accelerate knowledge acquisition.',
+    era: Era.TradingExpansion,
+    category: 'consumable',
+    effect: { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 600 },
+  },
+  expansionManifest: {
+    key: 'expansionManifest',
+    name: 'Expansion Manifest',
+    description: 'Fleet expansion orders that temporarily boost all Foundation output.',
+    era: Era.TradingExpansion,
+    category: 'consumable',
+    effect: { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 600 },
+  },
+
+  // Era 2 Story Missions
+  muleIntelligence: {
+    key: 'muleIntelligence',
+    name: 'Mule Intelligence',
+    description: 'Intelligence gathered from the Mule\'s safe house that boosts influence operations.',
+    era: Era.PsychologicalInfluence,
+    category: 'consumable',
+    effect: { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 900 },
+  },
+  probeFindings: {
+    key: 'probeFindings',
+    name: 'Probe Findings',
+    description: 'Findings from probing the Second Foundation that accelerate knowledge production.',
+    era: Era.PsychologicalInfluence,
+    category: 'consumable',
+    effect: { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 900 },
+  },
+  kalganReport: {
+    key: 'kalganReport',
+    name: 'Kalgan Report',
+    description: 'A stabilization report from Kalgan that boosts all Foundation operations.',
+    era: Era.PsychologicalInfluence,
+    category: 'consumable',
+    effect: { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 900 },
+  },
+
+  // Era 3 Story Missions
+  solarianDatacore: {
+    key: 'solarianDatacore',
+    name: 'Solarian Datacore',
+    description: 'A Solarian datacore containing advanced technology that boosts nuclear tech production.',
+    era: Era.GalacticReunification,
+    category: 'consumable',
+    effect: { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.5, durationSeconds: 1200 },
+  },
+  earthChronicle: {
+    key: 'earthChronicle',
+    name: 'Earth Chronicle',
+    description: 'An ancient chronicle from Earth that accelerates knowledge production.',
+    era: Era.GalacticReunification,
+    category: 'consumable',
+    effect: { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 1200 },
+  },
+  galaxiaTestResults: {
+    key: 'galaxiaTestResults',
+    name: 'Galaxia Test Results',
+    description: 'Results from the Galaxia prototype test that energize all Foundation operations.',
+    era: Era.GalacticReunification,
+    category: 'consumable',
+    effect: { type: 'globalProductionBuff', multiplier: 1.4, durationSeconds: 1200 },
+  },
 };
 
 export const ALL_ITEM_KEYS = Object.keys(ITEM_DEFINITIONS);

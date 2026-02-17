@@ -515,6 +515,39 @@ export const ACHIEVEMENT_DEFINITIONS: Record<string, AchievementDefinition> = {
     reward: { type: 'globalMultiplier', value: 1.1 },
     icon: 'time',
   },
+  // --- Story Chain Achievements ---
+  vaultPropheciesComplete: {
+    key: 'vaultPropheciesComplete',
+    name: "The Vault's Secrets",
+    description: 'Complete the Vault Prophecies story chain. Seldon\'s deepest truth, revealed.',
+    condition: { type: 'eventCompleted', eventKey: 'vaultSealsAgain' },
+    reward: { type: 'clickMultiplier', value: 1.15 },
+    icon: 'story',
+  },
+  korellianShadowWarComplete: {
+    key: 'korellianShadowWarComplete',
+    name: 'Shadow War Victor',
+    description: 'Complete the Korellian Shadow War story chain. The spy game is won.',
+    condition: { type: 'eventCompleted', eventKey: 'korellianResolution' },
+    reward: { type: 'resourceMultiplier', value: 1.1, resource: 'credits' },
+    icon: 'story',
+  },
+  mulesLegacyComplete: {
+    key: 'mulesLegacyComplete',
+    name: "The Mule's Legacy",
+    description: 'Complete the Echoes of the Mule story chain. The greatest threat, resolved.',
+    condition: { type: 'eventCompleted', eventKey: 'mulesLegacyResolved' },
+    reward: { type: 'globalMultiplier', value: 1.1 },
+    icon: 'story',
+  },
+  galaxiaConsensusComplete: {
+    key: 'galaxiaConsensusComplete',
+    name: 'The Galaxia Decision',
+    description: 'Complete the Galaxia Consensus story chain. Humanity\'s destiny, chosen.',
+    condition: { type: 'eventCompleted', eventKey: 'galaxiaThreshold' },
+    reward: { type: 'globalMultiplier', value: 1.15 },
+    icon: 'story',
+  },
 };
 
 export const ALL_ACHIEVEMENT_KEYS = Object.keys(ACHIEVEMENT_DEFINITIONS);

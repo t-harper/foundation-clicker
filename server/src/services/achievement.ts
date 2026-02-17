@@ -61,6 +61,8 @@ function isConditionMet(
       return state.tradeRoutes.filter(t => t.isUnlocked).length >= condition.count;
     case 'seldonPoints':
       return state.prestige.totalSeldonPoints >= condition.amount;
+    case 'eventCompleted':
+      return state.eventHistory.some(e => e.eventKey === condition.eventKey);
     default:
       return false;
   }

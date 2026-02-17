@@ -5996,6 +5996,945 @@ export const EVENT_DEFINITIONS: Record<string, EventDefinition> = {
     weight: 3,
     heroReward: 'fallom',
   },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // STORY CHAIN 1: THE VAULT PROPHECIES (Era 0)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  vaultProphecyRevealed: {
+    key: 'vaultProphecyRevealed',
+    name: 'The Vault Prophecy Revealed',
+    description:
+      'A hidden compartment in Seldon\'s Vault opens, revealing an encrypted holographic recording. The message is fragmented but clear: the Foundation\'s first true crisis is imminent, and the Encyclopedists must not be allowed to control the response.',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'activityCompleted', activityKey: 'vaultDeepDive', count: 1 },
+      { type: 'activityCompleted', activityKey: 'outerProvinceConversion', count: 1 },
+      { type: 'activityCompleted', activityKey: 'imperialCipherDecryption', count: 1 },
+    ],
+    choices: [
+      {
+        label: 'Embrace the Prophecy',
+        description: 'Rally the Foundation around Seldon\'s prediction.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 2000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Question the Source',
+        description: 'Investigate the recording\'s authenticity.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 3000 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.2, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  encyclopedistSchism: {
+    key: 'encyclopedistSchism',
+    name: 'The Encyclopedist Schism',
+    description:
+      'Your embrace of the prophecy has divided the Foundation. The Encyclopedists, seeing their authority undermined, threaten to form a breakaway faction on the far side of Terminus.',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'vaultProphecyRevealed', choiceIndex: 0 },
+    ],
+    choices: [
+      {
+        label: 'Negotiate Reunion',
+        description: 'Bring the factions back together through diplomacy.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 5000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Let Them Go',
+        description: 'The Foundation is stronger without division of purpose.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 8000 },
+          { type: 'resourceGrant', resource: 'rawMaterials', amount: 3000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  forgeryInvestigation: {
+    key: 'forgeryInvestigation',
+    name: 'The Forgery Investigation',
+    description:
+      'Your investigation reveals the recording IS genuine but was time-locked to open decades later. By finding it early, you\'ve accelerated Seldon\'s timeline. Free will can alter psychohistory.',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'vaultProphecyRevealed', choiceIndex: 1 },
+    ],
+    choices: [
+      {
+        label: 'Share the Discovery',
+        description: 'Let the Foundation know that free will matters.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 5000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Guard the Secret',
+        description: 'This knowledge is too dangerous for the public.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 4000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  vaultSecondRecording: {
+    key: 'vaultSecondRecording',
+    name: 'The Second Recording',
+    description:
+      'A second recording activates in the Vault — this one not from Seldon, but from a figure who identifies herself as Wanda Seldon, Hari\'s granddaughter. She offers a choice: continue following Hari\'s psychohistorical projections, or use the Second Foundation\'s mentalic techniques to forge a new path entirely.',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'anyEventCompleted', eventKeys: ['encyclopedistSchism', 'forgeryInvestigation'] },
+    ],
+    choices: [
+      {
+        label: 'Follow the Seldon Path',
+        description: 'Trust psychohistory\'s mathematics.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 6000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Chart an Independent Course',
+        description: 'The Foundation should make its own destiny.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 6000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  seldonsPlanUnfolds: {
+    key: 'seldonsPlanUnfolds',
+    name: "Seldon's Plan Unfolds",
+    description:
+      'Psychohistory begins to prove itself in real-time: trade disputes resolve as predicted, diplomatic crises unfold on schedule, and the Foundation\'s growth follows the curve Seldon drew centuries ago. The certainty is intoxicating — but some warn that blind faith in equations is its own religion.',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'vaultSecondRecording', choiceIndex: 0 },
+    ],
+    choices: [
+      {
+        label: 'Share Predictions Publicly',
+        description: 'Build confidence through transparency.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 8000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 900 },
+        ],
+      },
+      {
+        label: 'Keep Predictions Secret',
+        description: 'Maintain control through exclusive knowledge.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 8000 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.3, durationSeconds: 900 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  independentFoundation: {
+    key: 'independentFoundation',
+    name: 'The Independent Foundation',
+    description:
+      'Breaking from Seldon\'s Plan creates unexpected challenges: without psychohistorical guardrails, the Foundation must navigate crises through ingenuity alone. But the freedom is exhilarating. New technologies emerge that Seldon never predicted, and alliances form that his equations deemed impossible.',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'vaultSecondRecording', choiceIndex: 1 },
+    ],
+    choices: [
+      {
+        label: 'Embrace Innovation',
+        description: 'Pour resources into unprecedented research.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 6000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.5, durationSeconds: 900 },
+        ],
+      },
+      {
+        label: 'Strengthen Defenses',
+        description: 'Freedom requires the strength to protect it.',
+        effects: [
+          { type: 'resourceGrant', resource: 'rawMaterials', amount: 8000 },
+          { type: 'productionBuff', resource: 'rawMaterials', multiplier: 1.5, durationSeconds: 900 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  vaultSealsAgain: {
+    key: 'vaultSealsAgain',
+    name: 'The Vault Seals Again',
+    description:
+      'The Vault reseals with a final holographic message — this time from both Seldons, grandfather and granddaughter, speaking in unison: "Whether you follow the Plan or forge your own path, the Foundation endures. The next crisis comes not from without, but from within." The recording dissolves, and the Vault grows silent.',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'anyEventCompleted', eventKeys: ['seldonsPlanUnfolds', 'independentFoundation'] },
+    ],
+    choices: [
+      {
+        label: 'Fortify and Prepare',
+        description: 'Turn inward, strengthen Terminus.',
+        effects: [
+          { type: 'globalProductionBuff', multiplier: 1.2, durationSeconds: 900 },
+          { type: 'resourceGrant', resource: 'rawMaterials', amount: 5000 },
+        ],
+      },
+      {
+        label: 'Expand Outward',
+        description: 'The best defense is a strong presence.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 10000 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.4, durationSeconds: 900 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // STORY CHAIN 2: THE KORELLIAN SHADOW WAR (Era 1)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  korellianSpyNetwork: {
+    key: 'korellianSpyNetwork',
+    name: 'The Korellian Spy Network',
+    description:
+      'A Foundation trader discovers a Korellian spy ring operating within Foundation space, feeding trade secrets to remnants of the Imperial fleet. Your intelligence operatives present two approaches.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'activityCompleted', activityKey: 'askonianTradeNegotiation', count: 1 },
+      { type: 'activityCompleted', activityKey: 'siwennianIntelligenceOp', count: 1 },
+      { type: 'activityCompleted', activityKey: 'merchantFleetExpansion', count: 1 },
+    ],
+    choices: [
+      {
+        label: 'Public Exposure',
+        description: 'Expose the spies to rally support and deter enemies.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 30000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.4, durationSeconds: 600 },
+          { type: 'resourceLoss', resource: 'credits', amount: 15000 },
+        ],
+      },
+      {
+        label: 'Turn Them',
+        description: 'Quietly convert the spies into double agents.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 25000 },
+          { type: 'resourceGrant', resource: 'credits', amount: 20000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  tradeBlockade: {
+    key: 'tradeBlockade',
+    name: 'The Trade Blockade',
+    description:
+      'The Korellians retaliate with a full trade blockade. Foundation merchants are turned away from every Korellian port, and sympathetic worlds follow suit. Your public stance has rallied domestic support but disrupted commerce.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'korellianSpyNetwork', choiceIndex: 0 },
+    ],
+    choices: [
+      {
+        label: 'Break the Blockade',
+        description: 'Deploy Foundation technology to force open trade routes.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 20000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.4, durationSeconds: 600 },
+          { type: 'resourceLoss', resource: 'influence', amount: 10000 },
+        ],
+      },
+      {
+        label: 'Negotiate Through Intermediaries',
+        description: 'Use Askonian contacts for back-channels.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 40000 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  intelligenceGoldmine: {
+    key: 'intelligenceGoldmine',
+    name: 'The Intelligence Goldmine',
+    description:
+      'Your turned agents produce incredible intelligence — Foundation merchants anticipate every Korellian move. But one operative sends a cryptic warning: a double agent may be a triple agent, still loyal to Korellian interests.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'korellianSpyNetwork', choiceIndex: 1 },
+    ],
+    choices: [
+      {
+        label: 'Extract All Agents',
+        description: 'Pull everyone out before compromise.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 30000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'One More Operation',
+        description: 'Risk one final operation to identify the mole.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 60000 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  shadowWarEscalation: {
+    key: 'shadowWarEscalation',
+    name: 'Shadow War Escalation',
+    description:
+      'The conflict escalates beyond the Korellians. Imperial remnants enter the picture, offering military support to Korell in exchange for Foundation technology. The shadow war threatens to become a real one. You must choose your strategy for this expanded conflict.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'anyEventCompleted', eventKeys: ['tradeBlockade', 'intelligenceGoldmine'] },
+    ],
+    choices: [
+      {
+        label: 'Divide and Conquer',
+        description: 'Pit the Korellians and Imperial remnants against each other.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 40000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'United Front',
+        description: 'Rally neighboring worlds against the Imperial-Korellian alliance.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 40000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  imperialPlayingField: {
+    key: 'imperialPlayingField',
+    name: 'The Imperial Playing Field',
+    description:
+      'Your manipulation works brilliantly. Fabricated intelligence has the Korellians suspecting Imperial betrayal, and the Imperial remnants begin withdrawing support. But maintaining the deception requires increasingly bold lies, and some Foundation leaders question the moral cost.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'shadowWarEscalation', choiceIndex: 0 },
+    ],
+    choices: [
+      {
+        label: 'Maintain the Deception',
+        description: 'See the strategy through to total victory.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 60000 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.5, durationSeconds: 900 },
+          { type: 'resourceLoss', resource: 'influence', amount: 15000 },
+        ],
+      },
+      {
+        label: 'Come Clean',
+        description: 'Reveal the truth and negotiate from a position of revealed strength.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 50000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.3, durationSeconds: 900 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  peripheryAlliance: {
+    key: 'peripheryAlliance',
+    name: 'The Periphery Alliance',
+    description:
+      'An unprecedented alliance of Periphery worlds forms under Foundation leadership. For the first time since the Empire\'s fall, a coalition stands against Imperial ambition. But alliance leadership is contested — several worlds demand shared command.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'shadowWarEscalation', choiceIndex: 1 },
+    ],
+    choices: [
+      {
+        label: 'Lead the Alliance',
+        description: 'Assert Foundation supremacy within the coalition.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 30000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.4, durationSeconds: 900 },
+          { type: 'resourceLoss', resource: 'influence', amount: 10000 },
+        ],
+      },
+      {
+        label: 'Shared Leadership',
+        description: 'Accept a council model for lasting stability.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 50000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 900 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  korellianResolution: {
+    key: 'korellianResolution',
+    name: 'The Korellian Resolution',
+    description:
+      'The Korellian crisis reaches its climax. Whether through cunning manipulation or coalition strength, the Foundation has the upper hand. The Korellian Republic sends envoys seeking terms. The Imperial remnants have retreated to the inner galaxy. How you end this war will define the Foundation\'s reputation for generations.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'anyEventCompleted', eventKeys: ['imperialPlayingField', 'peripheryAlliance'] },
+    ],
+    choices: [
+      {
+        label: 'Generous Terms',
+        description: 'Offer favorable terms to build lasting partnership.',
+        effects: [
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 1200 },
+          { type: 'resourceGrant', resource: 'influence', amount: 30000 },
+        ],
+      },
+      {
+        label: 'Press the Advantage',
+        description: 'Demand exclusive trade concessions and disarmament.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 80000 },
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 20000 },
+          { type: 'productionDebuff', resource: 'influence', multiplier: 0.9, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // STORY CHAIN 3: ECHOES OF THE MULE (Era 2)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  mulesArchiveDiscovered: {
+    key: 'mulesArchiveDiscovered',
+    name: "The Mule's Archive Discovered",
+    description:
+      'Deep beneath Kalgan\'s surface, your agents discover the Mule\'s personal archive — a vault containing his research into emotional control, a modified Prime Radiant, and a journal revealing the Mule\'s true motivations. The knowledge could revolutionize mentalic science or destroy the balance of power.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'activityCompleted', activityKey: 'muleSafeHouseRaid', count: 1 },
+      { type: 'activityCompleted', activityKey: 'secondFoundationProbe', count: 1 },
+      { type: 'activityCompleted', activityKey: 'kalganStabilization', count: 1 },
+    ],
+    choices: [
+      {
+        label: 'Study the Archive',
+        description: 'This knowledge is too valuable to ignore.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 200000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 900 },
+          { type: 'resourceLoss', resource: 'influence', amount: 50000 },
+        ],
+      },
+      {
+        label: 'Seal It Forever',
+        description: 'Some knowledge is too dangerous.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 150000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.4, durationSeconds: 900 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  convertedResurface: {
+    key: 'convertedResurface',
+    name: 'The Converted Resurface',
+    description:
+      'Your study of the Mule\'s techniques reveals a disturbing truth: dozens of his "Converted" agents still exist across the galaxy, their emotional conditioning slowly fading but not gone. They\'ve heard about your research and seek you out — some wanting to be freed, others wanting to be re-empowered.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'mulesArchiveDiscovered', choiceIndex: 0 },
+    ],
+    choices: [
+      {
+        label: 'Deprogram Them',
+        description: 'Help the Converted break free of conditioning.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 100000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 900 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 80000 },
+        ],
+      },
+      {
+        label: 'Recruit the Willing',
+        description: 'Those seeking power can serve the Foundation.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 200000 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.4, durationSeconds: 900 },
+          { type: 'productionDebuff', resource: 'influence', multiplier: 0.9, durationSeconds: 300 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  guardiansWarning: {
+    key: 'guardiansWarning',
+    name: "The Guardian's Warning",
+    description:
+      'A Speaker of the Second Foundation contacts you in secret. They praise your decision to seal the archive and reveal it was a test — one that previous civilizations failed, leading to their destruction. But the Speaker warns: others are searching for similar caches across the galaxy.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'mulesArchiveDiscovered', choiceIndex: 1 },
+    ],
+    choices: [
+      {
+        label: 'Join the Hunt',
+        description: 'Help locate and destroy the remaining caches.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 120000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.4, durationSeconds: 900 },
+          { type: 'resourceGrant', resource: 'influence', amount: 80000 },
+        ],
+      },
+      {
+        label: 'Trust the Speakers',
+        description: 'Let the Second Foundation handle it.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 150000 },
+          { type: 'globalProductionBuff', multiplier: 1.2, durationSeconds: 900 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  mentalicRevelation: {
+    key: 'mentalicRevelation',
+    name: 'The Mentalic Revelation',
+    description:
+      'Whether you studied or sealed the archive, a mentalic anomaly emerges across the galaxy: someone else has Mule-like abilities and is actively using them. Entire populations are shifting allegiances overnight. The Second Foundation is alarmed — this new mentalic is powerful enough to threaten both Foundations.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'anyEventCompleted', eventKeys: ['convertedResurface', 'guardiansWarning'] },
+    ],
+    choices: [
+      {
+        label: 'Track the Source',
+        description: 'Hunt down this new mentalic before they grow stronger.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 150000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.4, durationSeconds: 900 },
+        ],
+      },
+      {
+        label: 'Shield the Foundation',
+        description: 'Fortify mentalic defenses before acting.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 150000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.4, durationSeconds: 900 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  mentalicConfrontation: {
+    key: 'mentalicConfrontation',
+    name: 'The Mentalic Confrontation',
+    description:
+      'You\'ve tracked the new mentalic to a hidden world at the galaxy\'s edge. They call themselves the Mule\'s Heir — not a conqueror, but a "healer" who claims to be undoing the emotional damage the Mule left behind. Their methods, however, involve the same violation of free will. They offer to negotiate.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'mentalicRevelation', choiceIndex: 0 },
+    ],
+    choices: [
+      {
+        label: 'Negotiate',
+        description: 'Hear them out. Perhaps their goals align.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 200000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 900 },
+        ],
+      },
+      {
+        label: 'Neutralize',
+        description: 'End the threat. No one should wield that power.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 150000 },
+          { type: 'clickBuff', multiplier: 1.5, durationSeconds: 600 },
+          { type: 'resourceLoss', resource: 'influence', amount: 80000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  mentalicSiege: {
+    key: 'mentalicSiege',
+    name: 'The Mentalic Siege',
+    description:
+      'The new mentalic turns their attention to the Foundation, testing your defenses. Waves of emotional manipulation wash over Terminus — citizens experience sudden euphoria, despair, and rage in rapid succession. Your shields hold, but barely. The Second Foundation offers to join your defense.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'mentalicRevelation', choiceIndex: 1 },
+    ],
+    choices: [
+      {
+        label: 'Counter-Attack',
+        description: 'Strike back with combined First and Second Foundation power.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 200000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.5, durationSeconds: 900 },
+        ],
+      },
+      {
+        label: 'Endure and Wait',
+        description: 'Let them exhaust themselves against your shields.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 180000 },
+          { type: 'globalProductionBuff', multiplier: 1.2, durationSeconds: 900 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  mulesLegacyResolved: {
+    key: 'mulesLegacyResolved',
+    name: "The Mule's True Legacy",
+    description:
+      'The mentalic crisis ends, but it has revealed a deeper truth. The Second Foundation\'s First Speaker summons you to Star\'s End for a revelation: the Mule\'s greatest creation wasn\'t his army or his emotional control — it was a device capable of amplifying mentalic abilities a thousandfold, hidden somewhere in the galaxy. The device is the true legacy, and it must be dealt with.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'anyEventCompleted', eventKeys: ['mentalicConfrontation', 'mentalicSiege'] },
+    ],
+    choices: [
+      {
+        label: 'Destroy All Traces',
+        description: 'End the Mule\'s legacy permanently. Stability above all.',
+        effects: [
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 1200 },
+          { type: 'resourceGrant', resource: 'influence', amount: 100000 },
+        ],
+      },
+      {
+        label: 'Find It First',
+        description: 'If it exists, better in Foundation hands than anyone else\'s.',
+        effects: [
+          { type: 'clickBuff', multiplier: 2.0, durationSeconds: 900 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 200000 },
+          { type: 'productionDebuff', resource: 'influence', multiplier: 0.8, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // STORY CHAIN 4: THE GALAXIA CONSENSUS (Era 3)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  solarianUltimatum: {
+    key: 'solarianUltimatum',
+    name: 'The Solarian Ultimatum',
+    description:
+      'The Solarians — hermit-world isolationists who have modified themselves beyond recognition — detect the Galaxia consciousness-merging project. They send an ultimatum through their robot servants: cease immediately, or face their planet-destroying gravitics technology. Behind the threat, your contact senses fear.',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'activityCompleted', activityKey: 'solarianContactMission', count: 1 },
+      { type: 'activityCompleted', activityKey: 'earthOriginExpedition', count: 1 },
+      { type: 'activityCompleted', activityKey: 'galaxiaPrototypeTest', count: 1 },
+    ],
+    choices: [
+      {
+        label: 'Open Diplomatic Channels',
+        description: 'Respond with empathy. The Solarians act from fear.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 1000000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 1200 },
+          { type: 'resourceLoss', resource: 'credits', amount: 500000 },
+        ],
+      },
+      {
+        label: 'Accelerate the Project',
+        description: 'The Solarians prove why Galaxia is necessary.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 800000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.5, durationSeconds: 1200 },
+          { type: 'resourceLoss', resource: 'influence', amount: 300000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  solarianEmbassy: {
+    key: 'solarianEmbassy',
+    name: 'The Solarian Embassy',
+    description:
+      'Against all expectations, a Solarian ambassador arrives at Terminus — the first to leave their world in centuries. Barely recognizable as human, augmented by transducer technology and accompanied by robot attendants. They offer a remarkable proposal: share their advanced gravitics technology in exchange for excluding Solarian worlds from the Galaxia merger.',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'solarianUltimatum', choiceIndex: 0 },
+    ],
+    choices: [
+      {
+        label: 'Accept the Compromise',
+        description: 'Respect Solarian autonomy. Their tech is worth it.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 1500000 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 800000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.5, durationSeconds: 1200 },
+        ],
+      },
+      {
+        label: 'Counter-Propose',
+        description: 'Offer gradual, voluntary integration instead.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 800000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.4, durationSeconds: 1200 },
+          { type: 'resourceGrant', resource: 'credits', amount: 500000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  accelerationCrisis: {
+    key: 'accelerationCrisis',
+    name: 'The Acceleration Crisis',
+    description:
+      'Rushed Galaxia expansion causes unexpected side effects across newly connected worlds — shared dreams, emotional bleedthrough, moments of collective consciousness that frighten unprepared populations. Meanwhile, the Solarians begin charging their planetary gravitics weapons.',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'solarianUltimatum', choiceIndex: 1 },
+    ],
+    choices: [
+      {
+        label: 'Pause and Stabilize',
+        description: 'Halt expansion and stabilize existing connections.',
+        effects: [
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 1200 },
+          { type: 'resourceGrant', resource: 'rawMaterials', amount: 800000 },
+        ],
+      },
+      {
+        label: 'Push Through',
+        description: 'The instability is temporary. Press forward.',
+        effects: [
+          { type: 'clickBuff', multiplier: 2.0, durationSeconds: 1200 },
+          { type: 'productionDebuff', resource: 'influence', multiplier: 0.8, durationSeconds: 600 },
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 1000000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  ancientRobotRevelation: {
+    key: 'ancientRobotRevelation',
+    name: 'The Ancient Robot Revelation',
+    description:
+      'R. Daneel Olivaw, the ancient robot who has secretly guided humanity for twenty thousand years, finally reveals himself fully. He confesses that Galaxia was always his ultimate goal — a way to protect humanity from threats that no individual civilization could withstand. But his revelation raises a profound question: should a robot\'s ancient plan define humanity\'s future?',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'anyEventCompleted', eventKeys: ['solarianEmbassy', 'accelerationCrisis'] },
+    ],
+    choices: [
+      {
+        label: 'Trust Daneel',
+        description: 'Twenty millennia of guidance deserve respect.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 1200000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 1200 },
+        ],
+      },
+      {
+        label: 'Humanity Decides',
+        description: 'No matter how wise, robots should not choose for us.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 1200000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 1200 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  daneelsGuidance: {
+    key: 'daneelsGuidance',
+    name: "Daneel's Guidance",
+    description:
+      'With Daneel\'s millennia of accumulated wisdom guiding you, Galaxia expansion proceeds with unprecedented precision. Each world joins the network smoothly, consciousness-merging happens without trauma. But dissent grows among those who feel humanity is surrendering its agency to a machine\'s vision. Some worlds threaten to resist.',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'ancientRobotRevelation', choiceIndex: 0 },
+    ],
+    choices: [
+      {
+        label: 'Suppress Dissent Gently',
+        description: 'Use subtle mentalic influence to ease fears.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 1500000 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.4, durationSeconds: 1200 },
+          { type: 'resourceLoss', resource: 'influence', amount: 300000 },
+        ],
+      },
+      {
+        label: 'Invite Open Debate',
+        description: 'Let democracy have its voice, even if it slows progress.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 1200000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 1200 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  humanitysChoice: {
+    key: 'humanitysChoice',
+    name: "Humanity's Own Choice",
+    description:
+      'Without Daneel\'s guidance, humanity must navigate the Galaxia decision through democracy and debate. Worlds convene a Galactic Congress — the first in millennia. The process is messy, slow, and often contentious. But something remarkable emerges: worlds that choose Galaxia freely are more deeply committed to it than any that were guided.',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eventChoiceMade', eventKey: 'ancientRobotRevelation', choiceIndex: 1 },
+    ],
+    choices: [
+      {
+        label: 'Modified Galaxia',
+        description: 'Partial merger preserving individual identity within the whole.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 1500000 },
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 1200 },
+        ],
+      },
+      {
+        label: 'Full Galaxia',
+        description: 'Complete consciousness merger, chosen freely by all.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 1200000 },
+          { type: 'clickBuff', multiplier: 2.0, durationSeconds: 1200 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
+
+  galaxiaThreshold: {
+    key: 'galaxiaThreshold',
+    name: 'The Galaxia Threshold',
+    description:
+      'The moment arrives. Whether guided by an ancient robot\'s wisdom or humanity\'s own chaotic democracy, the galaxy stands at the threshold of transformation. Daneel Olivaw appears one final time, his positronic brain failing after twenty thousand years of service. "The choice," he says, "was always yours. Galaxia is not destiny — it is a decision. Choose wisely, for this choice echoes through all of time."',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'anyEventCompleted', eventKeys: ['daneelsGuidance', 'humanitysChoice'] },
+    ],
+    choices: [
+      {
+        label: 'Complete Galaxia',
+        description: 'Unite the galaxy in a single consciousness.',
+        effects: [
+          { type: 'globalProductionBuff', multiplier: 1.5, durationSeconds: 1800 },
+          { type: 'resourceGrant', resource: 'credits', amount: 2000000 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 1000000 },
+        ],
+      },
+      {
+        label: 'Preserve Individuality',
+        description: 'Humanity\'s strength is its diversity.',
+        effects: [
+          { type: 'clickBuff', multiplier: 3.0, durationSeconds: 1200 },
+          { type: 'resourceGrant', resource: 'influence', amount: 1500000 },
+          { type: 'resourceGrant', resource: 'rawMaterials', amount: 800000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 50,
+  },
 };
 
 export const ALL_EVENT_KEYS = Object.keys(EVENT_DEFINITIONS);

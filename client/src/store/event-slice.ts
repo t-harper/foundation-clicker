@@ -1,10 +1,11 @@
 import type { StateCreator } from 'zustand';
-import type { ActiveEffect, EventKey } from '@foundation/shared';
+import type { ActiveEffect, EventKey, EventHistoryEntry } from '@foundation/shared';
 import type { StoreState } from './index';
 
 export interface EventSlice {
   // State
   activeEffects: ActiveEffect[];
+  eventHistory: EventHistoryEntry[];
   pendingEvent: EventKey | null;
   showEventModal: boolean;
 
@@ -12,6 +13,7 @@ export interface EventSlice {
   setActiveEffects: (effects: ActiveEffect[]) => void;
   addActiveEffects: (effects: ActiveEffect[]) => void;
   removeExpiredEffects: () => void;
+  setEventHistory: (history: EventHistoryEntry[]) => void;
   showEvent: (eventKey: EventKey) => void;
   hideEventModal: () => void;
 }
@@ -19,6 +21,7 @@ export interface EventSlice {
 export const createEventSlice: StateCreator<StoreState, [], [], EventSlice> = (set) => ({
   // Initial state
   activeEffects: [],
+  eventHistory: [],
   pendingEvent: null,
   showEventModal: false,
 
@@ -30,6 +33,9 @@ export const createEventSlice: StateCreator<StoreState, [], [], EventSlice> = (s
     set((state) => ({
       activeEffects: [...state.activeEffects, ...effects],
     })),
+
+  setEventHistory: (history) =>
+    set({ eventHistory: history }),
 
   removeExpiredEffects: () =>
     set((state) => {

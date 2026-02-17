@@ -33,6 +33,20 @@ export function isEventConditionMet(condition: EventCondition, state: GameState)
       const hero = state.heroes.find(h => h.heroKey === condition.hero);
       return hero?.unlockedAt != null;
     }
+    case 'activityCompleted': {
+      const activity = state.activities.find(a => a.activityKey === condition.activityKey);
+      return (activity?.timesCompleted ?? 0) >= condition.count;
+    }
+    case 'eventChoiceMade': {
+      return state.eventHistory.some(
+        e => e.eventKey === condition.eventKey && e.choiceIndex === condition.choiceIndex
+      );
+    }
+    case 'anyEventCompleted': {
+      return condition.eventKeys.some(
+        key => state.eventHistory.some(e => e.eventKey === key)
+      );
+    }
     default:
       return false;
   }

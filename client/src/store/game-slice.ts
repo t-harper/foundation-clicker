@@ -101,6 +101,7 @@ export const createGameSlice: StateCreator<StoreState, [], [], GameSlice> = (set
       activeActivities: gameState.activeActivities,
       inventory: gameState.inventory,
       activeConsumable: gameState.activeConsumable,
+      eventHistory: gameState.eventHistory,
       seldonPoints: gameState.prestige.seldonPoints,
       totalSeldonPoints: gameState.prestige.totalSeldonPoints,
       prestigeCount: gameState.prestige.prestigeCount,

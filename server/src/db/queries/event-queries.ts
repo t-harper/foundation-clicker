@@ -33,8 +33,7 @@ export async function getEventHistory(userId: number): Promise<EventHistoryRow[]
       choice_index: item.choiceIndex,
       fired_at: item.firedAt,
     }))
-    .sort((a, b) => b.fired_at - a.fired_at)
-    .slice(0, 100);
+    .sort((a, b) => b.fired_at - a.fired_at);
 }
 
 export interface EventHistoryPageResult {
