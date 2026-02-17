@@ -52,6 +52,17 @@ export interface EventDefinition {
   weight: number;
   /** Hero key unlocked when this event is resolved (any choice) */
   heroReward?: string;
+  /** If true, fires immediately when conditions met (no RNG) */
+  guaranteed?: boolean;
+}
+
+export interface EventChainDefinition {
+  chainKey: string;
+  name: string;
+  description: string;
+  era: Era;
+  eventKeys: string[];
+  achievementKey: string;
 }
 
 export interface ActiveEffect {

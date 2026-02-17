@@ -1,5 +1,5 @@
 import { Era } from '../types/eras.js';
-import { EventDefinition } from '../types/events.js';
+import { EventChainDefinition, EventDefinition } from '../types/events.js';
 
 /** How often the client polls for events (milliseconds) */
 export const EVENT_CHECK_INTERVAL = 10_000;
@@ -6935,6 +6935,1476 @@ export const EVENT_DEFINITIONS: Record<string, EventDefinition> = {
     cooldownSeconds: 0,
     weight: 50,
   },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // ERA CHRONICLES — 40 guaranteed story events (10 per era)
+  // Fire at 10% lifetime-credit increments toward each era's Seldon threshold
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // ─── Era 0: "The Seldon Prophecy" ──────────────────────────────────────
+  // Threshold: 1e9 (1B). Milestones: 100M, 200M, ... 1B
+
+  era0Chronicle01: {
+    key: 'era0Chronicle01',
+    name: 'The Trial of Hari Seldon',
+    description:
+      'The Commission of Public Safety has convened on Trantor. Hari Seldon stands before the tribunal, his psychohistorical equations projected on vast screens. "Trantor will fall," he declares calmly. "The Empire will dissolve. My calculations are irrefutable." Gaal Dornick watches from the gallery, stunned. The Commission must decide: is this old mathematician a threat, or a madman?',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eraReached', era: Era.ReligiousDominance },
+      { type: 'lifetimeCredits', amount: 1e8 },
+    ],
+    choices: [
+      {
+        label: 'Demand exile to Terminus',
+        description: 'Seldon\'s preferred outcome — banishment to the galaxy\'s edge.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 5000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Challenge the Commission publicly',
+        description: 'Turn the trial into a spectacle, gaining attention across the Empire.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 5000 },
+          { type: 'clickBuff', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era0Chronicle02: {
+    key: 'era0Chronicle02',
+    name: 'Arrival at Terminus',
+    description:
+      'The colony ship descends through Terminus\'s thin atmosphere. Gaal Dornick presses his face to the viewport — nothing but grey rock, sparse vegetation, and the skeletal framework of what will become Terminus City. "It\'s... desolate," he murmurs. Seldon places a hand on his shoulder. "It is a blank page, Gaal. And we shall write upon it the future of humanity."',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eraReached', era: Era.ReligiousDominance },
+      { type: 'lifetimeCredits', amount: 2e8 },
+      { type: 'anyEventCompleted', eventKeys: ['era0Chronicle01'] },
+    ],
+    choices: [
+      {
+        label: 'Prioritize shelter construction',
+        description: 'Survival comes first — build housing and infrastructure.',
+        effects: [
+          { type: 'resourceGrant', resource: 'rawMaterials', amount: 8000 },
+          { type: 'productionBuff', resource: 'rawMaterials', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Begin the Encyclopedia immediately',
+        description: 'Seldon\'s cover story must be maintained — start cataloguing knowledge.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 8000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era0Chronicle03: {
+    key: 'era0Chronicle03',
+    name: 'The Board of Trustees',
+    description:
+      'Lewis Pirenne, Chairman of the Board of Trustees, insists the Encyclopedia is the sole mission. "We are scientists, not politicians," he snaps at the young Salvor Hardin. But Hardin sees what Pirenne cannot: Anacreon is arming, the Empire is retreating, and Terminus has no weapons. "Violence is the last refuge of the incompetent," Hardin replies, "but we must not be so incompetent as to need it."',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eraReached', era: Era.ReligiousDominance },
+      { type: 'lifetimeCredits', amount: 3e8 },
+      { type: 'anyEventCompleted', eventKeys: ['era0Chronicle02'] },
+    ],
+    choices: [
+      {
+        label: 'Support Pirenne\'s academic vision',
+        description: 'Stay focused on preserving knowledge. The Empire will protect us.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 12000 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Back Hardin\'s pragmatism',
+        description: 'The colony needs a leader who sees the real threats.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 10000 },
+          { type: 'resourceGrant', resource: 'credits', amount: 15000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era0Chronicle04: {
+    key: 'era0Chronicle04',
+    name: 'Seldon\'s First Hologram',
+    description:
+      'The Time Vault opens for the first time. A holographic Hari Seldon appears, seated and calm, as though death were merely an inconvenience. "I am long dead," the image says, "but the Plan lives. You face your first Seldon Crisis — and as always, the solution is the only possible one." The crowd is silent. Seldon smiles. "Trust the math."',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eraReached', era: Era.ReligiousDominance },
+      { type: 'lifetimeCredits', amount: 4e8 },
+      { type: 'anyEventCompleted', eventKeys: ['era0Chronicle03'] },
+    ],
+    choices: [
+      {
+        label: 'Heed the hologram\'s guidance',
+        description: 'Follow the Plan as Seldon laid it out.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 15000 },
+          { type: 'globalProductionBuff', multiplier: 1.2, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Question whether the Plan still holds',
+        description: 'Circumstances may have changed. Adapt rather than obey blindly.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 20000 },
+          { type: 'clickBuff', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era0Chronicle05: {
+    key: 'era0Chronicle05',
+    name: 'The Anacreon Ultimatum',
+    description:
+      'Ambassador Verisof reports from Anacreon: King Lepold has been swayed by his regent, Wienis, who demands Terminus surrender its nuclear technology — or face invasion. The Foundation\'s fleet is nonexistent, its army a handful of researchers with ceremonial blasters. Hardin alone seems unperturbed. "They need us more than we need them," he says. "They just don\'t know it yet."',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eraReached', era: Era.ReligiousDominance },
+      { type: 'lifetimeCredits', amount: 5e8 },
+      { type: 'anyEventCompleted', eventKeys: ['era0Chronicle04'] },
+    ],
+    choices: [
+      {
+        label: 'Offer limited nuclear aid',
+        description: 'Share just enough technology to placate Anacreon without losing leverage.',
+        effects: [
+          { type: 'resourceLoss', resource: 'nuclearTech', amount: 5000 },
+          { type: 'resourceGrant', resource: 'influence', amount: 20000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Refuse and fortify',
+        description: 'Give Anacreon nothing. Invest everything in defense.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 15000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era0Chronicle06: {
+    key: 'era0Chronicle06',
+    name: 'The Church of Science',
+    description:
+      'Hardin\'s plan unfolds: Foundation missionaries spread across the Four Kingdoms, training local priests to operate nuclear technology they revere as holy relics. The priests pray before power plants; they genuflect to surgical robots. Poly Verisof, Hardin\'s ambassador to Anacreon, reports that the system is working. "They worship what they don\'t understand," he says. "And what they worship, they won\'t destroy."',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eraReached', era: Era.ReligiousDominance },
+      { type: 'lifetimeCredits', amount: 6e8 },
+      { type: 'anyEventCompleted', eventKeys: ['era0Chronicle05'] },
+    ],
+    choices: [
+      {
+        label: 'Expand the religious network',
+        description: 'Send more missionaries, build more temples of science.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 25000 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Invest in nuclear supremacy',
+        description: 'Keep the technological edge sharp — the religion is just a tool.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 20000 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era0Chronicle07: {
+    key: 'era0Chronicle07',
+    name: 'Wienis\'s Gambit',
+    description:
+      'Wienis has seized power on Anacreon. His warship, armed with repurposed Foundation technology, enters orbit above Terminus. "You will surrender," his transmission demands, "or we will demonstrate the power your own missionaries taught us to use." But Aporat, the high priest aboard the Anacreonian flagship, has received word from Terminus. He activates the ship\'s intercom. "In the name of the Galactic Spirit, this war is anathema!"',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eraReached', era: Era.ReligiousDominance },
+      { type: 'lifetimeCredits', amount: 7e8 },
+      { type: 'anyEventCompleted', eventKeys: ['era0Chronicle06'] },
+    ],
+    choices: [
+      {
+        label: 'Activate the religious override',
+        description: 'Command the priests to shut down Anacreon\'s fleet remotely.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 30000 },
+          { type: 'globalProductionBuff', multiplier: 1.25, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Negotiate from strength',
+        description: 'Use the threat of shutdown as leverage for a permanent treaty.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 35000 },
+          { type: 'resourceGrant', resource: 'influence', amount: 15000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era0Chronicle08: {
+    key: 'era0Chronicle08',
+    name: 'The Four Kingdoms Submit',
+    description:
+      'With Anacreon neutralized, the remaining kingdoms — Smyrno, Konom, and Daribow — send envoys to Terminus. They\'ve seen what happened to Wienis. They know the priests answer to the Foundation. One by one, they sign trade agreements that are, in practice, acts of submission. Hardin watches from his office window. "Four down," he murmurs. "Only the rest of the galaxy to go."',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eraReached', era: Era.ReligiousDominance },
+      { type: 'lifetimeCredits', amount: 8e8 },
+      { type: 'anyEventCompleted', eventKeys: ['era0Chronicle07'] },
+    ],
+    choices: [
+      {
+        label: 'Impose generous terms',
+        description: 'Win their loyalty, not just their obedience.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 30000 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Demand technological tribute',
+        description: 'Extract resources and raw materials as the price of peace.',
+        effects: [
+          { type: 'resourceGrant', resource: 'rawMaterials', amount: 30000 },
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 15000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era0Chronicle09: {
+    key: 'era0Chronicle09',
+    name: 'Hardin\'s Twilight',
+    description:
+      'Salvor Hardin is old now. The man who saved the Foundation twice — once from Anacreon, once from its own inertia — sits in the Time Vault, waiting for Seldon\'s next appearance. "I\'ve done what I could," he tells his successor. "The religious phase is ending. Soon they\'ll need something new — commerce, perhaps, or raw cleverness. The Plan adapts. So must we."',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eraReached', era: Era.ReligiousDominance },
+      { type: 'lifetimeCredits', amount: 9e8 },
+      { type: 'anyEventCompleted', eventKeys: ['era0Chronicle08'] },
+    ],
+    choices: [
+      {
+        label: 'Honor Hardin\'s legacy',
+        description: 'Name the central plaza after him and preserve his writings.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 30000 },
+          { type: 'resourceGrant', resource: 'influence', amount: 30000 },
+        ],
+      },
+      {
+        label: 'Look to the future',
+        description: 'Invest in the next generation of Foundation leaders.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 50000 },
+          { type: 'clickBuff', multiplier: 2.0, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era0Chronicle10: {
+    key: 'era0Chronicle10',
+    name: 'The Prophecy Fulfilled',
+    description:
+      'The Time Vault opens again, and Seldon speaks. "If you are hearing this, you have passed the first great crisis. The Foundation stands. The Periphery bows to you not through force, but through faith — faith in your technology, which is faith in your knowledge." He pauses. "But faith alone cannot sustain an empire. The next phase requires something the Church cannot provide: trade. The merchant princes are coming." The hologram flickers and dies. The era of Religious Dominance is over.',
+    era: Era.ReligiousDominance,
+    conditions: [
+      { type: 'eraReached', era: Era.ReligiousDominance },
+      { type: 'lifetimeCredits', amount: 1e9 },
+      { type: 'anyEventCompleted', eventKeys: ['era0Chronicle09'] },
+    ],
+    choices: [
+      {
+        label: 'Embrace the age of trade',
+        description: 'Open the Foundation\'s markets to the galaxy.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 80000 },
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 900 },
+        ],
+      },
+      {
+        label: 'Preserve the old ways',
+        description: 'Maintain the religious institutions even as commerce rises.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 60000 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 40000 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  // ─── Era 1: "The Merchant Princes" ─────────────────────────────────────
+  // Threshold: 1e12 (1T). Milestones: 100B, 200B, ... 1T
+
+  era1Chronicle01: {
+    key: 'era1Chronicle01',
+    name: 'The First Trader',
+    description:
+      'Limmar Ponyets sits in the hold of his trade ship, surrounded by nuclear gadgets disguised as religious relics. His mission: open trade with Askone, a world that banned nuclear technology on pain of death. "Religion got us this far," he tells his co-pilot, "but you can\'t eat a prayer. Credits — now those are universal." He grins. "Let\'s see what the Askonians will pay for a transmuter that turns iron into gold."',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eraReached', era: Era.TradingExpansion },
+      { type: 'lifetimeCredits', amount: 1e11 },
+    ],
+    choices: [
+      {
+        label: 'Trade openly',
+        description: 'Establish legitimate trade channels with Askone.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 5e6 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Trade through intermediaries',
+        description: 'Use Askonian merchants as cover to avoid political complications.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 3e6 },
+          { type: 'resourceGrant', resource: 'influence', amount: 3e6 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era1Chronicle02: {
+    key: 'era1Chronicle02',
+    name: 'Mallow\'s Voyage',
+    description:
+      'Hober Mallow, the greatest of the Foundation\'s Merchant Princes, departs Terminus aboard a modified trade cruiser. His destination: the Korellian Republic, rumored to have direct ties to the dying Galactic Empire. "The traders who came before me used religion as a lever," Mallow says, adjusting his plain civilian clothes. "I\'ll use something more honest: greed." His mission is unofficial, his authority his own, and his cargo hold full of nuclear gadgets.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eraReached', era: Era.TradingExpansion },
+      { type: 'lifetimeCredits', amount: 2e11 },
+      { type: 'anyEventCompleted', eventKeys: ['era1Chronicle01'] },
+    ],
+    choices: [
+      {
+        label: 'Approach Korell diplomatically',
+        description: 'Request an audience with the Commdor and propose a trade alliance.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 8e6 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Demonstrate Foundation technology',
+        description: 'Show the Korellians what nuclear gadgets can do. Let the products speak.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 5e6 },
+          { type: 'resourceGrant', resource: 'credits', amount: 8e6 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era1Chronicle03: {
+    key: 'era1Chronicle03',
+    name: 'The Missing Missionary',
+    description:
+      'Jorane Sutt, Secretary of the Foundation, confronts Mallow with a charge: a Foundation missionary named Jord Parma went missing on Korell, allegedly arrested and handed over to the Empire. Sutt wants Mallow to search for him — or better yet, to fail, creating a political scandal. Mallow sees through it immediately. "If I find the missionary, Sutt loses his weapon against me. If I don\'t look, I seem heartless. Clever." He smiles. "But not clever enough."',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eraReached', era: Era.TradingExpansion },
+      { type: 'lifetimeCredits', amount: 3e11 },
+      { type: 'anyEventCompleted', eventKeys: ['era1Chronicle02'] },
+    ],
+    choices: [
+      {
+        label: 'Search for the missionary',
+        description: 'Investigate Parma\'s disappearance — truth is worth the risk.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 10e6 },
+          { type: 'resourceGrant', resource: 'influence', amount: 5e6 },
+        ],
+      },
+      {
+        label: 'Focus on the trade mission',
+        description: 'Don\'t fall for Sutt\'s trap. Commerce comes first.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 15e6 },
+          { type: 'clickBuff', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era1Chronicle04: {
+    key: 'era1Chronicle04',
+    name: 'The Korellian Deal',
+    description:
+      'The Commdor of Korell, Asper Argo, sits across from Mallow in his palace. Imperial warships are visible through the window — gifts from Siwenna, a decaying Imperial province. "You offer trinkets," the Commdor says. "The Empire offers warships." Mallow leans forward. "The Empire offers warships it can no longer maintain. I offer the technology to keep them running — and much more besides." The Commdor strokes his chin.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eraReached', era: Era.TradingExpansion },
+      { type: 'lifetimeCredits', amount: 4e11 },
+      { type: 'anyEventCompleted', eventKeys: ['era1Chronicle03'] },
+    ],
+    choices: [
+      {
+        label: 'Offer a generous trade package',
+        description: 'Flood Korell with Foundation goods to create dependency.',
+        effects: [
+          { type: 'resourceLoss', resource: 'nuclearTech', amount: 5e6 },
+          { type: 'resourceGrant', resource: 'credits', amount: 20e6 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Keep the terms tight',
+        description: 'Control what Korell gets. Dependency works best when supply is limited.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 12e6 },
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 10e6 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era1Chronicle05: {
+    key: 'era1Chronicle05',
+    name: 'Mallow\'s Trial',
+    description:
+      'Mallow returns to Terminus as a hero of trade — and is promptly arrested. Jorane Sutt and his allies charge him with murder: the missionary Parma, they claim, was a Foundation agent that Mallow abandoned to die. The trial is packed. Mallow stands calmly before the tribunal. "I am a trader, not a priest," he says. "And I saw through a trap that was set not by Korell, but by men in this very room." He produces a recording: Parma was an Imperial agent, a plant designed to justify invasion.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eraReached', era: Era.TradingExpansion },
+      { type: 'lifetimeCredits', amount: 5e11 },
+      { type: 'anyEventCompleted', eventKeys: ['era1Chronicle04'] },
+    ],
+    choices: [
+      {
+        label: 'Expose the conspiracy fully',
+        description: 'Reveal everything — the Imperial plant, Sutt\'s manipulation, all of it.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 20e6 },
+          { type: 'globalProductionBuff', multiplier: 1.25, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Show mercy to Sutt',
+        description: 'Win with evidence but don\'t destroy your opponents. You\'ll need allies later.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 10e6 },
+          { type: 'resourceGrant', resource: 'credits', amount: 15e6 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era1Chronicle06: {
+    key: 'era1Chronicle06',
+    name: 'Mayor Mallow',
+    description:
+      'Hober Mallow is elected Mayor of Terminus in a landslide. The traders celebrate; the old guard of priests and bureaucrats fume. Mallow\'s first act: abolish the remaining religious trade missions and replace them with pure commercial operations. "The galaxy runs on credits, not catechisms," he declares. His merchant fleet doubles in size within the month. Foundation goods flow outward; galactic wealth flows in.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eraReached', era: Era.TradingExpansion },
+      { type: 'lifetimeCredits', amount: 6e11 },
+      { type: 'anyEventCompleted', eventKeys: ['era1Chronicle05'] },
+    ],
+    choices: [
+      {
+        label: 'Expand trade routes aggressively',
+        description: 'Open new markets as fast as ships can fly.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 25e6 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Consolidate existing markets',
+        description: 'Deepen dependency in current trade partners before expanding.',
+        effects: [
+          { type: 'resourceGrant', resource: 'rawMaterials', amount: 20e6 },
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 10e6 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era1Chronicle07: {
+    key: 'era1Chronicle07',
+    name: 'Korell Strikes Back',
+    description:
+      'The Commdor of Korell, emboldened by Imperial warships, declares war on the Foundation. His fleet — three Imperial cruisers and a dozen Korellian destroyers — jumps into Foundation space. Terminus\'s own fleet is tiny by comparison. But Mallow doesn\'t scramble ships. Instead, he issues a single order to every Foundation merchant in Korellian space: "Come home. Bring everything." The trade embargo begins.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eraReached', era: Era.TradingExpansion },
+      { type: 'lifetimeCredits', amount: 7e11 },
+      { type: 'anyEventCompleted', eventKeys: ['era1Chronicle06'] },
+    ],
+    choices: [
+      {
+        label: 'Hold the embargo',
+        description: 'Let Korell starve for Foundation technology. Time is on your side.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 25e6 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Strike surgically',
+        description: 'Disable the Imperial warships\' Foundation-made components remotely.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 25e6 },
+          { type: 'clickBuff', multiplier: 2.0, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era1Chronicle08: {
+    key: 'era1Chronicle08',
+    name: 'The Embargo\'s Grip',
+    description:
+      'Three months into the trade embargo, Korell is crumbling. Nuclear-powered factories go dark. Agricultural robots grind to a halt. Hospitals run out of synthetic medicines. The Imperial warships sit in orbit, magnificent and useless — their Foundation-made fire control systems locked out remotely. Riots break out in the Korellian capital. "This," Mallow says from his office on Terminus, "is how you fight a war without firing a shot."',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eraReached', era: Era.TradingExpansion },
+      { type: 'lifetimeCredits', amount: 8e11 },
+      { type: 'anyEventCompleted', eventKeys: ['era1Chronicle07'] },
+    ],
+    choices: [
+      {
+        label: 'Demand unconditional surrender',
+        description: 'Korell must submit fully to Foundation trade terms.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 30e6 },
+          { type: 'resourceGrant', resource: 'influence', amount: 20e6 },
+        ],
+      },
+      {
+        label: 'Offer humanitarian relief',
+        description: 'Show mercy — restore critical systems while negotiating peace.',
+        effects: [
+          { type: 'resourceLoss', resource: 'nuclearTech', amount: 5e6 },
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 900 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era1Chronicle09: {
+    key: 'era1Chronicle09',
+    name: 'General Bel Riose',
+    description:
+      'From the crumbling Empire comes a new threat: General Bel Riose, the last capable Imperial commander, has turned his attention to the Foundation. Unlike the petty kings of the Periphery, Riose commands genuine Imperial forces — old, but still formidable. Ducem Barr, an aging Siwennian patriot, warns the Foundation: "Riose is brilliant and loyal. But the Emperor is neither. Therein lies your salvation." The dead hand of history protects the Foundation once more.',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eraReached', era: Era.TradingExpansion },
+      { type: 'lifetimeCredits', amount: 9e11 },
+      { type: 'anyEventCompleted', eventKeys: ['era1Chronicle08'] },
+    ],
+    choices: [
+      {
+        label: 'Appeal to the Emperor\'s paranoia',
+        description: 'A successful general is a threat to any emperor. Let Cleon destroy his own.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 35e6 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Fortify the Foundation\'s defenses',
+        description: 'Prepare for war regardless. Trust actions, not politics.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 25e6 },
+          { type: 'resourceGrant', resource: 'rawMaterials', amount: 20e6 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era1Chronicle10: {
+    key: 'era1Chronicle10',
+    name: 'The Merchant Princes Ascendant',
+    description:
+      'Riose is recalled and executed by the Emperor — a victim of his own competence. Korell has submitted. The Foundation\'s trade network now spans a quarter of the galaxy. In the Time Vault, Seldon\'s hologram speaks again: "You have learned that commerce binds more strongly than religion. But beware — there is something that neither trade nor faith can defeat. It is coming, and it is unlike anything in my equations." The hologram wavers. For the first time, Seldon looks uncertain. "I did not foresee the Mule."',
+    era: Era.TradingExpansion,
+    conditions: [
+      { type: 'eraReached', era: Era.TradingExpansion },
+      { type: 'lifetimeCredits', amount: 1e12 },
+      { type: 'anyEventCompleted', eventKeys: ['era1Chronicle09'] },
+    ],
+    choices: [
+      {
+        label: 'Prepare for the unknown',
+        description: 'Seldon himself warned us. Invest in knowledge and readiness.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 40e6 },
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 900 },
+        ],
+      },
+      {
+        label: 'Trust in trade\'s resilience',
+        description: 'The trade network is the Foundation\'s strength. Expand it further.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 60e6 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.5, durationSeconds: 900 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  // ─── Era 2: "The Mule's Shadow" ────────────────────────────────────────
+  // Threshold: 1e15 (1Q). Milestones: 100T, 200T, ... 1Q
+
+  era2Chronicle01: {
+    key: 'era2Chronicle01',
+    name: 'The Clown Arrives',
+    description:
+      'A man called the Mule appears at the Foundation\'s borders — a warlord from beyond the Periphery who conquers worlds not with armies but with something impossible: emotional conversion. His enemies lay down their weapons in bliss; his generals fight with fanatical devotion. Bayta Darell and her husband Toran intercept a strange, thin man calling himself Magnifico Giganticus — a clown, he claims, fleeing the Mule\'s court. "Please," the clown begs, his large nose trembling, "he will find me. He always finds everyone."',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eraReached', era: Era.PsychologicalInfluence },
+      { type: 'lifetimeCredits', amount: 1e14 },
+    ],
+    choices: [
+      {
+        label: 'Shelter the clown',
+        description: 'Take Magnifico under Foundation protection. Every defector has value.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 5e9 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Investigate the Mule immediately',
+        description: 'Something about this warlord doesn\'t fit the Plan. Learn everything.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 5e9 },
+          { type: 'clickBuff', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era2Chronicle02: {
+    key: 'era2Chronicle02',
+    name: 'The Fall of Terminus',
+    description:
+      'It happens faster than anyone thought possible. The Mule\'s converted fleet appears above Terminus, and the Foundation\'s defenses crumble — not from superior firepower, but from betrayal. Admiral Hank converted. General Dewers converted. The planetary shield operators simply... opened the gates, weeping with joy at serving the Mule. Bayta watches the occupation from a hidden basement. "The Plan is broken," Toran whispers. Bayta shakes her head. "Not broken. Just... not ready for this."',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eraReached', era: Era.PsychologicalInfluence },
+      { type: 'lifetimeCredits', amount: 2e14 },
+      { type: 'anyEventCompleted', eventKeys: ['era2Chronicle01'] },
+    ],
+    choices: [
+      {
+        label: 'Go underground',
+        description: 'The Foundation survives in secret. Build a resistance network.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 8e9 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Flee to find the Second Foundation',
+        description: 'Seldon spoke of two Foundations. If the First has fallen, the Second must act.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 10e9 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era2Chronicle03: {
+    key: 'era2Chronicle03',
+    name: 'Ebling Mis and the Library',
+    description:
+      'Ebling Mis, the Foundation\'s greatest living psychologist, has been taken to Trantor — now a ruined world — to search the remains of the Imperial Library for the location of the Second Foundation. The Mule wants it found and destroyed. Mis works feverishly, his mind accelerated by the Mule\'s emotional manipulation, burning through years of research in weeks. Bayta watches him deteriorate. "He\'s killing himself," she tells Toran. "And when he finishes, the Mule will know everything."',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eraReached', era: Era.PsychologicalInfluence },
+      { type: 'lifetimeCredits', amount: 3e14 },
+      { type: 'anyEventCompleted', eventKeys: ['era2Chronicle02'] },
+    ],
+    choices: [
+      {
+        label: 'Help Mis work faster',
+        description: 'The Second Foundation must be found — even at terrible cost.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 15e9 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Try to slow the research',
+        description: 'If Mis finds the Second Foundation, the Mule finds it too.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 12e9 },
+          { type: 'globalProductionBuff', multiplier: 1.2, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era2Chronicle04: {
+    key: 'era2Chronicle04',
+    name: 'Bayta\'s Choice',
+    description:
+      'The moment of truth. Ebling Mis, wasted to a skeleton but burning with discovery, reaches for the console. "I know where the Second Foundation is!" he cries. "It\'s at—" Bayta raises the blaster. She fires. Mis crumples. Magnifico — the Mule himself, hidden in plain sight — stares at her in shock. "You knew," he whispers. "How did you know?" Bayta\'s hands tremble but her voice is steady: "Because you are not the monster you pretend to be. Because in all the worlds you\'ve converted, you left me free. That was your mistake."',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eraReached', era: Era.PsychologicalInfluence },
+      { type: 'lifetimeCredits', amount: 4e14 },
+      { type: 'anyEventCompleted', eventKeys: ['era2Chronicle03'] },
+    ],
+    choices: [
+      {
+        label: 'Honor Bayta\'s sacrifice',
+        description: 'Her courage saved the Second Foundation. Remember what it cost.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 20e9 },
+          { type: 'globalProductionBuff', multiplier: 1.25, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Use the intelligence gathered',
+        description: 'Mis\'s partial research still has value. Analyze everything he found.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 20e9 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era2Chronicle05: {
+    key: 'era2Chronicle05',
+    name: 'The Mule\'s Search',
+    description:
+      'The Mule knows the Second Foundation exists but not where. He sends Han Pritcher — once a Foundation loyalist, now his most devoted converted agent — to find it. Pritcher searches world after world, his original personality buried beneath layers of emotional manipulation. On Rossem, a frozen backwater, an old farmer named Preem Palver offers him shelter. "The Second Foundation?" Palver laughs. "Just an old story to frighten children." His eyes betray nothing.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eraReached', era: Era.PsychologicalInfluence },
+      { type: 'lifetimeCredits', amount: 5e14 },
+      { type: 'anyEventCompleted', eventKeys: ['era2Chronicle04'] },
+    ],
+    choices: [
+      {
+        label: 'Feed misinformation to the Mule',
+        description: 'Plant false leads about the Second Foundation\'s location.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 25e9 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Strengthen mental defenses',
+        description: 'If the Mule can convert minds, develop techniques to resist.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 25e9 },
+          { type: 'clickBuff', multiplier: 2.0, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era2Chronicle06: {
+    key: 'era2Chronicle06',
+    name: 'The Second Foundation Acts',
+    description:
+      'In the shadows, the Second Foundation moves. Its agents — mentalics trained in the art of mind-touching — have been watching the Mule for years. First Speaker Preem Palver convenes the Table. "The Mule is a mutation," he says. "Unpredicted, unpredictable. But not unbeatable." The plan is delicate: they must adjust the Mule\'s emotions without his knowledge, slowly turning his drive to conquer into a desire for peace. It will take years. And if he suspects, even for a moment, they are all dead.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eraReached', era: Era.PsychologicalInfluence },
+      { type: 'lifetimeCredits', amount: 6e14 },
+      { type: 'anyEventCompleted', eventKeys: ['era2Chronicle05'] },
+    ],
+    choices: [
+      {
+        label: 'Support the mental adjustment',
+        description: 'Let the Second Foundation do what it does best — subtle, invisible control.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 30e9 },
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Pursue a technological counter',
+        description: 'Develop devices that can shield minds from emotional manipulation.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 25e9 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 15e9 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era2Chronicle07: {
+    key: 'era2Chronicle07',
+    name: 'The Mule\'s Decline',
+    description:
+      'Five years after conquering the Foundation, the Mule sits alone in his palace on Kalgan. The drive is fading. He no longer sends fleets to new worlds; he no longer converts fresh generals. His empire holds through inertia, not ambition. Pritcher, still converted but sensing the change, asks: "What happened to you?" The Mule stares at the stars. "I don\'t know," he says. "I just... don\'t see the point anymore." Somewhere on Rossem, Palver smiles.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eraReached', era: Era.PsychologicalInfluence },
+      { type: 'lifetimeCredits', amount: 7e14 },
+      { type: 'anyEventCompleted', eventKeys: ['era2Chronicle06'] },
+    ],
+    choices: [
+      {
+        label: 'Reclaim Foundation territory',
+        description: 'With the Mule weakening, begin liberating converted worlds.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 30e9 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Rebuild quietly',
+        description: 'Don\'t provoke the Mule — rebuild strength while he fades.',
+        effects: [
+          { type: 'resourceGrant', resource: 'rawMaterials', amount: 25e9 },
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 15e9 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era2Chronicle08: {
+    key: 'era2Chronicle08',
+    name: 'Arkady\'s Discovery',
+    description:
+      'Fourteen-year-old Arkady Darell — Bayta\'s granddaughter — has been eavesdropping on her father\'s conspiracy. Dr. Toran Darell II and his colleagues believe the Second Foundation still controls the First, pulling strings from the shadows. Arkady disagrees. She\'s read her grandmother\'s journals. "The Second Foundation isn\'t our enemy," she writes in her diary. "But they\'re not exactly our friends, either. They\'re... gardeners. And we\'re the garden."',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eraReached', era: Era.PsychologicalInfluence },
+      { type: 'lifetimeCredits', amount: 8e14 },
+      { type: 'anyEventCompleted', eventKeys: ['era2Chronicle07'] },
+    ],
+    choices: [
+      {
+        label: 'Support Arkady\'s insight',
+        description: 'The Second Foundation as gardeners — cooperate rather than resist.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 35e9 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Pursue independence from the Second Foundation',
+        description: 'The First Foundation must control its own destiny.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 35e9 },
+          { type: 'clickBuff', multiplier: 2.0, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era2Chronicle09: {
+    key: 'era2Chronicle09',
+    name: 'The Mental Static Device',
+    description:
+      'Dr. Darell has succeeded: a device that generates mental static, blocking all forms of mentalic influence. Fifty Second Foundation agents on Terminus are exposed, their mental shields useless against the static. The First Foundation rejoices — they\'ve thrown off invisible chains. But Arkady, now safely returned from Kalgan, feels uneasy. "Too easy," she says. "The Second Foundation let us find exactly fifty agents. Not forty-nine. Not fifty-one. Exactly fifty." She suspects this, too, is part of a plan.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eraReached', era: Era.PsychologicalInfluence },
+      { type: 'lifetimeCredits', amount: 9e14 },
+      { type: 'anyEventCompleted', eventKeys: ['era2Chronicle08'] },
+    ],
+    choices: [
+      {
+        label: 'Deploy the mental static widely',
+        description: 'Protect every Foundation world from mentalic influence.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 35e9 },
+          { type: 'globalProductionBuff', multiplier: 1.25, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Investigate Arkady\'s suspicion',
+        description: 'If this is part of the Second Foundation\'s plan, we need to understand why.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 40e9 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era2Chronicle10: {
+    key: 'era2Chronicle10',
+    name: 'The Shadow Lifted',
+    description:
+      'In the Time Vault, Seldon appears once more. He speaks of the Mule — the deviation — and its resolution. "The Second Foundation has done its work," the hologram says. "The Plan is restored. But the galaxy now knows that minds can be touched, adjusted, controlled. This knowledge changes everything. In the next phase, you will face a question that psychohistory cannot answer: should humanity become one mind, or remain many?" The hologram fades. The era of the Mule\'s Shadow is over. What comes next is stranger still.',
+    era: Era.PsychologicalInfluence,
+    conditions: [
+      { type: 'eraReached', era: Era.PsychologicalInfluence },
+      { type: 'lifetimeCredits', amount: 1e15 },
+      { type: 'anyEventCompleted', eventKeys: ['era2Chronicle09'] },
+    ],
+    choices: [
+      {
+        label: 'Embrace mental science',
+        description: 'If mentalics exist, the Foundation should master them.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 50e9 },
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 900 },
+        ],
+      },
+      {
+        label: 'Focus on physical strength',
+        description: 'Technology, ships, and trade — the Foundation\'s proven tools.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 50e9 },
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 30e9 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  // ─── Era 3: "The Final Answer" ─────────────────────────────────────────
+  // Threshold: 1e18 (1Qi). Milestones: 100Q, 200Q, ... 1Qi
+
+  era3Chronicle01: {
+    key: 'era3Chronicle01',
+    name: 'Trevize\'s Doubt',
+    description:
+      'Councilman Golan Trevize stands before the Foundation Council, making an argument no one wants to hear: "The Second Foundation still exists. The fifty agents we caught were a sacrifice, a magician\'s misdirection." For this heresy, he is exiled — sent on a vague mission to find the origin of humanity. Janov Pelorat, a gentle scholar obsessed with Earth legends, volunteers to accompany him. "I\'ve spent my life searching for Earth," Pelorat says. "Perhaps our exile will be my pilgrimage."',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eraReached', era: Era.GalacticReunification },
+      { type: 'lifetimeCredits', amount: 1e17 },
+    ],
+    choices: [
+      {
+        label: 'Fund Trevize\'s expedition',
+        description: 'His instincts may be right. Give him the best ship available.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 5e12 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Investigate the Second Foundation independently',
+        description: 'Don\'t put all hopes on one exile. Run parallel intelligence operations.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 5e12 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 3e12 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era3Chronicle02: {
+    key: 'era3Chronicle02',
+    name: 'Gaia Revealed',
+    description:
+      'Trevize\'s ship, the Far Star, reaches Gaia — a world where every organism, every rock, every drop of water shares a single consciousness. Bliss, a young woman who is also the entire planet, greets them. "We are Gaia," she says, her voice carrying harmonics no single throat could produce. "We have been waiting for you, Trevize." Pelorat is enchanted. Trevize is deeply unsettled. A world-mind. Is this humanity\'s future — or its extinction?',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eraReached', era: Era.GalacticReunification },
+      { type: 'lifetimeCredits', amount: 2e17 },
+      { type: 'anyEventCompleted', eventKeys: ['era3Chronicle01'] },
+    ],
+    choices: [
+      {
+        label: 'Study Gaia\'s consciousness',
+        description: 'Understand how a planetary mind works. This could change everything.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 10e12 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Maintain skeptical distance',
+        description: 'A world that thinks together might also be a world that cannot disagree.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 8e12 },
+          { type: 'clickBuff', multiplier: 2.0, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era3Chronicle03: {
+    key: 'era3Chronicle03',
+    name: 'Speaker Gendibal\'s Pursuit',
+    description:
+      'The Second Foundation is in turmoil. Speaker Stor Gendibal, its most brilliant young mentalic, senses interference in the Plan — not from the First Foundation, but from something older, something powerful enough to adjust the Second Foundation\'s own adjustments. He commandeers a ship and races toward Gaia, pursued by political rivals within the Table. "There is a Third Player," Gendibal insists to the empty cockpit. "And it has been winning for longer than we\'ve been playing."',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eraReached', era: Era.GalacticReunification },
+      { type: 'lifetimeCredits', amount: 3e17 },
+      { type: 'anyEventCompleted', eventKeys: ['era3Chronicle02'] },
+    ],
+    choices: [
+      {
+        label: 'Ally with the Second Foundation',
+        description: 'Gendibal\'s discovery changes the game. Pool resources.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 12e12 },
+          { type: 'globalProductionBuff', multiplier: 1.25, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Stay independent',
+        description: 'The First Foundation has been manipulated enough. Chart your own course.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 15e12 },
+          { type: 'productionBuff', resource: 'credits', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era3Chronicle04: {
+    key: 'era3Chronicle04',
+    name: 'Trevize\'s Decision',
+    description:
+      'Three forces converge at Gaia: Trevize representing the First Foundation, Gendibal representing the Second, and Gaia representing something entirely new. The choice falls to Trevize — selected precisely because his intuition is uncanny. Three futures: the First Foundation\'s empire of technology, the Second Foundation\'s empire of mind, or Galaxia — a galaxy-wide consciousness modeled on Gaia. Trevize chooses Galaxia. He doesn\'t know why. "I chose it," he says later, "because it felt right. And I need to find out why."',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eraReached', era: Era.GalacticReunification },
+      { type: 'lifetimeCredits', amount: 4e17 },
+      { type: 'anyEventCompleted', eventKeys: ['era3Chronicle03'] },
+    ],
+    choices: [
+      {
+        label: 'Support the Galaxia vision',
+        description: 'Unity is humanity\'s best defense against the unknown.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 20e12 },
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Hedge with technological independence',
+        description: 'Galaxia or not, the Foundation should maintain its edge.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 15e12 },
+          { type: 'resourceGrant', resource: 'credits', amount: 12e12 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era3Chronicle05: {
+    key: 'era3Chronicle05',
+    name: 'The Search for Earth',
+    description:
+      'Trevize is haunted by his choice. Why Galaxia? The answer, he believes, lies on Earth — the legendary origin world that every database has been scrubbed of. With Pelorat and Bliss, he follows a trail of myths across the galaxy: Comporellon, Aurora, Solaria. On each world, fragments of Earth\'s location emerge. "Someone erased Earth from history," Pelorat marvels. "But why? What are they hiding?"',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eraReached', era: Era.GalacticReunification },
+      { type: 'lifetimeCredits', amount: 5e17 },
+      { type: 'anyEventCompleted', eventKeys: ['era3Chronicle04'] },
+    ],
+    choices: [
+      {
+        label: 'Fund the search for Earth',
+        description: 'Allocate Foundation resources to Trevize\'s quest.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 25e12 },
+          { type: 'productionBuff', resource: 'knowledge', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Focus on Galaxia preparations',
+        description: 'Earth is ancient history. The galactic future needs attention now.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 20e12 },
+          { type: 'resourceGrant', resource: 'influence', amount: 15e12 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era3Chronicle06: {
+    key: 'era3Chronicle06',
+    name: 'The Solarian Encounter',
+    description:
+      'On Solaria, the travelers find a world transformed. Its inhabitants have become hermit-like transducers of energy, each one alone on a vast estate, communicating only through holographic viewing. They have modified themselves genetically to the point of being a new species. Bander, their host, demonstrates casual telekinesis powered by brain-controlled microwave lobes. When Bander threatens them, Bliss kills it with a targeted mental pulse. Fallom, Bander\'s child, is orphaned. Trevize insists they take the child. He doesn\'t know why.',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eraReached', era: Era.GalacticReunification },
+      { type: 'lifetimeCredits', amount: 6e17 },
+      { type: 'anyEventCompleted', eventKeys: ['era3Chronicle05'] },
+    ],
+    choices: [
+      {
+        label: 'Study Solarian technology',
+        description: 'Brain-controlled energy transduction could revolutionize everything.',
+        effects: [
+          { type: 'resourceGrant', resource: 'nuclearTech', amount: 25e12 },
+          { type: 'productionBuff', resource: 'nuclearTech', multiplier: 1.5, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Protect the child Fallom',
+        description: 'Trevize\'s instinct says this child matters. Trust it.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 20e12 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 20e12 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era3Chronicle07: {
+    key: 'era3Chronicle07',
+    name: 'Earth Found',
+    description:
+      'They find it. Earth: a radioactive husk orbiting a dying sun, its continents barely recognizable beneath millennia of decay. And yet — life persists underground. Not human life. Something older. Trevize lands the Far Star on the scarred surface. Deep beneath the crust, sensors detect an enormous artificial structure, still powered after twenty thousand years. "Someone is still here," Bliss whispers. The ground vibrates in response.',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eraReached', era: Era.GalacticReunification },
+      { type: 'lifetimeCredits', amount: 7e17 },
+      { type: 'anyEventCompleted', eventKeys: ['era3Chronicle06'] },
+    ],
+    choices: [
+      {
+        label: 'Descend into the structure',
+        description: 'Twenty thousand years of waiting end now.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 30e12 },
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 600 },
+        ],
+      },
+      {
+        label: 'Report back to the Foundation first',
+        description: 'Earth\'s discovery belongs to all humanity, not just three travelers.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 30e12 },
+          { type: 'productionBuff', resource: 'influence', multiplier: 1.4, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era3Chronicle08: {
+    key: 'era3Chronicle08',
+    name: 'R. Daneel Olivaw',
+    description:
+      'Deep beneath Earth\'s surface, they meet him: R. Daneel Olivaw, a robot built twenty thousand years ago on the Spacer world of Aurora. He has been guiding humanity since before the Foundation, before the Empire, before hyperspace travel itself. "I have served humanity since the days of Elijah Baley," Daneel says, his ancient positronic brain flickering. "I created Gaia as a model for Galaxia. I guided Seldon to create psychohistory. I have been the invisible hand." He pauses. "And I am dying."',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eraReached', era: Era.GalacticReunification },
+      { type: 'lifetimeCredits', amount: 8e17 },
+      { type: 'anyEventCompleted', eventKeys: ['era3Chronicle07'] },
+    ],
+    choices: [
+      {
+        label: 'Accept Daneel\'s revelation',
+        description: 'Humanity\'s greatest guardian deserves gratitude, not anger.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 40e12 },
+          { type: 'resourceGrant', resource: 'influence', amount: 25e12 },
+        ],
+      },
+      {
+        label: 'Question twenty millennia of manipulation',
+        description: 'Benevolent or not, one robot shaped all of human history. That must end.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 40e12 },
+          { type: 'clickBuff', multiplier: 2.5, durationSeconds: 600 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era3Chronicle09: {
+    key: 'era3Chronicle09',
+    name: 'The Merging',
+    description:
+      'Daneel\'s positronic brain is failing — no repair possible after twenty thousand years. But his knowledge, his twenty millennia of experience guiding humanity, need not be lost. Fallom, the Solarian child with transducer lobes, can serve as a bridge. "The child\'s brain can hold my patterns," Daneel explains. "Not forever, but long enough for Galaxia to take root." Trevize understands now why his instinct told him to bring Fallom. Every step of the journey was leading here.',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eraReached', era: Era.GalacticReunification },
+      { type: 'lifetimeCredits', amount: 9e17 },
+      { type: 'anyEventCompleted', eventKeys: ['era3Chronicle08'] },
+    ],
+    choices: [
+      {
+        label: 'Allow the merging',
+        description: 'Daneel\'s wisdom preserved in a new vessel. The guardian endures.',
+        effects: [
+          { type: 'resourceGrant', resource: 'influence', amount: 40e12 },
+          { type: 'globalProductionBuff', multiplier: 1.3, durationSeconds: 900 },
+        ],
+      },
+      {
+        label: 'Let Daneel rest',
+        description: 'Twenty thousand years is enough. Let humanity stand on its own.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 50e12 },
+          { type: 'resourceGrant', resource: 'knowledge', amount: 30e12 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
+
+  era3Chronicle10: {
+    key: 'era3Chronicle10',
+    name: 'The Final Answer',
+    description:
+      'Trevize stands on Earth\'s surface one last time, looking up at the stars. He finally understands why he chose Galaxia. "The galaxy is not alone," he says. "Somewhere out there, beyond the spiral arms, there are other intelligences. Other galaxies with their own life. And when they come — in a thousand years or a million — humanity must speak with one voice, think with one mind, act as one organism. That is why Galaxia. Not for us. For what comes after." He turns to Bliss. "Tell Gaia to begin." Across the galaxy, minds begin to stir toward unity. The Foundation\'s final answer is not an empire, not a plan, not a formula — it is a transformation.',
+    era: Era.GalacticReunification,
+    conditions: [
+      { type: 'eraReached', era: Era.GalacticReunification },
+      { type: 'lifetimeCredits', amount: 1e18 },
+      { type: 'anyEventCompleted', eventKeys: ['era3Chronicle09'] },
+    ],
+    choices: [
+      {
+        label: 'Begin Galaxia',
+        description: 'The transformation of an entire galaxy. It starts now.',
+        effects: [
+          { type: 'resourceGrant', resource: 'credits', amount: 80e12 },
+          { type: 'globalProductionBuff', multiplier: 1.5, durationSeconds: 1200 },
+        ],
+      },
+      {
+        label: 'Preserve the Foundation\'s legacy',
+        description: 'Galaxia may be the future, but the Foundation\'s achievements endure within it.',
+        effects: [
+          { type: 'resourceGrant', resource: 'knowledge', amount: 50e12 },
+          { type: 'resourceGrant', resource: 'influence', amount: 50e12 },
+        ],
+      },
+    ],
+    repeatable: false,
+    cooldownSeconds: 0,
+    weight: 100,
+    guaranteed: true,
+  },
 };
 
 export const ALL_EVENT_KEYS = Object.keys(EVENT_DEFINITIONS);
+
+// ═══════════════════════════════════════════════════════════════════════
+// Event Chain Definitions — for UI tracking in the prestige tab
+// ═══════════════════════════════════════════════════════════════════════
+
+export const EVENT_CHAIN_DEFINITIONS: EventChainDefinition[] = [
+  {
+    chainKey: 'era0Chronicle',
+    name: 'The Seldon Prophecy',
+    description: 'The trial, the exile, and the rise of the Foundation on Terminus.',
+    era: Era.ReligiousDominance,
+    eventKeys: [
+      'era0Chronicle01', 'era0Chronicle02', 'era0Chronicle03', 'era0Chronicle04',
+      'era0Chronicle05', 'era0Chronicle06', 'era0Chronicle07', 'era0Chronicle08',
+      'era0Chronicle09', 'era0Chronicle10',
+    ],
+    achievementKey: 'era0ChronicleComplete',
+  },
+  {
+    chainKey: 'era1Chronicle',
+    name: 'The Merchant Princes',
+    description: 'Trade conquers where religion cannot. The Foundation becomes an economic empire.',
+    era: Era.TradingExpansion,
+    eventKeys: [
+      'era1Chronicle01', 'era1Chronicle02', 'era1Chronicle03', 'era1Chronicle04',
+      'era1Chronicle05', 'era1Chronicle06', 'era1Chronicle07', 'era1Chronicle08',
+      'era1Chronicle09', 'era1Chronicle10',
+    ],
+    achievementKey: 'era1ChronicleComplete',
+  },
+  {
+    chainKey: 'era2Chronicle',
+    name: 'The Mule\'s Shadow',
+    description: 'A mutant warlord shatters the Plan. Only courage and the invisible Second Foundation can restore it.',
+    era: Era.PsychologicalInfluence,
+    eventKeys: [
+      'era2Chronicle01', 'era2Chronicle02', 'era2Chronicle03', 'era2Chronicle04',
+      'era2Chronicle05', 'era2Chronicle06', 'era2Chronicle07', 'era2Chronicle08',
+      'era2Chronicle09', 'era2Chronicle10',
+    ],
+    achievementKey: 'era2ChronicleComplete',
+  },
+  {
+    chainKey: 'era3Chronicle',
+    name: 'The Final Answer',
+    description: 'The quest for Earth, the revelation of Daneel, and the birth of Galaxia.',
+    era: Era.GalacticReunification,
+    eventKeys: [
+      'era3Chronicle01', 'era3Chronicle02', 'era3Chronicle03', 'era3Chronicle04',
+      'era3Chronicle05', 'era3Chronicle06', 'era3Chronicle07', 'era3Chronicle08',
+      'era3Chronicle09', 'era3Chronicle10',
+    ],
+    achievementKey: 'era3ChronicleComplete',
+  },
+];

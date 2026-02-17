@@ -548,6 +548,40 @@ export const ACHIEVEMENT_DEFINITIONS: Record<string, AchievementDefinition> = {
     reward: { type: 'globalMultiplier', value: 1.15 },
     icon: 'story',
   },
+
+  // --- Era Chronicle Achievements ---
+  era0ChronicleComplete: {
+    key: 'era0ChronicleComplete',
+    name: 'The Seldon Prophecy',
+    description: 'Complete the Era 0 Chronicle. From trial to triumph, the Foundation is born.',
+    condition: { type: 'eventCompleted', eventKey: 'era0Chronicle10' },
+    reward: { type: 'globalMultiplier', value: 1.1 },
+    icon: 'story',
+  },
+  era1ChronicleComplete: {
+    key: 'era1ChronicleComplete',
+    name: 'The Merchant Princes',
+    description: 'Complete the Era 1 Chronicle. Commerce conquers where religion could not.',
+    condition: { type: 'eventCompleted', eventKey: 'era1Chronicle10' },
+    reward: { type: 'resourceMultiplier', value: 1.1, resource: 'credits' },
+    icon: 'story',
+  },
+  era2ChronicleComplete: {
+    key: 'era2ChronicleComplete',
+    name: "The Mule's Shadow",
+    description: 'Complete the Era 2 Chronicle. The greatest deviation, overcome.',
+    condition: { type: 'eventCompleted', eventKey: 'era2Chronicle10' },
+    reward: { type: 'globalMultiplier', value: 1.1 },
+    icon: 'story',
+  },
+  era3ChronicleComplete: {
+    key: 'era3ChronicleComplete',
+    name: 'The Final Answer',
+    description: 'Complete the Era 3 Chronicle. Galaxia begins. Humanity speaks as one.',
+    condition: { type: 'eventCompleted', eventKey: 'era3Chronicle10' },
+    reward: { type: 'globalMultiplier', value: 1.15 },
+    icon: 'story',
+  },
 };
 
 export const ALL_ACHIEVEMENT_KEYS = Object.keys(ACHIEVEMENT_DEFINITIONS);

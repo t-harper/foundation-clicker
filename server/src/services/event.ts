@@ -81,7 +81,8 @@ export async function checkForEvent(userId: number): Promise<CheckEventsResponse
   const state = await buildGameState(userId);
   const now = Math.floor(Date.now() / 1000);
 
-  const eligible: { key: string; weight: number }[] = [];
+  const guaranteed: { key: string; weight: number }[] = [];
+  const regular: { key: string; weight: number }[] = [];
 
   for (const [key, def] of Object.entries(EVENT_DEFINITIONS)) {
     if (state.currentEra < def.era) continue;
@@ -95,10 +96,21 @@ export async function checkForEvent(userId: number): Promise<CheckEventsResponse
 
     if (!areAllConditionsMet(def.conditions, state)) continue;
 
-    eligible.push({ key, weight: def.weight });
+    if (def.guaranteed) {
+      guaranteed.push({ key, weight: def.weight });
+    } else {
+      regular.push({ key, weight: def.weight });
+    }
   }
 
-  if (eligible.length === 0) {
+  // Guaranteed events fire immediately (no RNG)
+  if (guaranteed.length > 0) {
+    guaranteed.sort((a, b) => b.weight - a.weight);
+    await setPendingEvent(userId, guaranteed[0].key);
+    return { event: { eventKey: guaranteed[0].key } };
+  }
+
+  if (regular.length === 0) {
     return { event: null };
   }
 
@@ -106,10 +118,10 @@ export async function checkForEvent(userId: number): Promise<CheckEventsResponse
     return { event: null };
   }
 
-  const totalWeight = eligible.reduce((sum, e) => sum + e.weight, 0);
+  const totalWeight = regular.reduce((sum, e) => sum + e.weight, 0);
   let roll = Math.random() * totalWeight;
-  let selectedKey = eligible[eligible.length - 1].key;
-  for (const entry of eligible) {
+  let selectedKey = regular[regular.length - 1].key;
+  for (const entry of regular) {
     roll -= entry.weight;
     if (roll <= 0) {
       selectedKey = entry.key;

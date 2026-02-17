@@ -6,6 +6,7 @@ import { previewPrestige, triggerPrestige, getPrestigeHistory } from '../../api'
 import { Button, Modal, NumberDisplay } from '../common';
 import { PrestigeIcon, StarIcon } from '../../assets/svg/icons';
 import { formatNumber, formatTimeAgo } from '../../utils/format';
+import { ChainProgressSection } from './ChainProgressSection';
 
 export function PrestigePanel() {
   const seldonPoints = useGameStore((s) => s.seldonPoints);
@@ -134,6 +135,9 @@ export function PrestigePanel() {
           </span>
         </div>
       </div>
+
+      {/* Era Chronicles */}
+      <ChainProgressSection />
 
       {/* Preview section */}
       <div className="p-5 rounded-lg border border-[var(--era-accent)]/30 bg-[var(--era-accent)]/5">
