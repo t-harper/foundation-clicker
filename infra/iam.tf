@@ -45,6 +45,12 @@ resource "aws_iam_role_policy" "lambda_rest_dynamodb" {
   policy = data.aws_iam_policy_document.dynamodb_access.json
 }
 
+resource "aws_iam_role_policy" "lambda_rest_apigw" {
+  name   = "apigw-manage-connections"
+  role   = aws_iam_role.lambda_rest.id
+  policy = data.aws_iam_policy_document.apigw_manage_connections.json
+}
+
 # --- WebSocket Lambda IAM ---
 
 resource "aws_iam_role" "lambda_ws" {

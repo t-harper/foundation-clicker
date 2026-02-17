@@ -22,7 +22,14 @@ const PONG_TIMEOUT = 10000;
 const EFFECTS_CHECK_INTERVAL = 5000;
 const FULL_SYNC_EVERY = 12; // Force full sync every 12 ticks (12 × 5s = 60s)
 
-interface AuthenticatedSocket extends WebSocket {
+let wssInstance: WebSocketServer | null = null;
+
+/** Get the local-dev WebSocketServer instance (null if not yet created). */
+export function getWss(): WebSocketServer | null {
+  return wssInstance;
+}
+
+export interface AuthenticatedSocket extends WebSocket {
   userId?: number;
   isAlive?: boolean;
   timers?: {
@@ -59,6 +66,7 @@ function clearTimers(ws: AuthenticatedSocket): void {
 
 export function setupWebSocketSync(server: Server): void {
   const wss = new WebSocketServer({ server, path: '/ws' });
+  wssInstance = wss;
 
   wss.on('connection', (ws: AuthenticatedSocket, req) => {
     // Extract token from query param

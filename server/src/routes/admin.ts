@@ -20,6 +20,7 @@ import {
   revokeHero,
   cancelActivity,
 } from '../services/admin.js';
+import { pushFullSyncToUser } from '../ws/push-sync.js';
 
 const router = Router();
 
@@ -128,7 +129,9 @@ router.patch(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      await updateResources(paramInt(req.params.userId), req.body);
+      const userId = paramInt(req.params.userId);
+      await updateResources(userId, req.body);
+      pushFullSyncToUser(userId).catch(() => {});
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -142,7 +145,9 @@ router.patch(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      await updateEra(paramInt(req.params.userId), req.body.era);
+      const userId = paramInt(req.params.userId);
+      await updateEra(userId, req.body.era);
+      pushFullSyncToUser(userId).catch(() => {});
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -156,7 +161,9 @@ router.patch(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      await updatePrestige(paramInt(req.params.userId), req.body);
+      const userId = paramInt(req.params.userId);
+      await updatePrestige(userId, req.body);
+      pushFullSyncToUser(userId).catch(() => {});
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -170,7 +177,9 @@ router.patch(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      await updateBuildingAdmin(paramInt(req.params.userId), paramStr(req.params.key), req.body.count);
+      const userId = paramInt(req.params.userId);
+      await updateBuildingAdmin(userId, paramStr(req.params.key), req.body.count);
+      pushFullSyncToUser(userId).catch(() => {});
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -184,7 +193,9 @@ router.patch(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      await setUpgradePurchased(paramInt(req.params.userId), paramStr(req.params.key), req.body.isPurchased);
+      const userId = paramInt(req.params.userId);
+      await setUpgradePurchased(userId, paramStr(req.params.key), req.body.isPurchased);
+      pushFullSyncToUser(userId).catch(() => {});
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -198,7 +209,9 @@ router.delete(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      await deleteShipAdmin(paramInt(req.params.userId), paramStr(req.params.shipId));
+      const userId = paramInt(req.params.userId);
+      await deleteShipAdmin(userId, paramStr(req.params.shipId));
+      pushFullSyncToUser(userId).catch(() => {});
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -212,7 +225,9 @@ router.post(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      await grantAchievement(paramInt(req.params.userId), paramStr(req.params.key));
+      const userId = paramInt(req.params.userId);
+      await grantAchievement(userId, paramStr(req.params.key));
+      pushFullSyncToUser(userId).catch(() => {});
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -226,7 +241,9 @@ router.delete(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      await revokeAchievementAdmin(paramInt(req.params.userId), paramStr(req.params.key));
+      const userId = paramInt(req.params.userId);
+      await revokeAchievementAdmin(userId, paramStr(req.params.key));
+      pushFullSyncToUser(userId).catch(() => {});
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -240,7 +257,9 @@ router.post(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      await grantHero(paramInt(req.params.userId), paramStr(req.params.key));
+      const userId = paramInt(req.params.userId);
+      await grantHero(userId, paramStr(req.params.key));
+      pushFullSyncToUser(userId).catch(() => {});
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -254,7 +273,9 @@ router.delete(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      await revokeHero(paramInt(req.params.userId), paramStr(req.params.key));
+      const userId = paramInt(req.params.userId);
+      await revokeHero(userId, paramStr(req.params.key));
+      pushFullSyncToUser(userId).catch(() => {});
       res.status(204).send();
     } catch (err) {
       next(err);
@@ -268,7 +289,9 @@ router.delete(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      await cancelActivity(paramInt(req.params.userId), paramStr(req.params.key));
+      const userId = paramInt(req.params.userId);
+      await cancelActivity(userId, paramStr(req.params.key));
+      pushFullSyncToUser(userId).catch(() => {});
       res.status(204).send();
     } catch (err) {
       next(err);

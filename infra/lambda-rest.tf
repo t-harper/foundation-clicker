@@ -14,7 +14,8 @@ resource "aws_lambda_function" "rest_api" {
       JWT_SECRET     = var.jwt_secret
       DYNAMODB_TABLE = var.dynamodb_table_name
       AWS_REGION_APP = var.aws_region
-      ALLOWED_ORIGIN = "https://app.${var.domain_name}"
+      ALLOWED_ORIGIN  = "https://app.${var.domain_name}"
+      WS_API_ENDPOINT = "https://ws.${var.domain_name}"
     }
   }
 
