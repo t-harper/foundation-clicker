@@ -60,9 +60,9 @@ export function LoginPage({ onSuccess }: { onSuccess: () => void }) {
         <div className="text-center mb-8">
           <h1
             className="glitch-text text-5xl font-display font-bold tracking-wider text-[#c9952e] mb-2"
-            data-text="FOUNDATION"
+            data-text="FOUNDATION CLICKER"
           >
-            FOUNDATION
+            FOUNDATION CLICKER
           </h1>
           <p className="text-sm text-[#d4a574]/70 tracking-widest uppercase">
             The Seldon Plan Awaits

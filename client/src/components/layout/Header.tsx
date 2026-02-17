@@ -30,9 +30,9 @@ export function Header() {
         <div className="flex items-center gap-4">
           <h1
             className="glitch-text text-2xl font-display font-bold tracking-wider text-[var(--era-accent)]"
-            data-text="FOUNDATION"
+            data-text="FOUNDATION CLICKER"
           >
-            FOUNDATION
+            FOUNDATION CLICKER
           </h1>
           <span
             className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border border-[var(--era-primary)]/40 bg-[var(--era-primary)]/10 text-[var(--era-primary)]"
