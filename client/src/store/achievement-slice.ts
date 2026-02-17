@@ -20,11 +20,19 @@ export const createAchievementSlice: StateCreator<StoreState, [], [], Achievemen
     set({ achievements }),
 
   unlockAchievement: (key) =>
-    set((state) => ({
-      achievements: state.achievements.map((a) =>
-        a.achievementKey === key
-          ? { ...a, unlockedAt: Date.now() }
-          : a
-      ),
-    })),
+    set((state) => {
+      const exists = state.achievements.some((a) => a.achievementKey === key);
+      if (exists) {
+        return {
+          achievements: state.achievements.map((a) =>
+            a.achievementKey === key
+              ? { ...a, unlockedAt: Date.now() }
+              : a
+          ),
+        };
+      }
+      return {
+        achievements: [...state.achievements, { achievementKey: key, unlockedAt: Date.now() }],
+      };
+    }),
 });
