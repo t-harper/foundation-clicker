@@ -60,17 +60,23 @@ export async function checkAchievements(
   const state = await buildGameState(userId);
   const newAchievements: AchievementState[] = [];
 
-  for (const achievement of state.achievements) {
-    if (achievement.unlockedAt !== null) continue;
+  // Build a set of already-unlocked achievement keys for fast lookup.
+  // With the sparse DB model, state.achievements only contains unlocked items,
+  // so we must iterate ALL definitions and skip the ones already earned.
+  const unlockedKeys = new Set(
+    state.achievements
+      .filter((a) => a.unlockedAt !== null)
+      .map((a) => a.achievementKey)
+  );
 
-    const def = ACHIEVEMENT_DEFINITIONS[achievement.achievementKey];
-    if (!def) continue;
+  for (const [key, def] of Object.entries(ACHIEVEMENT_DEFINITIONS)) {
+    if (unlockedKeys.has(key)) continue;
 
     if (isConditionMet(def.condition, state)) {
-      await unlockAchievement(userId, achievement.achievementKey);
+      await unlockAchievement(userId, key);
       const now = Math.floor(Date.now() / 1000);
       newAchievements.push({
-        achievementKey: achievement.achievementKey,
+        achievementKey: key,
         unlockedAt: now,
       });
     }
