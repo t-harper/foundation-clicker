@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useGameStore } from '../../store';
-import { ACTIVITY_DEFINITIONS, HERO_DEFINITIONS, ERA_DEFINITIONS, Era } from '@foundation/shared';
+import { ACTIVITY_DEFINITIONS, HERO_DEFINITIONS, ERA_DEFINITIONS, EVENT_DEFINITIONS, Era } from '@foundation/shared';
 import { getHeroes } from '../../api/heroes';
 import { getActivities } from '../../api/activities';
 import { getInventory } from '../../api/inventory';
@@ -20,6 +20,7 @@ export function ResearchPanel() {
   const activeActivities = useGameStore((s) => s.activeActivities);
   const inventory = useGameStore((s) => s.inventory);
   const activeConsumable = useGameStore((s) => s.activeConsumable);
+  const eventHistory = useGameStore((s) => s.eventHistory);
   const setHeroes = useGameStore((s) => s.setHeroes);
   const setActivities = useGameStore((s) => s.setActivities);
   const setActiveActivities = useGameStore((s) => s.setActiveActivities);
@@ -67,7 +68,7 @@ export function ResearchPanel() {
   // Filter activities by type and era
   const getFilteredActivities = (type: 'research' | 'mission') => {
     return Object.values(ACTIVITY_DEFINITIONS)
-      .filter((def) => def.type === type && def.era <= currentEra)
+      .filter((def) => def.type === type && def.era === currentEra)
       .sort((a, b) => a.era - b.era || a.durationSeconds - b.durationSeconds);
   };
 
@@ -76,6 +77,18 @@ export function ResearchPanel() {
 
   // Busy hero set
   const busyHeroKeys = new Set(activeActivities.map((a) => a.heroKey));
+
+  // Heroes discovered in previous runs (via event heroReward) but not currently unlocked
+  const discoveredHeroKeys = useMemo(() => {
+    const completedEventKeys = new Set(eventHistory.map((e) => e.eventKey));
+    const discovered = new Set<string>();
+    for (const [eventKey, def] of Object.entries(EVENT_DEFINITIONS)) {
+      if (def.heroReward && completedEventKeys.has(eventKey)) {
+        discovered.add(def.heroReward);
+      }
+    }
+    return discovered;
+  }, [eventHistory]);
 
   // Hero counts (only current-era heroes count as usable)
   const unlockedHeroes = heroes.filter((h) => h.unlockedAt !== null);
@@ -138,7 +151,6 @@ export function ResearchPanel() {
             <ActivityList
               activities={projects}
               completionMap={completionMap}
-              currentEra={currentEra}
               emptyMessage="No research projects available yet."
             />
           )}
@@ -147,7 +159,6 @@ export function ResearchPanel() {
             <ActivityList
               activities={missions}
               completionMap={completionMap}
-              currentEra={currentEra}
               emptyMessage="No missions available yet."
             />
           )}
@@ -165,6 +176,7 @@ export function ResearchPanel() {
               currentEra={currentEra}
               busyHeroKeys={busyHeroKeys}
               activeActivities={activeActivities}
+              discoveredHeroKeys={discoveredHeroKeys}
             />
           )}
         </>
@@ -176,12 +188,10 @@ export function ResearchPanel() {
 function ActivityList({
   activities,
   completionMap,
-  currentEra,
   emptyMessage,
 }: {
   activities: typeof ACTIVITY_DEFINITIONS[string][];
   completionMap: Map<string, number>;
-  currentEra: Era;
   emptyMessage: string;
 }) {
   if (activities.length === 0) {
@@ -193,44 +203,15 @@ function ActivityList({
     );
   }
 
-  // Group by era
-  const groups = new Map<Era, typeof activities>();
-  for (const def of activities) {
-    const list = groups.get(def.era) ?? [];
-    list.push(def);
-    groups.set(def.era, list);
-  }
-
   return (
-    <div className="space-y-6">
-      {Array.from(groups.entries()).map(([era, defs]) => {
-        const eraDef = ERA_DEFINITIONS[era];
-        return (
-          <section key={era}>
-            <div className="flex items-center gap-3 mb-3">
-              <h3
-                className="text-sm font-semibold tracking-wide uppercase"
-                style={{ color: eraDef.themeColors.primary }}
-              >
-                Era {era}: {eraDef.name}
-              </h3>
-              <div
-                className="flex-1 h-px"
-                style={{ backgroundColor: `${eraDef.themeColors.primary}30` }}
-              />
-            </div>
-            <div className="grid gap-3">
-              {defs.map((def) => (
-                <ActivityCard
-                  key={def.key}
-                  activityKey={def.key}
-                  timesCompleted={completionMap.get(def.key) ?? 0}
-                />
-              ))}
-            </div>
-          </section>
-        );
-      })}
+    <div className="grid gap-3">
+      {activities.map((def) => (
+        <ActivityCard
+          key={def.key}
+          activityKey={def.key}
+          timesCompleted={completionMap.get(def.key) ?? 0}
+        />
+      ))}
     </div>
   );
 }
@@ -240,11 +221,13 @@ function HeroList({
   currentEra,
   busyHeroKeys,
   activeActivities,
+  discoveredHeroKeys,
 }: {
   heroes: import('@foundation/shared').HeroState[];
   currentEra: Era;
   busyHeroKeys: Set<string>;
   activeActivities: import('@foundation/shared').ActiveActivity[];
+  discoveredHeroKeys: Set<string>;
 }) {
   // Show heroes for current era and below
   const visibleHeroes = heroes.filter((h) => {
@@ -299,6 +282,7 @@ function HeroList({
                     isBusy={busyHeroKeys.has(hero.heroKey)}
                     assignedActivity={activity?.activityKey}
                     isPreviousEra={era < currentEra}
+                    wasDiscovered={discoveredHeroKeys.has(hero.heroKey)}
                   />
                 );
               })}

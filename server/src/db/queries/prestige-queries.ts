@@ -65,12 +65,16 @@ export async function resetForPrestige(
     prestigeMultiplier: number;
   }
 ): Promise<void> {
-  // Parallel batch deletes of buildings, upgrades, ships, trade routes
+  // Parallel batch deletes of buildings, upgrades, ships, trade routes, inventory
+  // Heroes and activities persist across prestige (heroes are era-specific, shown as inactive)
   await Promise.all([
     deleteItemsByPrefix(userPK(userId), 'BUILDING#'),
     deleteItemsByPrefix(userPK(userId), 'UPGRADE#'),
     deleteItemsByPrefix(userPK(userId), 'SHIP#'),
     deleteItemsByPrefix(userPK(userId), 'TRADEROUTE#'),
+    deleteItemsByPrefix(userPK(userId), 'ACTIVE_ACTIVITY#'),
+    deleteItemsByPrefix(userPK(userId), 'INVENTORY#'),
+    deleteItemsByPrefix(userPK(userId), 'ACTIVE_CONSUMABLE'),
   ]);
 
   // Atomic update of game state with pre-computed prestige values

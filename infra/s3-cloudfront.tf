@@ -44,6 +44,14 @@ resource "aws_s3_bucket_policy" "client" {
   policy = data.aws_iam_policy_document.s3_cloudfront.json
 }
 
+resource "aws_cloudfront_function" "device_routing" {
+  name    = "${local.prefix}-device-routing"
+  runtime = "cloudfront-js-2.0"
+  comment = "Route mobile devices to /mobile/ SPA entry point"
+  publish = true
+  code    = file("${path.module}/cf-functions/device-routing.js")
+}
+
 resource "aws_cloudfront_distribution" "client" {
   enabled             = true
   default_root_object = "index.html"
@@ -67,6 +75,11 @@ resource "aws_cloudfront_distribution" "client" {
       cookies {
         forward = "none"
       }
+    }
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.device_routing.arn
     }
 
     min_ttl     = 0

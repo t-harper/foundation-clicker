@@ -67,10 +67,16 @@ echo ""
 echo "==> Step 5: Building client..."
 VITE_API_URL="${API_CUSTOM_URL}/api" VITE_WS_URL="$WS_CUSTOM_URL" npm run build:client
 
-# 6. Deploy client to S3
+# 5b. Build mobile client
 echo ""
-echo "==> Step 6: Deploying client to S3..."
-aws s3 sync client/dist/ "s3://$S3_BUCKET" --delete
+echo "==> Step 5b: Building mobile client..."
+VITE_API_URL="${API_CUSTOM_URL}/api" VITE_WS_URL="$WS_CUSTOM_URL" VITE_BASE_PATH=/mobile/ npm run build:mobile
+
+# 6. Deploy clients to S3
+echo ""
+echo "==> Step 6: Deploying clients to S3..."
+aws s3 sync client/dist/ "s3://$S3_BUCKET" --delete --exclude "mobile/*"
+aws s3 sync client-mobile/dist/ "s3://$S3_BUCKET/mobile/" --delete
 
 # 7. Invalidate CloudFront cache
 echo ""

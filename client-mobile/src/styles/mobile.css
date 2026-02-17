@@ -1,0 +1,58 @@
+/* ==========================================================================
+   Mobile-specific styles for Safari / iOS
+   ========================================================================== */
+
+/* Safe area support */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Full height without Safari URL bar issues */
+.mobile-vh {
+  height: 100svh;
+  height: -webkit-fill-available;
+}
+
+/* Prevent overscroll bounce on body */
+html, body {
+  overscroll-behavior: none;
+}
+
+/* Disable double-tap zoom on interactive elements */
+.touch-action-manipulation { touch-action: manipulation; }
+
+/* Bottom sheet animation */
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes sheetDown {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+.sheet-enter { animation: sheetUp 0.25s ease-out; }
+.sheet-exit { animation: sheetDown 0.2s ease-in forwards; }
+
+/* Scrollbar hiding for horizontal scroll containers */
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* FAB scale pulse on tap */
+@keyframes fabPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.fab-pulse { animation: fabPulse 0.2s ease-out; }
+
+/* Prevent text selection on game UI elements */
+.select-none-deep,
+.select-none-deep * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Momentum scrolling for scroll containers */
+.scroll-momentum {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}

@@ -137,50 +137,87 @@ export function UpgradePanel() {
         Show unaffordable upgrades{!showAll && hiddenCount > 0 ? ` (${hiddenCount} hidden)` : ''}
       </button>
 
-      {/* Era groups */}
-      {filteredGroups.length === 0 ? (
+      {/* Available upgrades grouped by era */}
+      {filteredGroups.every((g) => g.available.length === 0) && totalPurchased === 0 ? (
         <div className="text-center py-12 text-[var(--era-text)]/40">
           <p className="text-lg">No upgrades available yet.</p>
           <p className="text-sm mt-2">Build more to unlock upgrades!</p>
         </div>
       ) : (
-        filteredGroups.map((group) => {
-          const eraDef = ERA_DEFINITIONS[group.era];
-          return (
-            <section key={group.era}>
-              <div className="flex items-center gap-3 mb-3">
-                <h3
-                  className="text-sm font-semibold tracking-wide uppercase"
-                  style={{ color: eraDef.themeColors.primary }}
-                >
-                  Era {group.era}: {group.name}
+        <>
+          {filteredGroups
+            .filter((g) => g.available.length > 0)
+            .map((group) => {
+              const eraDef = ERA_DEFINITIONS[group.era];
+              return (
+                <section key={group.era}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <h3
+                      className="text-sm font-semibold tracking-wide uppercase"
+                      style={{ color: eraDef.themeColors.primary }}
+                    >
+                      Era {group.era}: {group.name}
+                    </h3>
+                    <div
+                      className="flex-1 h-px"
+                      style={{ backgroundColor: `${eraDef.themeColors.primary}30` }}
+                    />
+                  </div>
+                  <div className="grid gap-3">
+                    {group.available.map((upgrade) => (
+                      <UpgradeCard
+                        key={upgrade.upgradeKey}
+                        upgradeState={upgrade}
+                        isBestValue={upgrade.upgradeKey === bestValueKey}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+
+          {/* Purchased upgrades grouped by era, at the bottom */}
+          {filteredGroups.some((g) => g.purchased.length > 0) && (
+            <>
+              <div className="flex items-center gap-3 mt-2">
+                <h3 className="text-sm font-semibold tracking-wide uppercase text-[var(--era-text)]/30">
+                  Purchased
                 </h3>
-                <div
-                  className="flex-1 h-px"
-                  style={{ backgroundColor: `${eraDef.themeColors.primary}30` }}
-                />
+                <div className="flex-1 h-px bg-[var(--era-text)]/10" />
               </div>
 
-              <div className="grid gap-3">
-                {/* Available upgrades first */}
-                {group.available.map((upgrade) => (
-                  <UpgradeCard
-                    key={upgrade.upgradeKey}
-                    upgradeState={upgrade}
-                    isBestValue={upgrade.upgradeKey === bestValueKey}
-                  />
-                ))}
-                {/* Then purchased upgrades */}
-                {group.purchased.map((upgrade) => (
-                  <UpgradeCard
-                    key={upgrade.upgradeKey}
-                    upgradeState={upgrade}
-                  />
-                ))}
-              </div>
-            </section>
-          );
-        })
+              {filteredGroups
+                .filter((g) => g.purchased.length > 0)
+                .map((group) => {
+                  const eraDef = ERA_DEFINITIONS[group.era];
+                  return (
+                    <section key={`purchased-${group.era}`}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <h3
+                          className="text-xs font-semibold tracking-wide uppercase"
+                          style={{ color: `${eraDef.themeColors.primary}80` }}
+                        >
+                          Era {group.era}: {group.name}
+                        </h3>
+                        <div
+                          className="flex-1 h-px"
+                          style={{ backgroundColor: `${eraDef.themeColors.primary}20` }}
+                        />
+                      </div>
+                      <div className="grid gap-3">
+                        {group.purchased.map((upgrade) => (
+                          <UpgradeCard
+                            key={upgrade.upgradeKey}
+                            upgradeState={upgrade}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
+            </>
+          )}
+        </>
       )}
     </div>
   );

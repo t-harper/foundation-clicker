@@ -5,15 +5,18 @@
   "workspaces": [
     "shared",
     "server",
-    "client"
+    "client",
+    "client-mobile"
   ],
   "scripts": {
     "dev:server": "npm run dev -w server",
     "dev:client": "npm run dev -w client",
+    "dev:mobile": "npm run dev -w client-mobile",
     "build": "npm run build -w shared && npm run build -w server && npm run build -w client",
     "build:shared": "npm run build -w shared",
     "build:server": "npm run build -w server",
     "build:client": "npm run build -w client",
+    "build:mobile": "npm run build -w client-mobile",
     "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w client",
     "dev:db": "podman-compose up -d",
     "dev:db:stop": "podman-compose down",

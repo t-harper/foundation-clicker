@@ -81,8 +81,8 @@ export async function startActivity(
   }
 
   const state = await buildGameState(userId);
-  if (state.currentEra < activityDef.era) {
-    throw new ValidationError(`Activity ${activityKey} requires a later era`);
+  if (state.currentEra !== activityDef.era) {
+    throw new ValidationError(`Activity ${activityKey} is not available in the current era`);
   }
 
   if (heroDef.era !== state.currentEra) {

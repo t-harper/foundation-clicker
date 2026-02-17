@@ -79,8 +79,17 @@ jobs:
           VITE_WS_URL: ${{ steps.tf.outputs.ws_url }}
         run: npm run build:client
 
-      - name: Deploy client to S3
-        run: aws s3 sync client/dist/ "s3://${{ steps.tf.outputs.s3_bucket }}" --delete
+      - name: Build mobile client
+        env:
+          VITE_API_URL: ${{ steps.tf.outputs.api_url }}/api
+          VITE_WS_URL: ${{ steps.tf.outputs.ws_url }}
+          VITE_BASE_PATH: /mobile/
+        run: npm run build:mobile
+
+      - name: Deploy clients to S3
+        run: |
+          aws s3 sync client/dist/ "s3://${{ steps.tf.outputs.s3_bucket }}" --delete --exclude "mobile/*"
+          aws s3 sync client-mobile/dist/ "s3://${{ steps.tf.outputs.s3_bucket }}/mobile/" --delete
 
       - name: Invalidate CloudFront cache
         run: |

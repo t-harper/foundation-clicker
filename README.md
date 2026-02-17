@@ -13,7 +13,8 @@ npm run dev:db
 
 # Start development servers (run in separate terminals)
 npm run dev:server        # Express API on port 3001
-npm run dev:client        # Vite dev server on port 5173
+npm run dev:client        # Desktop Vite dev server on port 5173
+npm run dev:mobile        # Mobile Vite dev server on port 5174 (optional)
 ```
 
 Navigate to `http://localhost:5173`, register an account, and start clicking.
@@ -59,7 +60,7 @@ Each era adds 14 buildings, ~42 upgrades, new ship types, new trade routes, 4 he
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 18, Zustand 5, Vite 5, Tailwind CSS 3, React Router 6 |
+| Frontend | React 18, Zustand 5, Vite 5, Tailwind CSS 3, React Router 6 (desktop + mobile) |
 | Backend | Node.js, Express 4, AWS Lambda, API Gateway (HTTP + WebSocket), DynamoDB, JWT, bcrypt |
 | Database | DynamoDB (single-table design), DynamoDB Local via Podman for dev |
 | Infrastructure | Terraform, S3 + CloudFront, Route53, ACM |
@@ -71,14 +72,15 @@ Each era adds 14 buildings, ~42 upgrades, new ship types, new trade routes, 4 he
 
 ```
 foundation-game/
-  shared/     # Game engine -- types, constants, formulas, tick logic (no runtime deps)
-  server/     # Express API + Lambda handlers + DynamoDB + WebSocket
-  client/     # React SPA with RAF game loop
-  infra/      # Terraform (Lambda, API Gateway, DynamoDB, S3/CloudFront, DNS)
-  scripts/    # Deployment and bootstrapping scripts
+  shared/         # Game engine -- types, constants, formulas, tick logic (no runtime deps)
+  server/         # Express API + Lambda handlers + DynamoDB + WebSocket
+  client/         # Desktop React SPA with RAF game loop
+  client-mobile/  # Mobile-optimized React SPA (shares store/API/hooks from client via @desktop alias)
+  infra/          # Terraform (Lambda, API Gateway, DynamoDB, S3/CloudFront, DNS)
+  scripts/        # Deployment and bootstrapping scripts
 ```
 
-All three packages are connected via npm workspaces. The `shared` package contains every piece of game logic and balance data, used identically by client and server.
+All four packages are connected via npm workspaces. The `shared` package contains every piece of game logic and balance data, used identically by client, client-mobile, and server.
 
 ## Architecture
 
@@ -93,6 +95,8 @@ All three packages are connected via npm workspaces. The `shared` package contai
 **Offline earnings** -- When you return after being away, the server calculates what you would have earned (50% rate, capped at 24 hours) and shows a welcome-back modal.
 
 **WebSocket sync** -- The server pushes building/upgrade state to connected clients at 2 Hz for real-time multi-tab consistency. All game mutations (buy, sell, click, prestige, events) also go through the WebSocket for low-latency interaction.
+
+**Mobile client** -- A separate `client-mobile/` package provides a touch-optimized UI for mobile devices. It shares all non-UI code (store, API, hooks, engine) with the desktop client via a Vite `@desktop` path alias. A CloudFront Function routes mobile User-Agents to `/mobile/index.html` automatically; a `fg-view` cookie allows manual override.
 
 ## Development
 
@@ -110,10 +114,12 @@ npm run dev:db:stop         # Stop DynamoDB Local
 npm run dev:db:reset        # Reset database (destroy all data + restart)
 
 # Application
-npm run dev:client          # Vite dev server (port 5173, proxies /api to 3001)
+npm run dev:client          # Desktop Vite dev server (port 5173, proxies /api to 3001)
+npm run dev:mobile          # Mobile Vite dev server (port 5174, proxies /api to 3001)
 npm run dev:server          # Express with tsx watch (port 3001, auto-restart)
 npm run build               # Build all: shared -> server -> client
 npm run build:shared        # Build shared only (must run first for type-checking)
+npm run build:mobile        # Build mobile client only
 npm run typecheck           # Type-check all packages
 ```
 
@@ -149,11 +155,11 @@ Configured in `server/.env`:
 
 Production deploys automatically on push to `master` via GitHub Actions (`.github/workflows/deploy.yml`).
 
-The pipeline builds shared + Lambda bundles, runs `terraform apply`, builds the client with production URLs, syncs to S3, and invalidates CloudFront. Authentication uses GitHub OIDC -- no long-lived AWS credentials stored in GitHub.
+The pipeline builds shared + Lambda bundles, runs `terraform apply`, builds both desktop and mobile clients with production URLs, syncs to S3 (desktop at root, mobile at `/mobile/`), and invalidates CloudFront. Authentication uses GitHub OIDC -- no long-lived AWS credentials stored in GitHub.
 
 | URL | Service |
 |-----|---------|
-| https://app.foundation-clicker.com | Client SPA |
+| https://app.foundation-clicker.com | Client SPA (desktop or mobile, auto-detected by User-Agent) |
 | https://api.foundation-clicker.com | REST API (Lambda) |
 | wss://ws.foundation-clicker.com | WebSocket API (Lambda) |
 

@@ -6,8 +6,8 @@ An incremental/idle game themed around Isaac Asimov's Foundation series. Players
 
 ## Tech Stack
 
-- **Monorepo**: npm workspaces (`shared`, `server`, `client`)
-- **Frontend**: React 18, TypeScript, Vite 5, Tailwind CSS 3, Zustand 5, React Router 6
+- **Monorepo**: npm workspaces (`shared`, `server`, `client`, `client-mobile`)
+- **Frontend**: React 18, TypeScript, Vite 5, Tailwind CSS 3, Zustand 5, React Router 6 (desktop + mobile clients)
 - **Backend**: Node.js, Express 4, DynamoDB (single-table design), JWT auth (jsonwebtoken), bcrypt, ws (WebSocket)
 - **Database**: DynamoDB via `@aws-sdk/client-dynamodb` + `@aws-sdk/lib-dynamodb`. DynamoDB Local in Podman for development.
 - **Shared**: Pure TypeScript game engine (types, constants, formulas, tick logic) -- no runtime deps
@@ -24,7 +24,7 @@ foundation-game/
   podman-compose.yml        # DynamoDB Local container for development
   .github/
     workflows/
-      deploy.yml            # GitHub Actions: build, terraform apply, deploy client to S3/CloudFront
+      deploy.yml            # GitHub Actions: build, terraform apply, deploy both clients to S3/CloudFront
   scripts/
     deploy.sh               # Manual full deployment (build + terraform + S3 sync + CF invalidation)
     bootstrap-tf-backend.sh  # One-time: create S3 state bucket + DynamoDB lock table
@@ -40,7 +40,9 @@ foundation-game/
     lambda-ws.tf            # WebSocket Lambda functions (connect, disconnect, default)
     apigateway-http.tf      # HTTP API Gateway + Lambda integration + custom domain
     apigateway-ws.tf        # WebSocket API Gateway + Lambda integrations + custom domain
-    s3-cloudfront.tf        # S3 bucket + CloudFront distribution + OAC for client SPA
+    s3-cloudfront.tf        # S3 bucket + CloudFront distribution + OAC + device-routing CF function
+    cf-functions/
+      device-routing.js     # CloudFront Function: routes mobile User-Agents to /mobile/index.html
     dns.tf                  # Route53 records + ACM certificate
   shared/
     src/
@@ -192,6 +194,39 @@ foundation-game/
       styles/
         index.css           # Tailwind base + era theming CSS vars + animations (506 lines)
       utils/                # Utility functions (number formatting, etc.)
+  client-mobile/
+    package.json            # Separate workspace, shares deps with client
+    tsconfig.json           # Extends base, `@desktop` path alias to ../client/src
+    vite.config.ts          # Port 5174, @desktop alias, VITE_BASE_PATH for /mobile/ prefix
+    tailwind.config.ts      # Same theme as desktop, scans both local + shared desktop components
+    index.html              # Mobile viewport (no-zoom, viewport-fit=cover, apple-mobile-web-app-capable)
+    src/
+      main.tsx              # Entry point (same as desktop but imports mobile styles)
+      App.tsx               # Routes: /login + / (protected), uses Mobile* pages
+      styles/
+        index.css           # Era CSS variables + simplified starfield (1 layer)
+        mobile.css          # Safe areas, 100svh, sheet animations, overscroll-behavior
+      pages/
+        MobileGamePage.tsx  # Same init as desktop (loadGame, useGameEngine, useWebSocketSync)
+        MobileLoginPage.tsx # Touch-optimized login (48px inputs, no background effects)
+      components/
+        layout/             # MobileGameLayout, MobileHeader, MobileBottomNav, MobileMoreSheet
+        resources/          # MobileResourceBar, MobileClickTarget, FloatingClickButton, MobileOfflineSheet
+        common/             # BottomSheet, MobileModal, MobileTooltip, PullToRefresh
+        buildings/          # MobileBuildingPanel, MobileBuildingCard, MobileBuyBar
+        upgrades/           # MobileUpgradePanel, MobileUpgradeCard
+        ships/              # MobileShipPanel, MobileShipCard, MobileTradeRouteManager
+        achievements/       # MobileAchievementPanel, MobileAchievementCard
+        prestige/           # MobilePrestigePanel, MobileChainProgress
+        events/             # MobileEventModal, MobileActiveEffectsBar, MobileEventHistoryPanel
+        research/           # MobileResearchPanel, MobileActivityCard, MobileHeroCard, MobileInventoryPanel, MobileItemCard
+        encyclopedia/       # MobileEncyclopediaPanel
+        colony-map/         # MobileColonyMapPanel (touch pan/pinch-zoom)
+        settings/           # MobileSettingsModal
+      hooks/
+        useSwipeNavigation.ts  # Horizontal swipe to switch tabs
+      assets/svg/icons/
+        MoreIcon.tsx        # Three-dot icon for bottom nav "More" button
 ```
 
 ## Development Commands
@@ -204,11 +239,13 @@ npm run dev:db:reset        # Reset DynamoDB Local (destroy data + restart)
 
 # Application
 npm run dev:client          # Start Vite dev server (port 5173)
+npm run dev:mobile          # Start mobile Vite dev server (port 5174)
 npm run dev:server          # Start Express server with tsx watch (port 3001)
 npm run build               # Build all packages (shared -> server -> client)
 npm run build:shared        # Build only shared
 npm run build:server        # Build only server
-npm run build:client        # Build only client
+npm run build:client        # Build only client (desktop)
+npm run build:mobile        # Build only client (mobile)
 npm run typecheck           # Type-check all packages sequentially
 ```
 
@@ -217,6 +254,30 @@ npm run typecheck           # Type-check all packages sequentially
 **Important**: DynamoDB Local must be running before starting the server. Run `npm run dev:db` first.
 
 ## Architecture
+
+### Mobile Client (`client-mobile/`)
+
+A separate npm workspace package providing a touch-optimized UI for mobile devices (375-430px viewports, primarily iPhone Safari). It shares all non-UI code with the desktop client and provides a completely new component tree.
+
+**Code sharing via Vite aliases**: The mobile package imports from `../client/src/` using a `@desktop` alias in `vite.config.ts` and `tsconfig.json`. This gives access to the Zustand store (all slices + selectors), API client layer, WebSocket manager, hooks (`useGameEngine`, `useWebSocketSync`, etc.), utilities, SVG assets, and `@foundation/shared` without duplicating them.
+
+**What's mobile-specific (new files)**: Layout shell (header, bottom nav, resource bar), all panel components (buildings, upgrades, ships, etc.), common primitives (BottomSheet, MobileModal, PullToRefresh), touch hooks (useSwipeNavigation), and mobile CSS (safe areas, 100svh, sheet animations).
+
+**Device routing**: A CloudFront Function (`infra/cf-functions/device-routing.js`) on `viewer-request` inspects the User-Agent header and rewrites the URI. Mobile users get `/mobile/index.html`, desktop users get `/index.html`. A `fg-view` cookie (set by "Switch to Desktop/Mobile" in settings) overrides UA detection.
+
+**Mobile layout structure**:
+- MobileHeader (44px + safe-area-top)
+- MobileResourceBar (48px, horizontal scroll)
+- MobileActiveEffectsBar (conditional, 28px)
+- Main content area (scrollable, panel switch by active tab)
+- FloatingClickButton (56px FAB, bottom-right, hidden on vault tab)
+- MobileBottomNav (5 tabs: Buildings, Upgrades, Vault, Research, More)
+
+**Build**: `npm run build:mobile` produces output in `client-mobile/dist/`. In production, deployed to `s3://<bucket>/mobile/` with `VITE_BASE_PATH=/mobile/` so asset paths are self-contained.
+
+**tsconfig note**: No `rootDir` is set in `client-mobile/tsconfig.json` because `@desktop/*` imports resolve to files under `../client/src/` which would violate a rootDir constraint.
+
+**ActiveTab type**: The desktop `ActiveTab` union doesn't include `'vault'` (a mobile-only tab). `MobileGameLayout.tsx` casts `activeTab` to `string` for comparisons. The bottom nav uses `setActiveTab(key as ActiveTab)` to store it.
 
 ### Client-Server Split
 
@@ -282,6 +343,12 @@ All game content (buildings, upgrades, ships, trade routes, achievements, eras, 
 | `.github/workflows/deploy.yml` | GitHub Actions deployment pipeline |
 | `scripts/deploy.sh` | Manual deployment script (fallback to CI/CD) |
 | `scripts/bootstrap-tf-backend.sh` | One-time S3 state bucket + DynamoDB lock table creation |
+| `client-mobile/vite.config.ts` | Mobile Vite config: `@desktop` alias, port 5174, `VITE_BASE_PATH` |
+| `client-mobile/src/components/layout/MobileGameLayout.tsx` | Mobile root layout: header, nav, resource bar, panel switch, overlays |
+| `client-mobile/src/components/layout/MobileBottomNav.tsx` | 5-tab bottom nav with raised vault FAB |
+| `client-mobile/src/components/resources/MobileClickTarget.tsx` | Full-screen vault tab click target (120px button) |
+| `client-mobile/src/components/common/BottomSheet.tsx` | Reusable bottom sheet with swipe-to-dismiss |
+| `infra/cf-functions/device-routing.js` | CloudFront Function: mobile UA detection + `fg-view` cookie override |
 
 ## Database
 
@@ -566,9 +633,9 @@ interface BuildingArtProps {
 
 ## Era Theming
 
-Era-specific colors are applied via CSS custom properties set on `GameLayout`:
+Era-specific colors are applied via CSS custom properties set on `GameLayout` (desktop) and `MobileGameLayout` (mobile):
 - `--era-primary`, `--era-secondary`, `--era-accent`, `--era-bg`, `--era-surface`, `--era-text`
-- Defined per era via `[data-era="N"]` selectors in `client/src/styles/index.css`
+- Defined per era via `[data-era="N"]` selectors in `client/src/styles/index.css` and `client-mobile/src/styles/index.css`
 - All SVGs inherit colors via `currentColor`, so era changes cascade automatically
 - Background effects (starfield parallax, tech-grid, scanlines) are layered behind content
 
@@ -649,7 +716,7 @@ This is a larger change:
 2. Add definition to `ERA_DEFINITIONS` and threshold to `ERA_UNLOCK_THRESHOLDS` in `shared/src/constants/eras.ts` (include theme colors).
 3. Update `calcCurrentEra()` in `shared/src/engine/calculator.ts`.
 4. Add buildings, upgrades, ships, trade routes, heroes, activities, and items for the new era.
-5. Add era CSS variables in `client/src/styles/index.css` under a new `[data-era="N"]` selector.
+5. Add era CSS variables in `client/src/styles/index.css` and `client-mobile/src/styles/index.css` under a new `[data-era="N"]` selector.
 
 ## Environment Variables
 
@@ -687,7 +754,7 @@ Automated deployment runs on every push to `master` via `.github/workflows/deplo
 
 **Authentication**: GitHub OIDC federation -- no long-lived AWS credentials stored in GitHub. The workflow assumes an IAM role (`foundation-game-github-actions`) scoped to `repo:t-harper/foundation-clicker:environment:production`.
 
-**Pipeline steps**: checkout, OIDC auth, install deps, build shared, build+zip lambdas, `terraform apply`, capture outputs, build client with production URLs, S3 sync, CloudFront invalidation.
+**Pipeline steps**: checkout, OIDC auth, install deps, build shared, build+zip lambdas, `terraform apply`, capture outputs, build desktop client + mobile client with production URLs, dual S3 sync (desktop to root, mobile to `/mobile/`), CloudFront invalidation.
 
 **Concurrency**: `deploy-production` group with `cancel-in-progress: false` -- never cancels a running deploy.
 
@@ -721,7 +788,7 @@ All AWS infrastructure is defined in `infra/*.tf` and managed by Terraform:
 | WebSocket Lambdas | `lambda-ws.tf` | 3 functions: connect, disconnect, default |
 | HTTP API Gateway | `apigateway-http.tf` | Routes to REST Lambda, custom domain `api.foundation-clicker.com` |
 | WebSocket API Gateway | `apigateway-ws.tf` | Routes to WS Lambdas, custom domain `ws.foundation-clicker.com` |
-| S3 + CloudFront | `s3-cloudfront.tf` | Static site hosting, OAC, custom domain `app.foundation-clicker.com` |
+| S3 + CloudFront | `s3-cloudfront.tf` | Static site hosting, OAC, device-routing CF function, custom domain `app.foundation-clicker.com` |
 | DNS + TLS | `dns.tf` | Route53 records, ACM wildcard certificate |
 | IAM | `iam.tf` | Lambda execution roles with DynamoDB + API Gateway permissions |
 | CI/CD | `cicd.tf` | GitHub OIDC provider + IAM role for GitHub Actions |
