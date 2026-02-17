@@ -26,7 +26,7 @@ export const ACTIVITY_DEFINITIONS: Record<string, ActivityDefinition> = {
     type: 'mission',
     cost: { credits: 10 },
     durationSeconds: 5,
-    rewards: [{ itemKey: 'encyclopediaVolume', quantity: 1 }],
+    rewards: [{ itemKey: 'atomicAshtray', quantity: 1 }],
     repeatable: false,
     maxCompletions: 1,
   },

@@ -2,7 +2,16 @@ import { Era } from '../types/eras.js';
 import { ItemDefinition } from '../types/items.js';
 
 export const ITEM_DEFINITIONS: Record<string, ItemDefinition> = {
-  // ─── Tutorial Artifact ──────────────────────────────────────────────
+  // ─── Tutorial Artifacts ─────────────────────────────────────────────
+
+  atomicAshtray: {
+    key: 'atomicAshtray',
+    name: 'Atomic Ashtray',
+    description: 'A novelty ashtray powered by a tiny atomic cell. A relic of Terminus\'s early days that somehow boosts credit production.',
+    era: Era.ReligiousDominance,
+    category: 'artifact',
+    effect: { type: 'resourceMultiplier', resource: 'credits', multiplier: 1.03 },
+  },
 
   primeRadiant: {
     key: 'primeRadiant',
