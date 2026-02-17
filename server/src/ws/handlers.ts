@@ -15,8 +15,11 @@ import {
   triggerPrestige,
   getPrestigeHistoryForUser,
 } from '../services/prestige.js';
-import { handleEventChoice, getUserActiveEffects, getUserEventHistory } from '../services/event.js';
+import { handleEventChoice, getUserActiveEffects, getUserEventHistory, checkForEvent } from '../services/event.js';
 import { checkAchievements } from '../services/achievement.js';
+import { getUserBuildings } from '../services/building.js';
+import { getUserUpgrades } from '../services/upgrade.js';
+import { getUserShips } from '../services/ship.js';
 
 export interface HandlerResult {
   response: ServerMessage | null;
@@ -156,6 +159,42 @@ export async function handleClientMessage(userId: number, msg: ClientMessage): P
       const result = await getUserEventHistory(userId);
       return {
         response: { type: 'result', requestId: msg.requestId, data: { history: result } },
+      };
+    }
+
+    case 'requestSync': {
+      const [buildings, upgrades, ships] = await Promise.all([
+        getUserBuildings(userId),
+        getUserUpgrades(userId),
+        getUserShips(userId),
+      ]);
+      return {
+        response: { type: 'result', requestId: msg.requestId, data: { type: 'sync', buildings, upgrades, ships } },
+      };
+    }
+
+    case 'checkEvents': {
+      const result = await checkForEvent(userId);
+      if (result.event) {
+        return {
+          response: { type: 'result', requestId: msg.requestId, data: { type: 'eventTriggered', eventKey: result.event.eventKey } },
+        };
+      }
+      return {
+        response: { type: 'result', requestId: msg.requestId, data: null },
+      };
+    }
+
+    case 'checkEffects': {
+      const effects = await getUserActiveEffects(userId);
+      return {
+        response: { type: 'result', requestId: msg.requestId, data: { type: 'effectsUpdate', activeEffects: effects } },
+      };
+    }
+
+    case 'ping': {
+      return {
+        response: { type: 'pong' } as any,
       };
     }
 

@@ -10,45 +10,68 @@ type PendingRequest = {
 };
 
 const REQUEST_TIMEOUT = 10000;
+const SYNC_POLL_INTERVAL = 5000;
+const EVENTS_POLL_INTERVAL = 20000;
+const EFFECTS_POLL_INTERVAL = 5000;
+const KEEPALIVE_INTERVAL = 5 * 60 * 1000; // 5 min
+const MAX_RECONNECT_FAILURES = 5;
 
 class WebSocketManager {
   private ws: WebSocket | null = null;
   private pending = new Map<string, PendingRequest>();
   private saveInterval: ReturnType<typeof setInterval> | null = null;
+  private syncInterval: ReturnType<typeof setInterval> | null = null;
+  private eventsInterval: ReturnType<typeof setInterval> | null = null;
+  private effectsInterval: ReturnType<typeof setInterval> | null = null;
+  private keepaliveInterval: ReturnType<typeof setInterval> | null = null;
   private requestCounter = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private backoff = 1000;
   private disposed = false;
+  private consecutiveFailures = 0;
 
   connect(): void {
     this.disposed = false;
     const token = localStorage.getItem('foundation_token');
     if (!token) return;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(
-      `${protocol}//${window.location.host}/ws?token=${encodeURIComponent(token)}`
-    );
+    let wsUrl: string;
+    const configuredWsUrl = import.meta.env.VITE_WS_URL;
+    if (configuredWsUrl) {
+      // Production: use configured WebSocket API Gateway URL
+      wsUrl = `${configuredWsUrl}?token=${encodeURIComponent(token)}`;
+    } else {
+      // Local dev: relative URL through Vite proxy
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      wsUrl = `${protocol}//${window.location.host}/ws?token=${encodeURIComponent(token)}`;
+    }
+
+    const ws = new WebSocket(wsUrl);
     this.ws = ws;
 
     ws.onopen = () => {
       console.log('[WS] Connected');
       this.backoff = 1000;
+      this.consecutiveFailures = 0;
       this.startSaveInterval();
+      this.startPollingIntervals();
     };
 
     ws.onmessage = (event) => {
       this.handleMessage(event);
     };
 
-    ws.onclose = (event) => {
+    ws.onclose = () => {
       this.ws = null;
       this.stopSaveInterval();
+      this.stopPollingIntervals();
 
       if (this.disposed) return;
 
-      if (event.code === 4001) {
-        console.warn('[WS] Auth rejected, redirecting to login');
+      this.consecutiveFailures++;
+
+      if (this.consecutiveFailures >= MAX_RECONNECT_FAILURES) {
+        console.warn('[WS] Too many reconnect failures, redirecting to login');
         localStorage.removeItem('foundation_token');
         window.location.href = '/login';
         return;
@@ -72,6 +95,7 @@ class WebSocketManager {
       this.reconnectTimer = null;
     }
     this.stopSaveInterval();
+    this.stopPollingIntervals();
 
     // Reject all pending requests
     for (const [id, pending] of this.pending) {
@@ -190,6 +214,11 @@ class WebSocketManager {
         useGameStore.getState().setGameState(msg.gameState);
         break;
       }
+
+      case 'pong': {
+        // Keepalive acknowledged, nothing to do
+        break;
+      }
     }
   }
 
@@ -214,6 +243,67 @@ class WebSocketManager {
     if (this.saveInterval) {
       clearInterval(this.saveInterval);
       this.saveInterval = null;
+    }
+  }
+
+  private startPollingIntervals(): void {
+    this.stopPollingIntervals();
+
+    // Sync polling (buildings, upgrades, ships)
+    this.syncInterval = setInterval(() => {
+      this.send<any>({ type: 'requestSync' }).then((data) => {
+        if (data && data.type === 'sync') {
+          const state = useGameStore.getState();
+          if (data.buildings) state.setBuildings(data.buildings);
+          if (data.upgrades) state.setUpgrades(data.upgrades);
+          if (data.ships) state.setShips(data.ships);
+        }
+      }).catch(() => { /* ignore poll failures */ });
+    }, SYNC_POLL_INTERVAL);
+
+    // Event polling
+    this.eventsInterval = setInterval(() => {
+      this.send<any>({ type: 'checkEvents' }).then((data) => {
+        if (data && data.type === 'eventTriggered') {
+          const state = useGameStore.getState();
+          if (!state.showEventModal) {
+            state.showEvent(data.eventKey);
+          }
+        }
+      }).catch(() => { /* ignore poll failures */ });
+    }, EVENTS_POLL_INTERVAL);
+
+    // Effects polling
+    this.effectsInterval = setInterval(() => {
+      this.send<any>({ type: 'checkEffects' }).then((data) => {
+        if (data && data.type === 'effectsUpdate') {
+          useGameStore.getState().setActiveEffects(data.activeEffects);
+        }
+      }).catch(() => { /* ignore poll failures */ });
+    }, EFFECTS_POLL_INTERVAL);
+
+    // Keepalive ping (API Gateway has 10-min idle timeout)
+    this.keepaliveInterval = setInterval(() => {
+      this.fire({ type: 'ping' } as any);
+    }, KEEPALIVE_INTERVAL);
+  }
+
+  private stopPollingIntervals(): void {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+      this.syncInterval = null;
+    }
+    if (this.eventsInterval) {
+      clearInterval(this.eventsInterval);
+      this.eventsInterval = null;
+    }
+    if (this.effectsInterval) {
+      clearInterval(this.effectsInterval);
+      this.effectsInterval = null;
+    }
+    if (this.keepaliveInterval) {
+      clearInterval(this.keepaliveInterval);
+      this.keepaliveInterval = null;
     }
   }
 }

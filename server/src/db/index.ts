@@ -14,3 +14,4 @@ export * from './queries/event-queries.js';
 export * from './queries/hero-queries.js';
 export * from './queries/activity-queries.js';
 export * from './queries/inventory-queries.js';
+export * from './queries/ws-connection-queries.js';

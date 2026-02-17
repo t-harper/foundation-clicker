@@ -10,8 +10,12 @@ import { errorHandler } from './middleware/error-handler.js';
 
 const app = express();
 
+const allowedOrigins = process.env.ALLOWED_ORIGIN
+  ? [process.env.ALLOWED_ORIGIN]
+  : ['http://localhost:5173', 'http://10.254.0.212:5173'];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://10.254.0.212:5173'],
+  origin: allowedOrigins,
   credentials: true,
 }));
 

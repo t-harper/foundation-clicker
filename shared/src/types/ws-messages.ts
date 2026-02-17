@@ -26,7 +26,12 @@ export type ClientMessage =
   | { type: 'getPrestigePreview'; requestId: string }
   | { type: 'getPrestigeHistory'; requestId: string }
   | { type: 'getActiveEffects'; requestId: string }
-  | { type: 'getEventHistory'; requestId: string };
+  | { type: 'getEventHistory'; requestId: string }
+  // Client-initiated polling (for serverless compatibility)
+  | { type: 'requestSync'; requestId: string }
+  | { type: 'checkEvents'; requestId: string }
+  | { type: 'checkEffects'; requestId: string }
+  | { type: 'ping' };
 
 // Server → Client messages
 export type ServerMessage =
@@ -38,4 +43,5 @@ export type ServerMessage =
   | { type: 'achievementUnlocked'; achievements: AchievementState[] }
   | { type: 'eventTriggered'; eventKey: string }
   | { type: 'effectsUpdate'; activeEffects: ActiveEffect[] }
-  | { type: 'fullState'; gameState: GameState };
+  | { type: 'fullState'; gameState: GameState }
+  | { type: 'pong' };

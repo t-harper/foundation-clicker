@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import type { GameState, AdminUserSummary, BuildingKey, UpgradeKey } from '@foundation/shared';
 import { BUILDING_DEFINITIONS, UPGRADE_DEFINITIONS, ACHIEVEMENT_DEFINITIONS, HERO_DEFINITIONS } from '@foundation/shared';
 import {

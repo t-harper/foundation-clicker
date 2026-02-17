@@ -1,0 +1,101 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.5"
+          terraform_wrapper: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared package
+        run: npm run build:shared
+
+      - name: Build and package Lambda functions
+        run: |
+          npm run --workspace=server build:lambda-rest
+          npm run --workspace=server build:lambda-ws
+          (cd server/dist-lambda/rest && zip -r ../../../infra/lambda-rest.zip .)
+          (cd server/dist-lambda/ws && zip -r ../../../infra/lambda-ws.zip .)
+
+      - name: Terraform init
+        working-directory: infra
+        run: terraform init -input=false
+
+      - name: Terraform apply
+        working-directory: infra
+        env:
+          TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
+        run: terraform apply -auto-approve -input=false
+
+      - name: Capture Terraform outputs
+        id: tf
+        working-directory: infra
+        run: |
+          echo "api_url=$(terraform output -raw api_custom_url)" >> "$GITHUB_OUTPUT"
+          echo "ws_url=$(terraform output -raw ws_custom_url)" >> "$GITHUB_OUTPUT"
+          echo "s3_bucket=$(terraform output -raw s3_bucket_name)" >> "$GITHUB_OUTPUT"
+          echo "cf_dist_id=$(terraform output -raw cloudfront_distribution_id)" >> "$GITHUB_OUTPUT"
+          echo "app_url=$(terraform output -raw app_url)" >> "$GITHUB_OUTPUT"
+
+      - name: Build client
+        env:
+          VITE_API_URL: ${{ steps.tf.outputs.api_url }}/api
+          VITE_WS_URL: ${{ steps.tf.outputs.ws_url }}
+        run: npm run build:client
+
+      - name: Deploy client to S3
+        run: aws s3 sync client/dist/ "s3://${{ steps.tf.outputs.s3_bucket }}" --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ steps.tf.outputs.cf_dist_id }}" \
+            --paths "/*" > /dev/null
+
+      - name: Deployment summary
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## Deployment Complete
+
+          | Resource | URL |
+          |----------|-----|
+          | App | ${{ steps.tf.outputs.app_url }} |
+          | API | ${{ steps.tf.outputs.api_url }} |
+          | WebSocket | ${{ steps.tf.outputs.ws_url }} |
+          EOF

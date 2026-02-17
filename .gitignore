@@ -8,3 +8,11 @@ dist/
 .env
 .DS_Store
 *.log
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate*
+
+# Lambda build artifacts
+server/dist-lambda/
+infra/lambda-*.zip

@@ -576,6 +576,24 @@ This is a larger change:
 | `AWS_ACCESS_KEY_ID` | *(none)* | AWS credentials. Set to `local` for DynamoDB Local. |
 | `AWS_SECRET_ACCESS_KEY` | *(none)* | AWS credentials. Set to `local` for DynamoDB Local. |
 
+### Deployment (`scripts/deploy.sh`)
+
+Required environment variables before running `scripts/deploy.sh`:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TF_VAR_jwt_secret` | Yes | JWT signing secret, passed to Terraform |
+| `AWS_ACCESS_KEY_ID` | Yes | AWS credentials for Terraform + AWS CLI |
+| `AWS_SECRET_ACCESS_KEY` | Yes | AWS credentials for Terraform + AWS CLI |
+| `AWS_REGION` | No (default: `us-east-1`) | AWS region for all resources |
+
+```bash
+export TF_VAR_jwt_secret="your-production-secret"
+export AWS_ACCESS_KEY_ID="AKIA..."
+export AWS_SECRET_ACCESS_KEY="..."
+bash scripts/deploy.sh
+```
+
 ## Conventions
 
 - All packages use ESM (`"type": "module"`) with `.js` extensions in server imports (Vite handles client imports without extensions).
