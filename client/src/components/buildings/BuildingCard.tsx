@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import type { BuildingKey, BuildingState, BuildingDefinition, ResourceKey, Resources } from '@foundation/shared';
-import { BUILDING_DEFINITIONS, calcBulkCost, calcMaxAffordable, calcBuildingUnitRates } from '@foundation/shared';
+import { BUILDING_DEFINITIONS, calcBulkCost, calcMaxAffordableBuilding, calcBuildingUnitRates } from '@foundation/shared';
 import { useGameStore, selectGameState } from '../../store';
 import type { BuyAmount } from '../../store';
 import { buyBuilding } from '../../api';
@@ -21,16 +21,12 @@ function getBuildingLevel(count: number): 1 | 2 | 3 {
 
 function getEffectiveAmount(
   buyAmount: BuyAmount,
-  definition: BuildingDefinition,
+  buildingKey: BuildingKey,
   owned: number,
   resources: Resources,
 ): number {
   if (buyAmount === 'max') {
-    // For max, compute based on the primary cost (credits)
-    const primaryKey = Object.keys(definition.baseCost)[0] as ResourceKey;
-    const baseCost = definition.baseCost[primaryKey] ?? 0;
-    const budget = resources[primaryKey] ?? 0;
-    return Math.max(1, calcMaxAffordable(baseCost, owned, budget));
+    return Math.max(1, calcMaxAffordableBuilding(buildingKey, owned, resources));
   }
   return buyAmount;
 }
@@ -75,7 +71,7 @@ export function BuildingCard({ buildingState, isBestValue = false }: BuildingCar
 
   const effectiveAmount = getEffectiveAmount(
     buyAmount,
-    definition,
+    buildingState.buildingKey,
     buildingState.count,
     resources,
   );

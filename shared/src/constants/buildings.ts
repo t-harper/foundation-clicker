@@ -23,7 +23,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Water Reclamator',
     description: 'Recycling atmospheric moisture into drinkable water. Essential for colony survival.',
     era: Era.ReligiousDominance,
-    baseCost: { credits: 25 },
+    baseCost: { credits: 25, rawMaterials: 8 },
     production: [
       { resource: 'rawMaterials', amount: 0.3 },
     ],
@@ -35,7 +35,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Hydroponics Farm',
     description: 'Growing food in controlled environments. Terminus\'s soil won\'t feed the colony alone.',
     era: Era.ReligiousDominance,
-    baseCost: { credits: 60 },
+    baseCost: { credits: 60, rawMaterials: 15 },
     production: [
       { resource: 'credits', amount: 0.3 },
       { resource: 'rawMaterials', amount: 0.2 },
@@ -109,7 +109,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Encyclopedia Archive',
     description: 'The great halls where scholars compile humanity\'s accumulated wisdom.',
     era: Era.ReligiousDominance,
-    baseCost: { credits: 15000, knowledge: 100 },
+    baseCost: { credits: 15000, knowledge: 100, rawMaterials: 50 },
     production: [
       { resource: 'knowledge', amount: 3 },
     ],
@@ -133,7 +133,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Missionary Chapel',
     description: 'Technician-priests spreading the holy word of atomic power to the Four Kingdoms.',
     era: Era.ReligiousDominance,
-    baseCost: { credits: 100000, knowledge: 300 },
+    baseCost: { credits: 100000, knowledge: 300, rawMaterials: 200 },
     production: [
       { resource: 'influence', amount: 2 },
     ],
@@ -145,7 +145,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Holo-Temple',
     description: 'Grand cathedrals where nuclear technology is presented as divine miracle.',
     era: Era.ReligiousDominance,
-    baseCost: { credits: 200000, influence: 100 },
+    baseCost: { credits: 200000, influence: 100, rawMaterials: 500 },
     production: [
       { resource: 'influence', amount: 5 },
       { resource: 'credits', amount: 6 },
@@ -158,7 +158,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Atomic Forge',
     description: 'Nuclear-powered fabricators that transmute raw elements into precision components.',
     era: Era.ReligiousDominance,
-    baseCost: { credits: 350000, nuclearTech: 200 },
+    baseCost: { credits: 350000, nuclearTech: 200, rawMaterials: 1000 },
     production: [
       { resource: 'nuclearTech', amount: 3 },
       { resource: 'rawMaterials', amount: 4 },
@@ -171,7 +171,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Cathedral of Science',
     description: 'The Foundation\'s crown jewel \u2014 a fortress of all human understanding.',
     era: Era.ReligiousDominance,
-    baseCost: { credits: 500000, knowledge: 500, nuclearTech: 200, influence: 200 },
+    baseCost: { credits: 500000, knowledge: 500, nuclearTech: 200, influence: 200, rawMaterials: 1500 },
     production: [
       { resource: 'credits', amount: 15 },
       { resource: 'knowledge', amount: 4 },
@@ -192,7 +192,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Trading Post',
     description: 'A frontier outpost where Foundation goods flow to hungry border worlds.',
     era: Era.TradingExpansion,
-    baseCost: { credits: 500000 },
+    baseCost: { credits: 500000, rawMaterials: 5000 },
     production: [
       { resource: 'credits', amount: 25 },
       { resource: 'rawMaterials', amount: 2 },
@@ -230,7 +230,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Foundation Bank',
     description: 'Lending credits at interest to planetary governments. The invisible chain.',
     era: Era.TradingExpansion,
-    baseCost: { credits: 4000000, knowledge: 20000 },
+    baseCost: { credits: 4000000, knowledge: 20000, rawMaterials: 5000 },
     production: [
       { resource: 'credits', amount: 80 },
     ],
@@ -280,7 +280,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Merchant Guild Hall',
     description: 'The nerve center of the Foundation\'s commercial empire.',
     era: Era.TradingExpansion,
-    baseCost: { credits: 50000000, influence: 30000 },
+    baseCost: { credits: 50000000, influence: 30000, rawMaterials: 50000 },
     production: [
       { resource: 'credits', amount: 150 },
       { resource: 'influence', amount: 12 },
@@ -293,7 +293,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Navigators Academy',
     description: 'An academy of hyperspace navigators charting the fastest trade routes.',
     era: Era.TradingExpansion,
-    baseCost: { credits: 80000000, knowledge: 50000 },
+    baseCost: { credits: 80000000, knowledge: 50000, rawMaterials: 30000 },
     production: [
       { resource: 'knowledge', amount: 25 },
     ],
@@ -305,7 +305,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Trade Embassy',
     description: 'Diplomatic missions converting economic leverage into political power.',
     era: Era.TradingExpansion,
-    baseCost: { credits: 120000000, influence: 50000 },
+    baseCost: { credits: 120000000, influence: 50000, rawMaterials: 40000 },
     production: [
       { resource: 'influence', amount: 20 },
       { resource: 'credits', amount: 80 },
@@ -318,7 +318,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Weapons Factory',
     description: 'Armaments for sale \u2014 because even pacifists must arm their clients.',
     era: Era.TradingExpansion,
-    baseCost: { credits: 180000000, nuclearTech: 100000 },
+    baseCost: { credits: 180000000, nuclearTech: 100000, rawMaterials: 100000 },
     production: [
       { resource: 'nuclearTech', amount: 25 },
       { resource: 'credits', amount: 100 },
@@ -356,7 +356,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Galactic Bourse',
     description: 'The central exchange where planetary economies are made or broken.',
     era: Era.TradingExpansion,
-    baseCost: { credits: 500000000, influence: 150000, knowledge: 100000, nuclearTech: 50000 },
+    baseCost: { credits: 500000000, influence: 150000, knowledge: 100000, nuclearTech: 50000, rawMaterials: 80000 },
     production: [
       { resource: 'credits', amount: 400 },
       { resource: 'rawMaterials', amount: 20 },
@@ -377,7 +377,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Psychohistory Lab',
     description: 'Where mathematicians model the future of thirty trillion souls.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 100000000, knowledge: 500000 },
+    baseCost: { credits: 100000000, knowledge: 500000, rawMaterials: 200000 },
     production: [
       { resource: 'knowledge', amount: 100 },
     ],
@@ -389,7 +389,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Emotional Adjustment Center',
     description: 'Subtle facilities where mentalics fine-tune the emotional states of key individuals.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 200000000, influence: 100000 },
+    baseCost: { credits: 200000000, influence: 100000, rawMaterials: 300000 },
     production: [
       { resource: 'influence', amount: 50 },
     ],
@@ -401,7 +401,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Mentalics Academy',
     description: 'The training ground for the Second Foundation\'s psychic elite.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 400000000, influence: 200000 },
+    baseCost: { credits: 400000000, influence: 200000, rawMaterials: 400000 },
     production: [
       { resource: 'knowledge', amount: 80 },
       { resource: 'influence', amount: 30 },
@@ -414,7 +414,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Aura Manufactory',
     description: 'Devices that project an aura of authority and trust around the wearer.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 800000000, influence: 400000 },
+    baseCost: { credits: 800000000, influence: 400000, rawMaterials: 800000 },
     production: [
       { resource: 'influence', amount: 80 },
       { resource: 'credits', amount: 1000 },
@@ -427,7 +427,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Prime Radiant Vault',
     description: 'The sacred device that displays the Seldon Plan in all its mathematical beauty.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 1500000000, knowledge: 1000000 },
+    baseCost: { credits: 1500000000, knowledge: 1000000, rawMaterials: 500000 },
     production: [
       { resource: 'knowledge', amount: 300 },
     ],
@@ -439,7 +439,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Propaganda Network',
     description: 'Subtly shaping public opinion across worlds that don\'t know they\'re being guided.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 3000000000, influence: 800000 },
+    baseCost: { credits: 3000000000, influence: 800000, rawMaterials: 300000 },
     production: [
       { resource: 'influence', amount: 150 },
     ],
@@ -451,7 +451,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Dream Probe Lab',
     description: 'Mentalic researchers explore the subconscious for patterns invisible to mathematics.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 5000000000, influence: 500000, knowledge: 500000 },
+    baseCost: { credits: 5000000000, influence: 500000, knowledge: 500000, rawMaterials: 500000 },
     production: [
       { resource: 'knowledge', amount: 200 },
       { resource: 'influence', amount: 100 },
@@ -464,7 +464,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Imperial Archive',
     description: 'Salvaged records of the fallen Galactic Empire \u2014 twelve millennia of data.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 10000000000, knowledge: 2000000 },
+    baseCost: { credits: 10000000000, knowledge: 2000000, rawMaterials: 1000000 },
     production: [
       { resource: 'knowledge', amount: 600 },
     ],
@@ -476,7 +476,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Shield Generator',
     description: 'Planetary defense screens powered by psychohistorical prediction of attack vectors.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 15000000000, nuclearTech: 1000000 },
+    baseCost: { credits: 15000000000, nuclearTech: 1000000, rawMaterials: 2000000 },
     production: [
       { resource: 'nuclearTech', amount: 200 },
     ],
@@ -488,7 +488,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Conversion Chamber',
     description: 'Reverse-engineered from the Mule\'s techniques. Persuasion beyond resistance.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 25000000000, influence: 2000000 },
+    baseCost: { credits: 25000000000, influence: 2000000, rawMaterials: 3000000 },
     production: [
       { resource: 'influence', amount: 500 },
     ],
@@ -500,7 +500,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Speakers\' Sanctum',
     description: 'The inner circle of the Second Foundation \u2014 Speakers who guide the Plan.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 40000000000, influence: 3000000, knowledge: 2000000 },
+    baseCost: { credits: 40000000000, influence: 3000000, knowledge: 2000000, rawMaterials: 2000000 },
     production: [
       { resource: 'knowledge', amount: 400 },
       { resource: 'influence', amount: 300 },
@@ -513,7 +513,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Mind Shield Array',
     description: 'Defensive networks that protect against mentalic intrusion \u2014 built after the Mule.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 60000000000, nuclearTech: 3000000, influence: 1000000 },
+    baseCost: { credits: 60000000000, nuclearTech: 3000000, influence: 1000000, rawMaterials: 4000000 },
     production: [
       { resource: 'nuclearTech', amount: 300 },
       { resource: 'influence', amount: 200 },
@@ -526,7 +526,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Whisper Ship Hangar',
     description: 'Covert hangars for the Second Foundation\'s psychological influence vessels.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 80000000000, influence: 4000000, nuclearTech: 2000000 },
+    baseCost: { credits: 80000000000, influence: 4000000, nuclearTech: 2000000, rawMaterials: 5000000 },
     production: [
       { resource: 'influence', amount: 400 },
       { resource: 'nuclearTech', amount: 150 },
@@ -539,7 +539,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Second Foundation Retreat',
     description: 'Star\'s End \u2014 the hidden world where the true guardians of the Plan reside.',
     era: Era.PsychologicalInfluence,
-    baseCost: { credits: 100000000000, knowledge: 5000000, influence: 5000000, nuclearTech: 2000000 },
+    baseCost: { credits: 100000000000, knowledge: 5000000, influence: 5000000, nuclearTech: 2000000, rawMaterials: 5000000 },
     production: [
       { resource: 'credits', amount: 10000 },
       { resource: 'knowledge', amount: 500 },
@@ -560,7 +560,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Gravitic Plant',
     description: 'Anti-gravity technology that rewrites the rules of engineering and transport.',
     era: Era.GalacticReunification,
-    baseCost: { credits: 10000000000, nuclearTech: 5000000 },
+    baseCost: { credits: 10000000000, nuclearTech: 5000000, rawMaterials: 3000000 },
     production: [
       { resource: 'nuclearTech', amount: 1000 },
     ],
@@ -572,7 +572,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Gaian Biosphere',
     description: 'A self-sustaining ecosystem where every lifeform shares one consciousness.',
     era: Era.GalacticReunification,
-    baseCost: { credits: 20000000000, influence: 5000000 },
+    baseCost: { credits: 20000000000, influence: 5000000, rawMaterials: 5000000 },
     production: [
       { resource: 'rawMaterials', amount: 1000 },
       { resource: 'knowledge', amount: 500 },
@@ -598,7 +598,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Consciousness Amplifier',
     description: 'Technology that extends the Gaian gestalt across interstellar distances.',
     era: Era.GalacticReunification,
-    baseCost: { credits: 80000000000, influence: 20000000, knowledge: 10000000 },
+    baseCost: { credits: 80000000000, influence: 20000000, knowledge: 10000000, rawMaterials: 5000000 },
     production: [
       { resource: 'influence', amount: 2000 },
       { resource: 'knowledge', amount: 1500 },
@@ -623,7 +623,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Galaxia Beacon',
     description: 'Transmitters that carry the Galaxia signal to the farthest spiral arms.',
     era: Era.GalacticReunification,
-    baseCost: { credits: 300000000000, influence: 50000000, knowledge: 30000000 },
+    baseCost: { credits: 300000000000, influence: 50000000, knowledge: 30000000, rawMaterials: 20000000 },
     production: [
       { resource: 'influence', amount: 5000 },
     ],
@@ -648,7 +648,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Robot Archives',
     description: 'The hidden records of R. Daneel Olivaw \u2014 twenty thousand years of guidance.',
     era: Era.GalacticReunification,
-    baseCost: { credits: 1000000000000, knowledge: 100000000 },
+    baseCost: { credits: 1000000000000, knowledge: 100000000, rawMaterials: 30000000 },
     production: [
       { resource: 'knowledge', amount: 8000 },
     ],
@@ -673,7 +673,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Galactic Senate',
     description: 'Where every world has a voice, and every voice is heard through shared consciousness.',
     era: Era.GalacticReunification,
-    baseCost: { credits: 2500000000000, influence: 200000000, knowledge: 100000000 },
+    baseCost: { credits: 2500000000000, influence: 200000000, knowledge: 100000000, rawMaterials: 50000000 },
     production: [
       { resource: 'influence', amount: 8000 },
       { resource: 'credits', amount: 80000 },
@@ -702,7 +702,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingKey, BuildingDefinition> = {
     name: 'Galaxia Core',
     description: 'The beating heart of the galactic superorganism. Every mind, one mind.',
     era: Era.GalacticReunification,
-    baseCost: { credits: 6000000000000, influence: 500000000, knowledge: 300000000, nuclearTech: 100000000 },
+    baseCost: { credits: 6000000000000, influence: 500000000, knowledge: 300000000, nuclearTech: 100000000, rawMaterials: 100000000 },
     production: [
       { resource: 'credits', amount: 500000 },
       { resource: 'knowledge', amount: 15000 },

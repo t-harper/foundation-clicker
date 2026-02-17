@@ -28,6 +28,7 @@ data "aws_iam_policy_document" "dynamodb_access" {
       "dynamodb:UpdateItem",
       "dynamodb:DeleteItem",
       "dynamodb:Query",
+      "dynamodb:Scan",
       "dynamodb:BatchWriteItem",
       "dynamodb:BatchGetItem",
     ]

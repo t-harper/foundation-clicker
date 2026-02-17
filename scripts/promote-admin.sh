@@ -17,7 +17,7 @@ fi
 
 aws dynamodb update-item --table-name "$TABLE" \
   --key "{\"PK\": {\"S\": \"${USER_PK}\"}, \"SK\": {\"S\": \"PROFILE\"}}" \
-  --update-expression "SET is_admin = :t" \
-  --expression-attribute-values '{":t": {"BOOL": true}}'
+  --update-expression "SET isAdmin = :t" \
+  --expression-attribute-values '{":t": {"N": "1"}}'
 
 echo "Promoted ${USERNAME} (${USER_PK}) to admin"
