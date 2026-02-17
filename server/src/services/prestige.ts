@@ -47,6 +47,9 @@ export async function triggerPrestige(userId: number): Promise<PrestigeResponse>
   }
 
   const newPrestigeCount = state.prestige.prestigeCount + 1;
+  const newSeldonPoints = state.prestige.seldonPoints + seldonPointsEarned;
+  const newTotalSP = state.prestige.totalSeldonPoints + seldonPointsEarned;
+  const newMultiplier = calcPrestigeMultiplier(newTotalSP);
 
   await addPrestigeEntry(userId, {
     prestigeNumber: newPrestigeCount,
@@ -55,7 +58,12 @@ export async function triggerPrestige(userId: number): Promise<PrestigeResponse>
     eraAtReset: state.currentEra,
   });
 
-  await resetForPrestige(userId, seldonPointsEarned);
+  await resetForPrestige(userId, {
+    seldonPoints: newSeldonPoints,
+    totalSeldonPoints: newTotalSP,
+    prestigeCount: newPrestigeCount,
+    prestigeMultiplier: newMultiplier,
+  });
 
   const updatedRow = await getGameState(userId);
   if (!updatedRow) {

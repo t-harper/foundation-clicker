@@ -58,7 +58,12 @@ export async function addPrestigeEntry(
 
 export async function resetForPrestige(
   userId: number,
-  seldonPointsEarned: number
+  prestige: {
+    seldonPoints: number;
+    totalSeldonPoints: number;
+    prestigeCount: number;
+    prestigeMultiplier: number;
+  }
 ): Promise<void> {
   // Parallel batch deletes of buildings, upgrades, ships, trade routes
   await Promise.all([
@@ -68,7 +73,7 @@ export async function resetForPrestige(
     deleteItemsByPrefix(userPK(userId), 'TRADEROUTE#'),
   ]);
 
-  // Atomic update of game state
+  // Atomic update of game state with pre-computed prestige values
   const client = getDocClient();
   const now = Math.floor(Date.now() / 1000);
 
@@ -84,10 +89,10 @@ export async function resetForPrestige(
             #rm = :zero,
             #cv = :one,
             #ce = :zero,
-            #sp = #sp + :sp,
-            #tsp = #tsp + :sp,
-            #pc = #pc + :one,
-            #pm = :one + (#tsp + :sp) * :spRate,
+            #sp = :sp,
+            #tsp = :tsp,
+            #pc = :pc,
+            #pm = :pm,
             #lt = :now
       `,
       ExpressionAttributeNames: {
@@ -104,8 +109,10 @@ export async function resetForPrestige(
       ExpressionAttributeValues: {
         ':zero': 0,
         ':one': 1,
-        ':sp': seldonPointsEarned,
-        ':spRate': 0.001,
+        ':sp': prestige.seldonPoints,
+        ':tsp': prestige.totalSeldonPoints,
+        ':pc': prestige.prestigeCount,
+        ':pm': prestige.prestigeMultiplier,
         ':now': now,
       },
     })
