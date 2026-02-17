@@ -43,7 +43,15 @@ export const createGameSlice: StateCreator<StoreState, [], [], GameSlice> = (set
 
   // Actions
   setResources: (resources) =>
-    set({ resources }),
+    set((state) => {
+      const creditDelta = resources.credits - state.resources.credits;
+      return {
+        resources,
+        lifetimeCredits: creditDelta > 0
+          ? state.lifetimeCredits + creditDelta
+          : state.lifetimeCredits,
+      };
+    }),
 
   updateResource: (key, amount) =>
     set((state) => ({
