@@ -22,7 +22,7 @@ export function calculateOfflineEarnings(
       const route = TRADE_ROUTE_DEFINITIONS[ship.tradeRouteId];
       if (!route) continue;
 
-      const now = state.lastTickAt + elapsedSeconds * 1000;
+      const now = (state.lastTickAt + elapsedSeconds) * 1000;
       if (ship.returnsAt <= now) {
         // Ship completed its route during offline time
         for (const [resource, amount] of Object.entries(route.reward)) {
@@ -56,6 +56,6 @@ export function applyOfflineEarnings(state: GameState, earnings: Resources): Gam
     ...state,
     resources: newResources,
     ships: updatedShips,
-    lastTickAt: now,
+    lastTickAt: Math.floor(now / 1000),
   };
 }

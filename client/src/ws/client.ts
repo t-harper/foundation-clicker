@@ -1,7 +1,8 @@
-import type { ClientMessage, ServerMessage } from '@foundation/shared';
+import type { ClientMessage, ServerMessage, ResourceKey } from '@foundation/shared';
 import { WS_SAVE_INTERVAL } from '@foundation/shared';
 import { useGameStore } from '../store';
 import { ACHIEVEMENT_DEFINITIONS } from '@foundation/shared';
+import { formatNumber } from '../utils/format';
 
 type PendingRequest = {
   resolve: (data: unknown) => void;
@@ -249,7 +250,7 @@ class WebSocketManager {
   private startPollingIntervals(): void {
     this.stopPollingIntervals();
 
-    // Sync polling (buildings, upgrades, ships)
+    // Sync polling (buildings, upgrades, ships, trade rewards)
     this.syncInterval = setInterval(() => {
       this.send<any>({ type: 'requestSync' }).then((data) => {
         if (data && data.type === 'sync') {
@@ -257,6 +258,25 @@ class WebSocketManager {
           if (data.buildings) state.setBuildings(data.buildings);
           if (data.upgrades) state.setUpgrades(data.upgrades);
           if (data.ships) state.setShips(data.ships);
+
+          // Apply trade route rewards collected by the server
+          if (data.tradeRewards) {
+            for (const key of Object.keys(data.tradeRewards) as ResourceKey[]) {
+              const amount = data.tradeRewards[key];
+              if (amount) {
+                state.updateResource(key, amount);
+              }
+            }
+            const creditReward = data.tradeRewards.credits;
+            const rewardText = creditReward
+              ? `+${formatNumber(creditReward, 'short')} credits`
+              : 'Resources collected';
+            const shipCount = data.shipsCollected ?? 1;
+            state.addNotification({
+              message: `Trade route completed! ${shipCount > 1 ? `(${shipCount} ships) ` : ''}${rewardText}`,
+              type: 'success',
+            });
+          }
         }
       }).catch(() => { /* ignore poll failures */ });
     }, SYNC_POLL_INTERVAL);

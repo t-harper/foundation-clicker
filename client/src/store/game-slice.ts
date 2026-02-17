@@ -35,7 +35,7 @@ export const createGameSlice: StateCreator<StoreState, [], [], GameSlice> = (set
   resources: { ...EMPTY_RESOURCES },
   clickValue: 1,
   currentEra: 0 as Era,
-  lastTickAt: Date.now(),
+  lastTickAt: Math.floor(Date.now() / 1000),
   totalPlayTime: 0,
   totalClicks: 0,
   lifetimeCredits: 0,

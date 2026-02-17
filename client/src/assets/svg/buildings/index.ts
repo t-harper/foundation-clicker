@@ -126,10 +126,6 @@ export { FoundationHeadquartersArt } from './FoundationHeadquartersArt';
 export { EternityEngineArt } from './EternityEngineArt';
 export { GenericBuildingArt } from './GenericBuildingArt';
 
-// Legacy re-exports for any external usage
-export { VaultOfKnowledgeArt } from './VaultOfKnowledgeArt';
-export { HyperspaceRelayArt } from './HyperspaceRelayArt';
-
 type BuildingArtComponent = React.FC<{ className?: string; size?: number; level?: 1 | 2 | 3 }>;
 
 export const BUILDING_ART_MAP: Record<BuildingKey, BuildingArtComponent> = {

@@ -1,5 +1,6 @@
 import { GameState, Resources, ResourceKey, EMPTY_RESOURCES } from '../types/index.js';
 import { calcProductionRates } from './calculator.js';
+import { TRADE_ROUTE_DEFINITIONS } from '../constants/ships.js';
 
 /** Apply a single tick of production to game state. Returns new resources. */
 export function tick(state: GameState, deltaSeconds: number): Resources {
@@ -32,15 +33,31 @@ export function applyClick(state: GameState, clickValue: number, clicks: number 
 export function processTradeShips(state: GameState, now: number): {
   resources: Resources;
   updatedShips: typeof state.ships;
+  anyChanged: boolean;
 } {
   const resources = { ...state.resources };
+  let anyChanged = false;
   const updatedShips = state.ships.map(ship => {
     if (ship.status === 'trading' && ship.returnsAt && now >= ship.returnsAt) {
-      // Ship has returned - collect rewards would be handled by server
+      anyChanged = true;
+
+      // Apply trade route rewards
+      if (ship.tradeRouteId) {
+        const route = TRADE_ROUTE_DEFINITIONS[ship.tradeRouteId];
+        if (route) {
+          for (const key of Object.keys(route.reward) as ResourceKey[]) {
+            const amount = route.reward[key];
+            if (amount) {
+              resources[key] += amount;
+            }
+          }
+        }
+      }
+
       return { ...ship, status: 'docked' as const, tradeRouteId: null, departedAt: null, returnsAt: null };
     }
     return ship;
   });
 
-  return { resources, updatedShips };
+  return { resources, updatedShips, anyChanged };
 }

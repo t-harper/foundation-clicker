@@ -4,6 +4,7 @@ import {
   TradeRouteKey,
   Resources,
   ResourceKey,
+  EMPTY_RESOURCES,
   SHIP_DEFINITIONS,
   TRADE_ROUTE_DEFINITIONS,
   generateShipName,
@@ -168,4 +169,59 @@ export async function recallShip(userId: number, shipId: string): Promise<ShipSt
     departedAt: null,
     returnsAt: null,
   };
+}
+
+/** Collect rewards from all ships that have completed their trade routes */
+export async function collectCompletedShips(
+  userId: number
+): Promise<{ collectedRewards: Partial<Resources> | null; shipsCollected: number }> {
+  const shipRows = await getShips(userId);
+  const now = Date.now();
+
+  const completedShips = shipRows.filter(
+    (s) => s.status === 'trading' && s.returns_at && s.returns_at <= now && s.trade_route_id
+  );
+
+  if (completedShips.length === 0) {
+    return { collectedRewards: null, shipsCollected: 0 };
+  }
+
+  // Accumulate rewards from all completed ships
+  const totalRewards: Resources = { ...EMPTY_RESOURCES };
+  for (const ship of completedShips) {
+    const route = TRADE_ROUTE_DEFINITIONS[ship.trade_route_id!];
+    if (!route) continue;
+
+    for (const key of Object.keys(route.reward) as ResourceKey[]) {
+      const amount = route.reward[key];
+      if (amount) {
+        totalRewards[key] += amount;
+      }
+    }
+
+    // Dock the ship
+    await updateShipStatus(userId, ship.id, 'docked', null, null, null);
+  }
+
+  // Apply rewards to player resources
+  const state = await buildGameState(userId);
+  const projected = projectResources(state);
+
+  const newResources: Resources = { ...projected.resources };
+  for (const key of Object.keys(totalRewards) as ResourceKey[]) {
+    newResources[key] += totalRewards[key];
+  }
+
+  const creditReward = totalRewards.credits;
+  await updateGameState(userId, {
+    credits: newResources.credits,
+    knowledge: newResources.knowledge,
+    influence: newResources.influence,
+    nuclear_tech: newResources.nuclearTech,
+    raw_materials: newResources.rawMaterials,
+    last_tick_at: projected.lastTickAt,
+    lifetime_credits: projected.lifetimeCredits + creditReward,
+  });
+
+  return { collectedRewards: totalRewards, shipsCollected: completedShips.length };
 }

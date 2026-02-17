@@ -699,8 +699,3 @@ All AWS infrastructure is defined in `infra/*.tf` and managed by Terraform:
 - All server-side query and service functions are async (return Promises).
 - Routes define their full paths (e.g. `/api/auth/login`) and are mounted at root in `app.ts`.
 
-## Known Issues
-
-- **Trade route rewards not collected**: Ships dock when their route completes, but the reward resources defined in `TRADE_ROUTE_DEFINITIONS` are never applied to the player's account.
-- **Ship timestamp units**: Ship `departed_at`/`returns_at` use milliseconds (`Date.now()`) while `game_state.last_tick_at` uses seconds, requiring care when comparing.
-- **Legacy SVG components**: `VaultOfKnowledgeArt` and `HyperspaceRelayArt` exist in the buildings directory but are not in `BUILDING_ART_MAP` (dead code).

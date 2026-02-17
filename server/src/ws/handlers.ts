@@ -1,7 +1,7 @@
 import type { ClientMessage, ServerMessage, GameState } from '@foundation/shared';
 import { buyBuilding, sellBuilding } from '../services/building.js';
 import { buyUpgrade } from '../services/upgrade.js';
-import { buildShip, sendShip, recallShip } from '../services/ship.js';
+import { buildShip, sendShip, recallShip, collectCompletedShips } from '../services/ship.js';
 import { unlockTradeRoute } from '../services/trade.js';
 import {
   handleClick,
@@ -163,13 +163,26 @@ export async function handleClientMessage(userId: number, msg: ClientMessage): P
     }
 
     case 'requestSync': {
+      // Collect completed trade ship rewards before fetching current state
+      const tradeResult = await collectCompletedShips(userId);
+
       const [buildings, upgrades, ships] = await Promise.all([
         getUserBuildings(userId),
         getUserUpgrades(userId),
         getUserShips(userId),
       ]);
       return {
-        response: { type: 'result', requestId: msg.requestId, data: { type: 'sync', buildings, upgrades, ships } },
+        response: {
+          type: 'result',
+          requestId: msg.requestId,
+          data: {
+            type: 'sync',
+            buildings,
+            upgrades,
+            ships,
+            ...(tradeResult.collectedRewards ? { tradeRewards: tradeResult.collectedRewards, shipsCollected: tradeResult.shipsCollected } : {}),
+          },
+        },
       };
     }
 
