@@ -2,6 +2,17 @@ import { Era } from '../types/eras.js';
 import { ItemDefinition } from '../types/items.js';
 
 export const ITEM_DEFINITIONS: Record<string, ItemDefinition> = {
+  // ─── Tutorial Artifact ──────────────────────────────────────────────
+
+  primeRadiant: {
+    key: 'primeRadiant',
+    name: 'Prime Radiant',
+    description: 'The legendary device that displays the Seldon Plan. Its mathematical perfection boosts all production by 5%.',
+    era: Era.ReligiousDominance,
+    category: 'artifact',
+    effect: { type: 'globalMultiplier', multiplier: 1.05 },
+  },
+
   // ─── Era 0 Artifacts (from Research Projects) ────────────────────────
 
   seldonsPrimer: {

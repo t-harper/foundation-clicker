@@ -119,38 +119,38 @@ export function useTutorial() {
 
     const { addNotification, fireMilestone } = useGameStore.getState();
 
-    // Step 11: approaching prestige (500M lifetime credits)
-    if (!firedMilestones.includes(11) && lifetimeCredits >= 500_000_000) {
-      fireMilestone(11);
-      addNotification({
-        message: TUTORIAL_STEPS[11].message,
-        type: 'info',
-      });
-    }
-
-    // Step 12: prestige available (1B lifetime credits)
-    if (!firedMilestones.includes(12) && lifetimeCredits >= 1_000_000_000) {
-      fireMilestone(12);
-      addNotification({
-        message: TUTORIAL_STEPS[12].message,
-        type: 'info',
-      });
-    }
-
-    // Step 13: first era change (prestige done)
-    if (!firedMilestones.includes(13) && prestigeCount >= 1) {
+    // Step 13: approaching prestige (500M lifetime credits)
+    if (!firedMilestones.includes(13) && lifetimeCredits >= 500_000_000) {
       fireMilestone(13);
       addNotification({
         message: TUTORIAL_STEPS[13].message,
+        type: 'info',
+      });
+    }
+
+    // Step 14: prestige available (1B lifetime credits)
+    if (!firedMilestones.includes(14) && lifetimeCredits >= 1_000_000_000) {
+      fireMilestone(14);
+      addNotification({
+        message: TUTORIAL_STEPS[14].message,
+        type: 'info',
+      });
+    }
+
+    // Step 15: first era change (prestige done)
+    if (!firedMilestones.includes(15) && prestigeCount >= 1) {
+      fireMilestone(15);
+      addNotification({
+        message: TUTORIAL_STEPS[15].message,
         type: 'success',
       });
     }
 
-    // Step 14: build your fleet (reached trading expansion era)
-    if (!firedMilestones.includes(14) && currentEra >= 1) {
-      fireMilestone(14);
+    // Step 16: build your fleet (reached trading expansion era)
+    if (!firedMilestones.includes(16) && currentEra >= 1) {
+      fireMilestone(16);
       addNotification({
-        message: TUTORIAL_STEPS[14].message,
+        message: TUTORIAL_STEPS[16].message,
         type: 'info',
       });
     }

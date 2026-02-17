@@ -8,7 +8,7 @@ export const UPGRADE_DEFINITIONS: Record<string, UpgradeDefinition> = {
   improvedTools: {
     key: 'improvedTools',
     name: 'Improved Tools',
-    description: 'Better equipment doubles your clicking efficiency.',
+    description: 'Better equipment improves your clicking efficiency by 10%.',
     era: Era.ReligiousDominance,
     cost: { credits: 100 },
     effects: [{ type: 'clickMultiplier', multiplier: 1.1 }],

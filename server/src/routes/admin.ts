@@ -96,6 +96,10 @@ router.patch(
   ...adminAuth,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      if (paramInt(req.params.userId) === req.userId) {
+        res.status(400).json({ error: 'Cannot change your own admin status' });
+        return;
+      }
       await setAdminLevel(paramInt(req.params.userId), req.body.isAdmin);
       res.status(204).send();
     } catch (err) {

@@ -88,7 +88,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: 6,
     title: 'Buy an Upgrade',
     message:
-      'Purchase \u201CImproved Tools\u201D to double your click value. Upgrades are one-time investments with powerful, lasting effects. This is the Foundation\u2019s way \u2014 technology as power.',
+      'Purchase \u201CImproved Tools\u201D to boost your click value. Upgrades are one-time investments with powerful, lasting effects. This is the Foundation\u2019s way \u2014 technology as power.',
     type: 'spotlight',
     target: 'upgrade-improvedTools',
     requiredTab: 'upgrades',
@@ -117,6 +117,28 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 9,
+    title: 'Try a Research Project',
+    message:
+      'Research projects earn permanent artifacts that boost your production. Find \u201CCalibrate the Vault\u201D in the Projects list, select Hari Seldon as your hero, and start it. It only takes 5 seconds \u2014 then collect your reward.',
+    type: 'spotlight',
+    requiredTab: 'research',
+    advanceMode: 'acknowledge',
+    acknowledgeLabel: 'I\u2019ll try it',
+    placement: 'bottom',
+  },
+  {
+    id: 10,
+    title: 'Try a Mission',
+    message:
+      'Missions work the same way but are found on the Missions sub-tab. Try \u201CTerminus Perimeter Scan\u201D \u2014 another quick 5-second activity. Assign a hero, start it, wait, and collect.',
+    type: 'spotlight',
+    requiredTab: 'research',
+    advanceMode: 'acknowledge',
+    acknowledgeLabel: 'Got it',
+    placement: 'bottom',
+  },
+  {
+    id: 11,
     title: 'Heroes & Activities',
     message:
       'Heroes speed up research and mission activities. Hari Seldon is your starter hero \u2014 assign him to activities to complete them faster. As you progress, story events will unlock new heroes with even stronger abilities.',
@@ -126,7 +148,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     placement: 'bottom',
   },
   {
-    id: 10,
+    id: 12,
     title: 'Story Events',
     message:
       'Random story events will appear as you build the Foundation. Each presents choices with different rewards and consequences. Some rare events unlock powerful hidden heroes \u2014 the legends of the Foundation saga.',
@@ -136,7 +158,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     placement: 'bottom',
   },
   {
-    id: 11,
+    id: 13,
     title: 'Approaching Prestige',
     message:
       'Seldon: You are halfway to your first Seldon Crisis. The Plan proceeds as I have foreseen.',
@@ -144,7 +166,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     advanceMode: 'auto',
   },
   {
-    id: 12,
+    id: 14,
     title: 'Prestige Available',
     message:
       'Seldon: The first Seldon Crisis is now available. Open the Prestige tab to advance the Foundation.',
@@ -152,7 +174,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     advanceMode: 'auto',
   },
   {
-    id: 13,
+    id: 15,
     title: 'First Era Change',
     message:
       'Seldon: The Foundation enters the Trading Expansion era. My work here is done \u2014 but the Plan continues.',
@@ -160,7 +182,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     advanceMode: 'auto',
   },
   {
-    id: 14,
+    id: 16,
     title: 'Build Your Fleet',
     message:
       'Seldon: The Trading Expansion era brings ships and trade routes. Build your fleet to earn resources from across the galaxy.',
