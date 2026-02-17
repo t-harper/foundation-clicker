@@ -8,6 +8,7 @@ export type ActiveTab =
   | 'upgrades'
   | 'ships'
   | 'achievements'
+  | 'events'
   | 'encyclopedia'
   | 'prestige'
   | 'research'

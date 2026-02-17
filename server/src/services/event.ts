@@ -10,6 +10,7 @@ import {
 import { areAllConditionsMet } from '@foundation/shared';
 import {
   getEventHistory,
+  getEventHistoryPage,
   getLastEventFiredAt,
   hasEventFired,
   insertEventHistory,
@@ -53,6 +54,24 @@ export async function getUserEventHistory(userId: number): Promise<EventHistoryE
     choiceIndex: r.choice_index,
     firedAt: r.fired_at,
   }));
+}
+
+export async function getUserEventHistoryPage(
+  userId: number,
+  limit: number,
+  cursor?: string
+): Promise<{ history: EventHistoryEntry[]; cursor: string | null; hasMore: boolean }> {
+  const result = await getEventHistoryPage(userId, limit, cursor);
+  const history = result.items.map((r) => ({
+    eventKey: r.event_key,
+    choiceIndex: r.choice_index,
+    firedAt: r.fired_at,
+  }));
+  return {
+    history,
+    cursor: result.lastKey,
+    hasMore: result.lastKey !== null,
+  };
 }
 
 export async function checkForEvent(userId: number): Promise<CheckEventsResponse> {

@@ -27,6 +27,7 @@ export type ClientMessage =
   | { type: 'getPrestigeHistory'; requestId: string }
   | { type: 'getActiveEffects'; requestId: string }
   | { type: 'getEventHistory'; requestId: string }
+  | { type: 'getEventHistoryPage'; requestId: string; limit?: number; cursor?: string }
   // Client-initiated polling (for serverless compatibility)
   | { type: 'requestSync'; requestId: string }
   | { type: 'checkEvents'; requestId: string }

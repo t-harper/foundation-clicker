@@ -37,6 +37,50 @@ export async function getEventHistory(userId: number): Promise<EventHistoryRow[]
     .slice(0, 100);
 }
 
+export interface EventHistoryPageResult {
+  items: EventHistoryRow[];
+  lastKey: string | null;
+}
+
+export async function getEventHistoryPage(
+  userId: number,
+  limit: number,
+  cursor?: string
+): Promise<EventHistoryPageResult> {
+  const client = getDocClient();
+
+  const params: Record<string, unknown> = {
+    TableName: TABLE_NAME,
+    KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+    ExpressionAttributeValues: {
+      ':pk': userPK(userId),
+      ':prefix': 'EVENT#',
+    },
+    ScanIndexForward: false,
+    Limit: limit,
+  };
+
+  if (cursor) {
+    params.ExclusiveStartKey = {
+      PK: userPK(userId),
+      SK: cursor,
+    };
+  }
+
+  const result = await client.send(new QueryCommand(params as any));
+  const items: EventHistoryRow[] = (result.Items ?? []).map((item: any, idx: number) => ({
+    id: idx,
+    user_id: userId,
+    event_key: item.eventKey,
+    choice_index: item.choiceIndex,
+    fired_at: item.firedAt,
+  }));
+
+  const lastKey = result.LastEvaluatedKey ? (result.LastEvaluatedKey.SK as string) : null;
+
+  return { items, lastKey };
+}
+
 export async function getLastEventFiredAt(userId: number, eventKey: string): Promise<number | null> {
   // Query all events and filter by eventKey, find most recent
   const items = await queryItems(userPK(userId), 'EVENT#');

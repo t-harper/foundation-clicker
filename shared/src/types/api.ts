@@ -134,6 +134,12 @@ export interface GetEventHistoryResponse {
   history: EventHistoryEntry[];
 }
 
+export interface GetEventHistoryPageResponse {
+  history: EventHistoryEntry[];
+  cursor: string | null;
+  hasMore: boolean;
+}
+
 // Heroes
 export interface GetHeroesResponse {
   heroes: import('./heroes.js').HeroState[];
