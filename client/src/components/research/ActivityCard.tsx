@@ -6,6 +6,7 @@ import { startActivity, collectActivity } from '../../api/activities';
 import { Button } from '../common';
 import { formatNumber, formatDuration } from '../../utils/format';
 import { formatCountdown } from '../../utils/time';
+import { RewardModal } from './RewardModal';
 
 interface ActivityCardProps {
   activityKey: string;
@@ -27,6 +28,10 @@ export function ActivityCard({ activityKey, timesCompleted }: ActivityCardProps)
   const [loading, setLoading] = useState(false);
   const [selectedHero, setSelectedHero] = useState<string>('');
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [rewardModalData, setRewardModalData] = useState<{
+    activityName: string;
+    rewards: { itemKey: string; quantity: number }[];
+  } | null>(null);
 
   if (!def) return null;
 
@@ -98,13 +103,9 @@ export function ActivityCard({ activityKey, timesCompleted }: ActivityCardProps)
       removeActiveActivity(activityKey);
       updateActivityCompletion(activityKey, result.activity.timesCompleted);
       setInventory(result.inventory);
-      const rewardNames = result.rewards.map((r) => {
-        const itemName = r.itemKey;
-        return `${r.quantity}x ${itemName}`;
-      }).join(', ');
-      addNotification({
-        message: `Collected: ${rewardNames}`,
-        type: 'success',
+      setRewardModalData({
+        activityName: def.name,
+        rewards: result.rewards,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to collect';
@@ -112,7 +113,7 @@ export function ActivityCard({ activityKey, timesCompleted }: ActivityCardProps)
     } finally {
       setLoading(false);
     }
-  }, [loading, activityKey, removeActiveActivity, updateActivityCompletion, setInventory, addNotification]);
+  }, [loading, activityKey, def.name, removeActiveActivity, updateActivityCompletion, setInventory, addNotification]);
 
   return (
     <div className={[
@@ -243,6 +244,13 @@ export function ActivityCard({ activityKey, timesCompleted }: ActivityCardProps)
       {atMaxCompletions && !isActive && (
         <p className="text-xs text-[var(--era-text)]/30 italic">Max completions reached</p>
       )}
+
+      <RewardModal
+        isOpen={rewardModalData !== null}
+        onClose={() => setRewardModalData(null)}
+        activityName={rewardModalData?.activityName ?? ''}
+        rewards={rewardModalData?.rewards ?? []}
+      />
     </div>
   );
 }

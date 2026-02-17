@@ -4,29 +4,11 @@ import { ITEM_DEFINITIONS } from '@foundation/shared';
 import { useGameStore } from '../../store';
 import { useConsumable } from '../../api/inventory';
 import { Button } from '../common';
-import { formatDuration } from '../../utils/format';
+import { formatItemEffect } from '../../utils/items';
 
 interface ItemCardProps {
   item: InventoryItem;
   activeConsumable: ActiveConsumable | null;
-}
-
-function formatItemEffect(def: typeof ITEM_DEFINITIONS[string]): string {
-  const effect = def.effect;
-  switch (effect.type) {
-    case 'resourceMultiplier':
-      return `${effect.resource} production x${effect.multiplier}`;
-    case 'globalMultiplier':
-      return `All production x${effect.multiplier}`;
-    case 'clickMultiplier':
-      return `Click value x${effect.multiplier}`;
-    case 'productionBuff':
-      return `${effect.resource} production x${effect.multiplier} for ${formatDuration(effect.durationSeconds)}`;
-    case 'globalProductionBuff':
-      return `All production x${effect.multiplier} for ${formatDuration(effect.durationSeconds)}`;
-    case 'clickBuff':
-      return `Click value x${effect.multiplier} for ${formatDuration(effect.durationSeconds)}`;
-  }
 }
 
 export function ItemCard({ item, activeConsumable }: ItemCardProps) {
