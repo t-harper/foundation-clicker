@@ -1,30 +1,43 @@
 import React, { useMemo } from 'react';
 import { useGameStore } from '../../store';
 import { ACHIEVEMENT_DEFINITIONS } from '@foundation/shared';
+import type { AchievementState } from '@foundation/shared';
 import { AchievementCard } from './AchievementCard';
+
+const ALL_KEYS = Object.keys(ACHIEVEMENT_DEFINITIONS);
 
 export function AchievementPanel() {
   const achievements = useGameStore((s) => s.achievements);
 
+  // Merge store data (unlocked only, sparse) with all definitions
+  const allAchievements = useMemo(() => {
+    const unlockedMap = new Map(
+      achievements.map((a) => [a.achievementKey, a]),
+    );
+    return ALL_KEYS.map(
+      (key): AchievementState =>
+        unlockedMap.get(key) ?? { achievementKey: key, unlockedAt: null },
+    );
+  }, [achievements]);
+
   const unlockedCount = useMemo(
-    () => achievements.filter((a) => a.unlockedAt !== null).length,
-    [achievements],
+    () => allAchievements.filter((a) => a.unlockedAt !== null).length,
+    [allAchievements],
   );
 
-  // Sort: unlocked first, then locked
+  // Sort: unlocked first (newest unlock first), then locked (definition order)
   const sortedAchievements = useMemo(() => {
-    return [...achievements].sort((a, b) => {
+    return [...allAchievements].sort((a, b) => {
       const aUnlocked = a.unlockedAt !== null;
       const bUnlocked = b.unlockedAt !== null;
       if (aUnlocked && !bUnlocked) return -1;
       if (!aUnlocked && bUnlocked) return 1;
-      // Among unlocked, sort by unlock time (newest first)
       if (aUnlocked && bUnlocked) {
         return (b.unlockedAt ?? 0) - (a.unlockedAt ?? 0);
       }
       return 0;
     });
-  }, [achievements]);
+  }, [allAchievements]);
 
   return (
     <div className="space-y-6">
@@ -34,7 +47,7 @@ export function AchievementPanel() {
           Achievements
         </h2>
         <span className="text-xs text-[var(--era-text)]/40">
-          {unlockedCount} / {achievements.length} unlocked
+          {unlockedCount} / {ALL_KEYS.length} unlocked
         </span>
       </div>
 
@@ -43,29 +56,20 @@ export function AchievementPanel() {
         <div
           className="h-full rounded-full bg-[var(--era-accent)] transition-[width] duration-500"
           style={{
-            width: achievements.length > 0
-              ? `${(unlockedCount / achievements.length) * 100}%`
-              : '0%',
+            width: `${(unlockedCount / ALL_KEYS.length) * 100}%`,
           }}
         />
       </div>
 
       {/* Achievement grid */}
-      {sortedAchievements.length === 0 ? (
-        <div className="text-center py-12 text-[var(--era-text)]/40">
-          <p className="text-lg">No achievements to display.</p>
-          <p className="text-sm mt-2">Start playing to unlock achievements!</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {sortedAchievements.map((achievement) => (
-            <AchievementCard
-              key={achievement.achievementKey}
-              achievementState={achievement}
-            />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {sortedAchievements.map((achievement) => (
+          <AchievementCard
+            key={achievement.achievementKey}
+            achievementState={achievement}
+          />
+        ))}
+      </div>
     </div>
   );
 }

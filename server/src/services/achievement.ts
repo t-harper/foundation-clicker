@@ -49,6 +49,18 @@ function isConditionMet(
       return state.ships.length >= condition.count;
     case 'playTime':
       return state.totalPlayTime >= condition.seconds;
+    case 'heroUnlocked':
+      return state.heroes.some(h => h.heroKey === condition.hero && h.unlockedAt !== null);
+    case 'totalHeroes':
+      return state.heroes.filter(h => h.unlockedAt !== null).length >= condition.count;
+    case 'totalActivityCompletions':
+      return state.activities.reduce((sum, a) => sum + a.timesCompleted, 0) >= condition.count;
+    case 'upgradesPurchased':
+      return state.upgrades.filter(u => u.isPurchased).length >= condition.count;
+    case 'tradeRoutesUnlocked':
+      return state.tradeRoutes.filter(t => t.isUnlocked).length >= condition.count;
+    case 'seldonPoints':
+      return state.prestige.totalSeldonPoints >= condition.amount;
     default:
       return false;
   }

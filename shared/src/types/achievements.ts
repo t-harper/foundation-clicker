@@ -1,6 +1,7 @@
 import { ResourceKey } from './resources.js';
 import { BuildingKey } from './buildings.js';
 import { Era } from './eras.js';
+import { HeroKey } from './heroes.js';
 
 export type AchievementKey = string;
 
@@ -12,7 +13,13 @@ export type AchievementCondition =
   | { type: 'eraReached'; era: Era }
   | { type: 'totalClicks'; count: number }
   | { type: 'shipCount'; count: number }
-  | { type: 'playTime'; seconds: number };
+  | { type: 'playTime'; seconds: number }
+  | { type: 'heroUnlocked'; hero: HeroKey }
+  | { type: 'totalHeroes'; count: number }
+  | { type: 'totalActivityCompletions'; count: number }
+  | { type: 'upgradesPurchased'; count: number }
+  | { type: 'tradeRoutesUnlocked'; count: number }
+  | { type: 'seldonPoints'; amount: number };
 
 export interface AchievementDefinition {
   key: AchievementKey;
