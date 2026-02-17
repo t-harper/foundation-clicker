@@ -11,6 +11,8 @@ An incremental/idle game themed around Isaac Asimov's Foundation series. Players
 - **Backend**: Node.js, Express 4, DynamoDB (single-table design), JWT auth (jsonwebtoken), bcrypt, ws (WebSocket)
 - **Database**: DynamoDB via `@aws-sdk/client-dynamodb` + `@aws-sdk/lib-dynamodb`. DynamoDB Local in Podman for development.
 - **Shared**: Pure TypeScript game engine (types, constants, formulas, tick logic) -- no runtime deps
+- **Infrastructure**: AWS Lambda, API Gateway (HTTP + WebSocket), DynamoDB, S3 + CloudFront, Route53, ACM
+- **CI/CD**: GitHub Actions with OIDC authentication, Terraform (S3 backend with DynamoDB locking)
 - **Dev tooling**: tsx (server watch), Vite (client HMR), TypeScript 5.6 strict mode, Podman Compose (DynamoDB Local)
 
 ## Directory Structure
@@ -20,6 +22,26 @@ foundation-game/
   package.json              # Root workspace config
   tsconfig.base.json        # Shared TS compiler options (ES2022, strict, bundler resolution)
   podman-compose.yml        # DynamoDB Local container for development
+  .github/
+    workflows/
+      deploy.yml            # GitHub Actions: build, terraform apply, deploy client to S3/CloudFront
+  scripts/
+    deploy.sh               # Manual full deployment (build + terraform + S3 sync + CF invalidation)
+    bootstrap-tf-backend.sh  # One-time: create S3 state bucket + DynamoDB lock table
+    package-lambda.sh        # Build and zip Lambda function bundles
+  infra/
+    main.tf                 # Terraform config, S3 backend, provider versions
+    variables.tf            # Input variables (region, table name, jwt_secret, domain)
+    outputs.tf              # Stack outputs (URLs, bucket name, CloudFront ID, GitHub Actions role ARN)
+    iam.tf                  # Lambda execution roles + DynamoDB/API Gateway policies
+    cicd.tf                 # GitHub OIDC provider + IAM role for GitHub Actions
+    dynamodb.tf             # FoundationGame table + counter seed
+    lambda-rest.tf          # REST API Lambda function
+    lambda-ws.tf            # WebSocket Lambda functions (connect, disconnect, default)
+    apigateway-http.tf      # HTTP API Gateway + Lambda integration + custom domain
+    apigateway-ws.tf        # WebSocket API Gateway + Lambda integrations + custom domain
+    s3-cloudfront.tf        # S3 bucket + CloudFront distribution + OAC for client SPA
+    dns.tf                  # Route53 records + ACM certificate
   shared/
     src/
       index.ts              # Re-exports all types, constants, engine
@@ -54,7 +76,11 @@ foundation-game/
   server/
     src/
       app.ts                # Express app setup, CORS, route mounting, error handler
-      index.ts              # Entry point: ensures DynamoDB table, creates HTTP server, attaches WS
+      index.ts              # Entry point (local dev): ensures DynamoDB table, creates HTTP server, attaches WS
+      lambda-rest.ts        # Lambda entry point: REST API via @vendia/serverless-express
+      lambda-ws-connect.ts  # Lambda entry point: WebSocket $connect (JWT auth + connection tracking)
+      lambda-ws-disconnect.ts # Lambda entry point: WebSocket $disconnect (connection cleanup)
+      lambda-ws-default.ts  # Lambda entry point: WebSocket $default (message handling)
       db/
         connection.ts       # DynamoDB DocumentClient singleton, TABLE_NAME export
         init-table.ts       # ensureTable(): CreateTable if not exists + GSI1 + TTL + counter seed
@@ -73,6 +99,7 @@ foundation-game/
           hero-queries.ts
           activity-queries.ts
           inventory-queries.ts
+          ws-connection-queries.ts
       middleware/
         auth.ts             # JWT Bearer token extraction and verification
         admin.ts            # Async admin role check middleware
@@ -100,7 +127,8 @@ foundation-game/
         admin.ts            # Admin operations (list users, impersonate, modify state, etc.)
       ws/
         handlers.ts         # Async message handler switch (returns Promise<HandlerResult>)
-        sync.ts             # WebSocket server -- pushes buildings/upgrades at 2 Hz, async intervals
+        sync.ts             # WebSocket server (local dev) -- pushes buildings/upgrades at 2 Hz, async intervals
+        api-gw-utils.ts     # API Gateway WebSocket utilities (postToConnection for Lambda)
   client/
     src/
       api/                  # Typed fetch wrappers per domain
@@ -236,6 +264,16 @@ All game content (buildings, upgrades, ships, trade routes, achievements, eras, 
 | `client/src/hooks/useAutoSave.ts` | 30-second auto-save interval |
 | `client/src/api/client.ts` | `ApiClient` class handling auth tokens and error redirects |
 | `client/src/styles/index.css` | Era theming CSS variables, animations, background effects |
+| `server/src/lambda-rest.ts` | Lambda handler wrapping Express app via @vendia/serverless-express |
+| `server/src/lambda-ws-connect.ts` | Lambda handler for WebSocket $connect (JWT verification, connection storage) |
+| `server/src/lambda-ws-default.ts` | Lambda handler for WebSocket $default (message routing via handlers.ts) |
+| `server/src/ws/api-gw-utils.ts` | API Gateway Management API wrapper for posting to WebSocket connections |
+| `server/src/db/queries/ws-connection-queries.ts` | DynamoDB queries for WebSocket connection tracking |
+| `infra/main.tf` | Terraform config with S3 backend, provider requirements |
+| `infra/cicd.tf` | GitHub OIDC provider + IAM role for CI/CD |
+| `.github/workflows/deploy.yml` | GitHub Actions deployment pipeline |
+| `scripts/deploy.sh` | Manual deployment script (fallback to CI/CD) |
+| `scripts/bootstrap-tf-backend.sh` | One-time S3 state bucket + DynamoDB lock table creation |
 
 ## Database
 
@@ -593,6 +631,59 @@ export AWS_ACCESS_KEY_ID="AKIA..."
 export AWS_SECRET_ACCESS_KEY="..."
 bash scripts/deploy.sh
 ```
+
+### CI/CD (GitHub Actions)
+
+Automated deployment runs on every push to `master` via `.github/workflows/deploy.yml`.
+
+**Authentication**: GitHub OIDC federation -- no long-lived AWS credentials stored in GitHub. The workflow assumes an IAM role (`foundation-game-github-actions`) scoped to `repo:t-harper/foundation-clicker:environment:production`.
+
+**Pipeline steps**: checkout, OIDC auth, install deps, build shared, build+zip lambdas, `terraform apply`, capture outputs, build client with production URLs, S3 sync, CloudFront invalidation.
+
+**Concurrency**: `deploy-production` group with `cancel-in-progress: false` -- never cancels a running deploy.
+
+**GitHub Secrets** (in `production` environment):
+
+| Secret | Description |
+|--------|-------------|
+| `AWS_ROLE_ARN` | ARN of the GitHub Actions IAM role |
+| `TF_VAR_JWT_SECRET` | JWT signing secret, passed to Terraform |
+
+### Terraform State
+
+State is stored in S3 with DynamoDB locking (not local):
+
+| Resource | Name |
+|----------|------|
+| State bucket | `foundation-game-tfstate-831473839640` (versioned, encrypted) |
+| Lock table | `foundation-game-tflock` (DynamoDB, PAY_PER_REQUEST) |
+| State key | `foundation-game/terraform.tfstate` |
+
+The S3 backend is configured in `infra/main.tf`. To bootstrap from scratch, run `scripts/bootstrap-tf-backend.sh` then `terraform init -migrate-state`.
+
+### Infrastructure (Terraform)
+
+All AWS infrastructure is defined in `infra/*.tf` and managed by Terraform:
+
+| Resource | Terraform File | Details |
+|----------|---------------|---------|
+| DynamoDB table | `dynamodb.tf` | `FoundationGame` table + GSI1 + TTL + counter seed |
+| REST Lambda | `lambda-rest.tf` | Express app via serverless-express, Node 20 |
+| WebSocket Lambdas | `lambda-ws.tf` | 3 functions: connect, disconnect, default |
+| HTTP API Gateway | `apigateway-http.tf` | Routes to REST Lambda, custom domain `api.foundation-clicker.com` |
+| WebSocket API Gateway | `apigateway-ws.tf` | Routes to WS Lambdas, custom domain `ws.foundation-clicker.com` |
+| S3 + CloudFront | `s3-cloudfront.tf` | Static site hosting, OAC, custom domain `app.foundation-clicker.com` |
+| DNS + TLS | `dns.tf` | Route53 records, ACM wildcard certificate |
+| IAM | `iam.tf` | Lambda execution roles with DynamoDB + API Gateway permissions |
+| CI/CD | `cicd.tf` | GitHub OIDC provider + IAM role for GitHub Actions |
+
+### Production URLs
+
+| Service | URL |
+|---------|-----|
+| App | `https://app.foundation-clicker.com` |
+| API | `https://api.foundation-clicker.com` |
+| WebSocket | `wss://ws.foundation-clicker.com` |
 
 ## Conventions
 

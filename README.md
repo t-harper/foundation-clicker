@@ -60,8 +60,10 @@ Each era adds 14 buildings, ~42 upgrades, new ship types, new trade routes, 4 he
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 18, Zustand 5, Vite 5, Tailwind CSS 3, React Router 6 |
-| Backend | Node.js, Express 4, DynamoDB, JWT, bcrypt |
+| Backend | Node.js, Express 4, AWS Lambda, API Gateway (HTTP + WebSocket), DynamoDB, JWT, bcrypt |
 | Database | DynamoDB (single-table design), DynamoDB Local via Podman for dev |
+| Infrastructure | Terraform, S3 + CloudFront, Route53, ACM |
+| CI/CD | GitHub Actions with OIDC authentication |
 | Shared | Pure TypeScript game engine (types, constants, formulas, tick logic) |
 | Language | TypeScript 5.6, strict mode, ES2022 |
 
@@ -70,8 +72,10 @@ Each era adds 14 buildings, ~42 upgrades, new ship types, new trade routes, 4 he
 ```
 foundation-game/
   shared/     # Game engine -- types, constants, formulas, tick logic (no runtime deps)
-  server/     # Express API + DynamoDB + WebSocket sync
+  server/     # Express API + Lambda handlers + DynamoDB + WebSocket
   client/     # React SPA with RAF game loop
+  infra/      # Terraform (Lambda, API Gateway, DynamoDB, S3/CloudFront, DNS)
+  scripts/    # Deployment and bootstrapping scripts
 ```
 
 All three packages are connected via npm workspaces. The `shared` package contains every piece of game logic and balance data, used identically by client and server.
@@ -138,6 +142,39 @@ Configured in `server/.env`:
 - All server query and service functions are async
 - SVG art uses `currentColor` for automatic era theming
 - API responses return data directly (no wrapper envelope)
+
+## Deployment
+
+### Production
+
+Production deploys automatically on push to `master` via GitHub Actions (`.github/workflows/deploy.yml`).
+
+The pipeline builds shared + Lambda bundles, runs `terraform apply`, builds the client with production URLs, syncs to S3, and invalidates CloudFront. Authentication uses GitHub OIDC -- no long-lived AWS credentials stored in GitHub.
+
+| URL | Service |
+|-----|---------|
+| https://app.foundation-clicker.com | Client SPA |
+| https://api.foundation-clicker.com | REST API (Lambda) |
+| wss://ws.foundation-clicker.com | WebSocket API (Lambda) |
+
+### Manual Deployment
+
+```bash
+# Set required env vars, then:
+bash scripts/deploy.sh
+```
+
+### Infrastructure
+
+All AWS resources are managed by Terraform in `infra/`. State is stored in S3 (`foundation-game-tfstate-831473839640`) with DynamoDB locking.
+
+To bootstrap a fresh environment:
+
+```bash
+bash scripts/bootstrap-tf-backend.sh   # Create S3 bucket + lock table (one-time)
+cd infra && terraform init              # Initialize Terraform
+terraform apply                         # Create all resources
+```
 
 ## Game Mechanics Reference
 
