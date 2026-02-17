@@ -28,7 +28,7 @@ data "aws_iam_policy_document" "github_actions_assume" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:t-harper/foundation-clicker:ref:refs/heads/master"]
+      values   = ["repo:t-harper/foundation-clicker:environment:production"]
     }
   }
 }
