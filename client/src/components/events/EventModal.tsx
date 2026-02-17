@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { EVENT_DEFINITIONS } from '@foundation/shared';
-import type { EventEffect } from '@foundation/shared';
+import React, { useState, useMemo } from 'react';
+import { EVENT_DEFINITIONS, EVENT_CHAIN_DEFINITIONS } from '@foundation/shared';
+import type { EventEffect, EventChainDefinition } from '@foundation/shared';
 import { useGameStore } from '../../store';
 import { chooseEvent } from '../../api/events';
 import { Modal } from '../common';
@@ -49,14 +49,37 @@ function isPositiveEffect(effect: EventEffect): boolean {
 // No-op: events cannot be dismissed without a choice
 const noop = () => {};
 
+/** Look up which chronicle chain (if any) an event belongs to, plus its 1-based step index */
+function findChainInfo(eventKey: string): { chain: EventChainDefinition; step: number } | null {
+  for (const chain of EVENT_CHAIN_DEFINITIONS) {
+    const idx = chain.eventKeys.indexOf(eventKey);
+    if (idx !== -1) return { chain, step: idx + 1 };
+  }
+  return null;
+}
+
 export function EventModal() {
   const pendingEvent = useGameStore((s) => s.pendingEvent);
   const showEventModal = useGameStore((s) => s.showEventModal);
   const hideEventModal = useGameStore((s) => s.hideEventModal);
   const setResources = useGameStore((s) => s.setResources);
   const addActiveEffects = useGameStore((s) => s.addActiveEffects);
+  const addEventHistoryEntry = useGameStore((s) => s.addEventHistoryEntry);
   const addNotification = useGameStore((s) => s.addNotification);
+  const eventHistory = useGameStore((s) => s.eventHistory);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const chainInfo = useMemo(
+    () => (pendingEvent ? findChainInfo(pendingEvent) : null),
+    [pendingEvent],
+  );
+
+  // How many events in this chain the player has already completed (before this one)
+  const chainCompleted = useMemo(() => {
+    if (!chainInfo) return 0;
+    const done = new Set(eventHistory.map((e) => e.eventKey));
+    return chainInfo.chain.eventKeys.filter((k) => done.has(k)).length;
+  }, [chainInfo, eventHistory]);
 
   if (!showEventModal || !pendingEvent) return null;
 
@@ -80,6 +103,12 @@ export function EventModal() {
       if (response.newEffects.length > 0) {
         addActiveEffects(response.newEffects);
       }
+
+      addEventHistoryEntry({
+        eventKey: pendingEvent,
+        choiceIndex,
+        firedAt: Math.floor(Date.now() / 1000),
+      });
 
       addNotification({
         message: `${def.name}: ${def.choices[choiceIndex].label}`,
@@ -105,6 +134,22 @@ export function EventModal() {
       size="lg"
     >
       <div className="space-y-4">
+        {/* Chronicle chain indicator */}
+        {chainInfo && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-[var(--era-accent)]/10 border border-[var(--era-accent)]/20">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--era-accent)]">
+              Main Story
+            </span>
+            <span className="text-[var(--era-accent)]/40">|</span>
+            <span className="text-xs text-[var(--era-accent)]/70 font-medium">
+              {chainInfo.chain.name}
+            </span>
+            <span className="ml-auto text-xs tabular-nums font-semibold text-[var(--era-accent)]">
+              {chainInfo.step}/{chainInfo.chain.eventKeys.length}
+            </span>
+          </div>
+        )}
+
         {/* Title (rendered manually — no X button) */}
         <h2 className="text-lg font-display font-semibold text-[var(--era-primary)]">
           {def.name}

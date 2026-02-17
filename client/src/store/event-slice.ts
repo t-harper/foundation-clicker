@@ -14,6 +14,7 @@ export interface EventSlice {
   addActiveEffects: (effects: ActiveEffect[]) => void;
   removeExpiredEffects: () => void;
   setEventHistory: (history: EventHistoryEntry[]) => void;
+  addEventHistoryEntry: (entry: EventHistoryEntry) => void;
   showEvent: (eventKey: EventKey) => void;
   hideEventModal: () => void;
 }
@@ -36,6 +37,11 @@ export const createEventSlice: StateCreator<StoreState, [], [], EventSlice> = (s
 
   setEventHistory: (history) =>
     set({ eventHistory: history }),
+
+  addEventHistoryEntry: (entry) =>
+    set((state) => ({
+      eventHistory: [...state.eventHistory, entry],
+    })),
 
   removeExpiredEffects: () =>
     set((state) => {
