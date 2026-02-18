@@ -1,5 +1,9 @@
-import type { AdminUserSummary, GameState } from '@foundation/shared';
+import type { AdminUserSummary, AdminDashboardResponse, GameState } from '@foundation/shared';
 import { apiClient } from './client';
+
+export async function getAdminDashboard(): Promise<AdminDashboardResponse> {
+  return apiClient.get('/admin/dashboard');
+}
 
 export async function getAdminUsers(): Promise<{ users: AdminUserSummary[] }> {
   return apiClient.get('/admin/users');
@@ -15,10 +19,6 @@ export async function deleteAdminUser(userId: number): Promise<void> {
 
 export async function forcePasswordChange(userId: number, newPassword: string): Promise<void> {
   return apiClient.post(`/admin/users/${userId}/password`, { newPassword });
-}
-
-export async function toggleAdmin(userId: number, isAdmin: boolean): Promise<void> {
-  return apiClient.patch(`/admin/users/${userId}/admin`, { isAdmin });
 }
 
 export async function getAdminUserState(userId: number): Promise<GameState> {

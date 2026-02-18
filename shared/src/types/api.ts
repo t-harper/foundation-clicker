@@ -229,6 +229,50 @@ export interface GetLeaderboardResponse {
   updatedAt: number;
 }
 
+// Admin Dashboard
+export interface AdminDashboardResponse {
+  overview: {
+    totalPlayers: number;
+    active24h: number;
+    active7d: number;
+    newPlayers7d: number;
+  };
+  eraDistribution: {
+    playersPerEra: [number, number, number, number];
+    avgPrestigeCount: number;
+    maxPrestigeCount: number;
+    avgTotalSeldonPoints: number;
+    maxTotalSeldonPoints: number;
+  };
+  engagement: {
+    avgPlayTimeSeconds: number;
+    medianPlayTimeSeconds: number;
+    avgTotalClicks: number;
+    avgLifetimeCredits: number;
+    maxLifetimeCredits: number;
+  };
+  contentAdoption: {
+    avgBuildingsOwned: number;
+    avgUpgradesPurchased: number;
+    avgAchievementsUnlocked: number;
+    avgHeroesUnlocked: number;
+  };
+  economy: {
+    totalLifetimeCredits: number;
+    totalSeldonPoints: number;
+    totalClicks: number;
+  };
+  shipsAndTrade: {
+    totalShipsBuilt: number;
+    totalTradeRoutesUnlocked: number;
+  };
+  topPlayers: {
+    byLifetimeCredits: { nickname: string; value: number }[];
+    bySeldonPoints: { nickname: string; value: number }[];
+  };
+  computedAt: number;
+}
+
 // Generic
 export interface ApiError {
   error: string;

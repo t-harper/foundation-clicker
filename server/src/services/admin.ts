@@ -5,7 +5,6 @@ import {
   getAllUsers,
   findUserById,
   updateUserPassword,
-  updateUserAdmin,
   deleteUserFull,
 } from '../db/queries/user-queries.js';
 import { getGameState, updateGameState } from '../db/queries/game-state-queries.js';
@@ -73,12 +72,6 @@ export async function forcePasswordChange(userId: number, newPassword: string): 
   if (!user) throw new NotFoundError('User not found');
   const hash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
   await updateUserPassword(userId, hash);
-}
-
-export async function setAdminLevel(userId: number, isAdmin: boolean): Promise<void> {
-  const user = await findUserById(userId);
-  if (!user) throw new NotFoundError('User not found');
-  await updateUserAdmin(userId, isAdmin);
 }
 
 export async function updateResources(

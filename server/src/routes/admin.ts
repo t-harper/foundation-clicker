@@ -7,7 +7,6 @@ import {
   impersonateUser,
   deleteUser,
   forcePasswordChange,
-  setAdminLevel,
   updateResources,
   updateEra,
   updatePrestige,
@@ -21,6 +20,7 @@ import {
   cancelActivity,
 } from '../services/admin.js';
 import { pushFullSyncToUser } from '../ws/push-sync.js';
+import { getAdminDashboard } from '../services/admin-dashboard.js';
 
 const router = Router();
 
@@ -34,6 +34,20 @@ function paramStr(value: string | string[]): string {
 function paramInt(value: string | string[]): number {
   return parseInt(paramStr(value), 10);
 }
+
+// Dashboard analytics
+router.get(
+  '/api/admin/dashboard',
+  ...adminAuth,
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const data = await getAdminDashboard();
+      res.json(data);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 // List users
 router.get(
@@ -84,24 +98,6 @@ router.post(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       await forcePasswordChange(paramInt(req.params.userId), req.body.newPassword);
-      res.status(204).send();
-    } catch (err) {
-      next(err);
-    }
-  }
-);
-
-// Toggle admin
-router.patch(
-  '/api/admin/users/:userId/admin',
-  ...adminAuth,
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    try {
-      if (paramInt(req.params.userId) === req.userId) {
-        res.status(400).json({ error: 'Cannot change your own admin status' });
-        return;
-      }
-      await setAdminLevel(paramInt(req.params.userId), req.body.isAdmin);
       res.status(204).send();
     } catch (err) {
       next(err);

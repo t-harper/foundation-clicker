@@ -7,7 +7,6 @@ import {
   impersonateUser,
   deleteAdminUser,
   forcePasswordChange,
-  toggleAdmin,
 } from '../../api/admin';
 
 interface UserListTabProps {
@@ -72,15 +71,6 @@ export function UserListTab({ onSelectUser }: UserListTabProps) {
     }
   };
 
-  const handleToggleAdmin = async (userId: number, currentIsAdmin: boolean) => {
-    try {
-      await toggleAdmin(userId, !currentIsAdmin);
-      await loadUsers();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Toggle admin failed');
-    }
-  };
-
   if (loading) {
     return (
       <div className="text-center py-12 text-[var(--era-text)]/40">
@@ -124,17 +114,13 @@ export function UserListTab({ onSelectUser }: UserListTabProps) {
                 </td>
                 <td className="px-3 py-2 text-[var(--era-text)]/60">{user.prestigeCount}</td>
                 <td className="px-3 py-2">
-                  <button
-                    type="button"
-                    onClick={() => handleToggleAdmin(user.id, user.isAdmin)}
-                    className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                      user.isAdmin
-                        ? 'bg-red-500/20 text-red-400'
-                        : 'bg-[var(--era-surface)]/30 text-[var(--era-text)]/40'
-                    }`}
-                  >
+                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                    user.isAdmin
+                      ? 'bg-red-500/20 text-red-400'
+                      : 'bg-[var(--era-surface)]/30 text-[var(--era-text)]/40'
+                  }`}>
                     {user.isAdmin ? 'Yes' : 'No'}
-                  </button>
+                  </span>
                 </td>
                 <td className="px-3 py-2 text-right">
                   <div className="flex items-center justify-end gap-1">

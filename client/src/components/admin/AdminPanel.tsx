@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { UserListTab } from './UserListTab';
 import { UserDetailTab } from './UserDetailTab';
+import { DashboardTab } from './DashboardTab';
+
+type AdminTab = 'dashboard' | 'users';
 
 export function AdminPanel() {
+  const [tab, setTab] = useState<AdminTab>('dashboard');
   const [view, setView] = useState<'list' | 'detail'>('list');
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedUsername, setSelectedUsername] = useState<string>('');
@@ -30,10 +34,28 @@ export function AdminPanel() {
         </span>
       </div>
 
-      {view === 'list' && (
+      <div className="flex gap-1 bg-white/5 rounded-lg p-1 w-fit">
+        {(['dashboard', 'users'] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => { setTab(t); if (t === 'users') setView('list'); }}
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+              tab === t
+                ? 'bg-red-500/20 text-red-400 font-medium'
+                : 'text-white/50 hover:text-white/70'
+            }`}
+          >
+            {t === 'dashboard' ? 'Dashboard' : 'Users'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'dashboard' && <DashboardTab />}
+
+      {tab === 'users' && view === 'list' && (
         <UserListTab onSelectUser={handleSelectUser} />
       )}
-      {view === 'detail' && selectedUserId !== null && (
+      {tab === 'users' && view === 'detail' && selectedUserId !== null && (
         <UserDetailTab
           userId={selectedUserId}
           username={selectedUsername}
