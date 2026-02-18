@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
-import { createUser, findUserByUsername } from '../db/queries/user-queries.js';
+import { createUser, findUserByUsername, findUserById, updateUserNickname } from '../db/queries/user-queries.js';
 import { createGameState } from '../db/queries/game-state-queries.js';
 import { unlockHero } from '../db/queries/hero-queries.js';
 import {
@@ -16,14 +16,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'foundation-dev-secret-key';
 const BCRYPT_ROUNDS = 10;
 const USERNAME_REGEX = /^[a-zA-Z0-9]+$/;
 
-interface UserInfo {
-  id: number;
-  username: string;
-}
-
 interface AuthResult {
   token: string;
-  user: UserInfo;
+  userId: number;
+  username: string;
+  nickname: string | null;
 }
 
 function validateRegistrationInput(username: string, password: string): void {
@@ -87,10 +84,9 @@ export async function register(
 
   return {
     token,
-    user: {
-      id: user.id,
-      username: user.username,
-    },
+    userId: user.id,
+    username: user.username,
+    nickname: null,
   };
 }
 
@@ -116,9 +112,25 @@ export async function login(
 
   return {
     token,
-    user: {
-      id: user.id,
-      username: user.username,
-    },
+    userId: user.id,
+    username: user.username,
+    nickname: user.nickname ?? user.username,
   };
+}
+
+const NICKNAME_REGEX = /^[a-zA-Z0-9 \-]+$/;
+
+export async function setNickname(userId: number, nickname: string): Promise<string> {
+  if (!nickname || typeof nickname !== 'string') {
+    throw new ValidationError('Nickname is required');
+  }
+  const trimmed = nickname.trim();
+  if (trimmed.length < 2 || trimmed.length > 20) {
+    throw new ValidationError('Nickname must be between 2 and 20 characters');
+  }
+  if (!NICKNAME_REGEX.test(trimmed)) {
+    throw new ValidationError('Nickname can only contain letters, numbers, spaces, and hyphens');
+  }
+  await updateUserNickname(userId, trimmed);
+  return trimmed;
 }

@@ -18,3 +18,6 @@ export type { Tab, TabGroupProps } from './TabGroup';
 
 export { NotificationArea } from './NotificationArea';
 export type { Notification, NotificationAreaProps } from './NotificationArea';
+
+export { NicknamePicker } from './NicknamePicker';
+export type { NicknamePickerProps } from './NicknamePicker';

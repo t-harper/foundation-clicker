@@ -6,6 +6,7 @@ import { queryItems, batchDeleteItems, userPK } from '../dynamo-utils.js';
 export interface UserRow {
   id: number;
   username: string;
+  nickname: string;
   password_hash: string;
   is_admin: number;
   created_at: number;
@@ -65,7 +66,7 @@ export async function createUser(username: string, passwordHash: string): Promis
     })
   );
 
-  return { id, username, password_hash: passwordHash, is_admin: 0, created_at: now };
+  return { id, username, nickname: username, password_hash: passwordHash, is_admin: 0, created_at: now };
 }
 
 export async function findUserByUsername(username: string): Promise<UserRow | undefined> {
@@ -89,6 +90,7 @@ export async function findUserByUsername(username: string): Promise<UserRow | un
   return {
     id: parseInt(item.PK.replace('USER#', ''), 10),
     username: item.username,
+    nickname: item.nickname ?? item.username,
     password_hash: item.passwordHash,
     is_admin: item.isAdmin,
     created_at: item.createdAt,
@@ -110,6 +112,7 @@ export async function findUserById(id: number): Promise<UserRow | undefined> {
   return {
     id,
     username: item.username,
+    nickname: item.nickname ?? item.username,
     password_hash: item.passwordHash,
     is_admin: item.isAdmin,
     created_at: item.createdAt,
@@ -140,6 +143,7 @@ export async function getAllUsers(): Promise<UserRow[]> {
     .map((item) => ({
       id: parseInt(item.PK.replace('USER#', ''), 10),
       username: item.username as string,
+      nickname: (item.nickname ?? item.username) as string,
       password_hash: item.passwordHash as string,
       is_admin: item.isAdmin as number,
       created_at: item.createdAt as number,
@@ -167,6 +171,18 @@ export async function updateUserAdmin(userId: number, isAdmin: boolean): Promise
       Key: { PK: userPK(userId), SK: 'PROFILE' },
       UpdateExpression: 'SET isAdmin = :val',
       ExpressionAttributeValues: { ':val': isAdmin ? 1 : 0 },
+    })
+  );
+}
+
+export async function updateUserNickname(userId: number, nickname: string): Promise<void> {
+  const client = getDocClient();
+  await client.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: 'PROFILE' },
+      UpdateExpression: 'SET nickname = :nick',
+      ExpressionAttributeValues: { ':nick': nickname },
     })
   );
 }

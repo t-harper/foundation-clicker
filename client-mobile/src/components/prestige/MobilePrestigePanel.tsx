@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '@desktop/store';
 import type { PrestigePreview, PrestigeHistoryEntry } from '@foundation/shared';
-import { ERA_SELDON_THRESHOLDS } from '@foundation/shared';
-import { previewPrestige, triggerPrestige, getPrestigeHistory } from '@desktop/api';
+import { ERA_SELDON_THRESHOLDS, ERA_DEFINITIONS, ERA_UNLOCK_THRESHOLDS, Era } from '@foundation/shared';
+import { previewPrestige, triggerPrestige, getPrestigeHistory, replayEra } from '@desktop/api';
 import { NumberDisplay } from '@desktop/components/common';
 import { PrestigeIcon, StarIcon } from '@desktop/assets/svg/icons';
 import { formatNumber, formatTimeAgo } from '@desktop/utils/format';
@@ -25,6 +25,9 @@ export function MobilePrestigePanel() {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [loadingPrestige, setLoadingPrestige] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showReplayConfirm, setShowReplayConfirm] = useState(false);
+  const [replayTargetEra, setReplayTargetEra] = useState<number | null>(null);
+  const [loadingReplay, setLoadingReplay] = useState(false);
 
   // Load preview and history on mount
   useEffect(() => {
@@ -76,6 +79,34 @@ export function MobilePrestigePanel() {
       setLoadingPrestige(false);
     }
   }, [loadingPrestige, setGameState, addNotification]);
+
+  const handleReplayEra = useCallback(async () => {
+    if (loadingReplay || replayTargetEra === null) return;
+    setLoadingReplay(true);
+    try {
+      const result = await replayEra(replayTargetEra);
+      setGameState(result.gameState);
+      setShowReplayConfirm(false);
+      setReplayTargetEra(null);
+      addNotification({
+        message: `Switched to ${ERA_DEFINITIONS[replayTargetEra as Era].name}!`,
+        type: 'success',
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to replay era';
+      addNotification({ message, type: 'error' });
+    } finally {
+      setLoadingReplay(false);
+    }
+  }, [loadingReplay, replayTargetEra, setGameState, addNotification]);
+
+  const unlockedEras = ([0, 1, 2, 3] as Era[]).filter((era) => {
+    if (era === currentEra) return false;
+    const threshold = ERA_UNLOCK_THRESHOLDS[era];
+    if (threshold.prestigeCount && prestigeCount < threshold.prestigeCount) return false;
+    if (threshold.seldonPoints && totalSeldonPoints < threshold.seldonPoints) return false;
+    return true;
+  });
 
   const canPrestige = preview !== null && preview.seldonPointsEarned > 0;
 
@@ -218,6 +249,33 @@ export function MobilePrestigePanel() {
         </button>
       </div>
 
+      {/* Era Replay */}
+      {unlockedEras.length > 0 && (
+        <div className="p-4 rounded-lg border border-red-500/20 bg-red-500/5">
+          <h3 className="text-sm font-display font-semibold text-red-400 mb-1.5">
+            Replay Previous Era
+          </h3>
+          <p className="text-[11px] text-[var(--era-text)]/50 mb-3">
+            Reset all progress and switch to a previously unlocked era. No Seldon Points are earned.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {unlockedEras.map((era) => (
+              <button
+                key={era}
+                type="button"
+                onClick={() => {
+                  setReplayTargetEra(era);
+                  setShowReplayConfirm(true);
+                }}
+                className="px-3 py-2 rounded-lg text-xs font-semibold bg-red-600 text-white active:bg-red-700 transition-colors touch-action-manipulation"
+              >
+                {ERA_DEFINITIONS[era].name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Prestige history */}
       <div>
         <h3 className="text-sm font-display font-semibold text-[var(--era-primary)] mb-2">
@@ -262,7 +320,7 @@ export function MobilePrestigePanel() {
         )}
       </div>
 
-      {/* Confirmation modal (two-stage) */}
+      {/* Seldon Crisis confirmation modal */}
       <MobileModal
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
@@ -308,6 +366,45 @@ export function MobilePrestigePanel() {
               className="flex-1 py-3 rounded-lg text-sm font-semibold bg-red-600 text-white active:bg-red-700 disabled:opacity-50 transition-colors touch-action-manipulation"
             >
               {loadingPrestige ? 'Processing...' : 'Confirm Crisis'}
+            </button>
+          </div>
+        </div>
+      </MobileModal>
+
+      {/* Era Replay confirmation modal */}
+      <MobileModal
+        isOpen={showReplayConfirm}
+        onClose={() => { setShowReplayConfirm(false); setReplayTargetEra(null); }}
+        title="Confirm Era Replay"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--era-text)]/70">
+            Replaying <span className="font-semibold text-[var(--era-primary)]">{replayTargetEra !== null ? ERA_DEFINITIONS[replayTargetEra as Era].name : ''}</span> will:
+          </p>
+          <ul className="text-sm text-[var(--era-text)]/60 space-y-1.5 ml-4 list-disc">
+            <li>Reset all resources to zero</li>
+            <li>Reset all buildings, upgrades, ships, and trade routes</li>
+            <li>Clear all active effects and missions</li>
+            <li>Switch to {replayTargetEra !== null ? ERA_DEFINITIONS[replayTargetEra as Era].name : ''}</li>
+          </ul>
+          <p className="text-xs text-amber-400/70">
+            No Seldon Points will be earned. This action cannot be undone.
+          </p>
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => { setShowReplayConfirm(false); setReplayTargetEra(null); }}
+              className="flex-1 py-3 rounded-lg text-sm font-semibold border border-[var(--era-surface)] text-[var(--era-text)]/70 active:bg-[var(--era-surface)]/30 transition-colors touch-action-manipulation"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={loadingReplay}
+              onClick={handleReplayEra}
+              className="flex-1 py-3 rounded-lg text-sm font-semibold bg-red-600 text-white active:bg-red-700 disabled:opacity-50 transition-colors touch-action-manipulation"
+            >
+              {loadingReplay ? 'Processing...' : 'Confirm Replay'}
             </button>
           </div>
         </div>

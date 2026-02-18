@@ -101,6 +101,7 @@ export function MobileUpgradeCard({
 
   return (
     <div
+      data-tutorial={`upgrade-${upgradeState.upgradeKey}`}
       className={[
         'rounded-lg border transition-colors',
         isBestROI

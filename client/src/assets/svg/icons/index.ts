@@ -20,3 +20,5 @@ export { ColonyMapIcon } from './ColonyMapIcon';
 export { ResearchIcon } from './ResearchIcon';
 export { AdminIcon } from './AdminIcon';
 export { EventsIcon } from './EventsIcon';
+export { LeaderboardIcon } from './LeaderboardIcon';
+export { StatsIcon } from './StatsIcon';

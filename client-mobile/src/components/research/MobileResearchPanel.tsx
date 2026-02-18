@@ -124,6 +124,7 @@ export function MobileResearchPanel() {
             key={tab.key}
             type="button"
             onClick={() => setSubTab(tab.key)}
+            {...(tab.key === 'inventory' ? { 'data-tutorial': 'research-inventory-tab' } : {})}
             className={[
               'shrink-0 px-3 py-2 text-sm font-medium rounded-t transition-colors touch-action-manipulation',
               subTab === tab.key

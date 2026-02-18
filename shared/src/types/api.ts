@@ -23,6 +23,7 @@ export interface AuthResponse {
   token: string;
   userId: number;
   username: string;
+  nickname: string | null;
 }
 
 // Game State
@@ -31,6 +32,7 @@ export interface LoadGameResponse {
   offlineEarnings: Resources | null;
   offlineSeconds: number;
   pendingEventKey: string | null;
+  nickname: string;
 }
 
 export interface SaveGameRequest {
@@ -103,6 +105,11 @@ export interface PrestigeResponse {
     prestigeCount: number;
     prestigeMultiplier: number;
   };
+  newEra: number;
+}
+
+// Era Replay
+export interface ReplayEraResponse {
   newEra: number;
 }
 
@@ -190,10 +197,36 @@ export interface UseConsumableResponse {
 export interface AdminUserSummary {
   id: number;
   username: string;
+  nickname: string;
   isAdmin: boolean;
   createdAt: number;
   currentEra: number;
   prestigeCount: number;
+}
+
+// Nickname
+export interface SetNicknameRequest {
+  nickname: string;
+}
+
+export interface SetNicknameResponse {
+  nickname: string;
+}
+
+// Leaderboard
+export type LeaderboardCategory = 'lifetimeCredits' | 'totalSeldonPoints' | 'prestigeCount' | 'currentEra' | 'totalAchievements';
+
+export interface LeaderboardEntry {
+  rank: number;
+  nickname: string;
+  value: number;
+  currentEra: number;
+}
+
+export interface GetLeaderboardResponse {
+  category: LeaderboardCategory;
+  entries: LeaderboardEntry[];
+  updatedAt: number;
 }
 
 // Generic

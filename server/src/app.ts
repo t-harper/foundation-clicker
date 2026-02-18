@@ -6,6 +6,7 @@ import heroesRouter from './routes/heroes.js';
 import activitiesRouter from './routes/activities.js';
 import inventoryRouter from './routes/inventory.js';
 import adminRouter from './routes/admin.js';
+import leaderboardRouter from './routes/leaderboard.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 const app = express();
@@ -29,6 +30,7 @@ app.use(heroesRouter);
 app.use(activitiesRouter);
 app.use(inventoryRouter);
 app.use(adminRouter);
+app.use(leaderboardRouter);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

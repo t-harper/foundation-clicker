@@ -5,6 +5,7 @@ const config: Config = {
     './index.html',
     './src/**/*.{ts,tsx}',
     '../client/src/components/common/**/*.{ts,tsx}',
+    '../client/src/components/tutorial/**/*.{ts,tsx}',
     '../client/src/assets/svg/**/*.{ts,tsx}',
   ],
   theme: {

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useGameStore, selectGameStats, selectGameState } from '@desktop/store';
-import { resetGame, getStats } from '@desktop/api';
+import { resetGame, getStats, setNickname as setNicknameApi } from '@desktop/api';
 import { wsManager } from '@desktop/ws';
 import type { GameStats } from '@foundation/shared';
 import { MobileModal } from '@/components/common/MobileModal';
@@ -16,6 +16,7 @@ export function MobileSettingsModal({ isOpen }: MobileSettingsModalProps) {
   const setGameState = useGameStore((s) => s.setGameState);
   const addNotification = useGameStore((s) => s.addNotification);
   const setIsSaving = useGameStore((s) => s.setIsSaving);
+  const nickname = useGameStore((s) => s.nickname);
 
   const [stats, setStats] = useState<GameStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -23,6 +24,8 @@ export function MobileSettingsModal({ isOpen }: MobileSettingsModalProps) {
   const [resetting, setResetting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [newNickname, setNewNickname] = useState('');
 
   // Load stats when modal opens
   useEffect(() => {
@@ -214,6 +217,54 @@ export function MobileSettingsModal({ isOpen }: MobileSettingsModalProps) {
               className="w-full"
             >
               Switch to Desktop View
+            </Button>
+          </section>
+
+          {/* Account */}
+          <section>
+            <h3 className="text-sm font-semibold text-[var(--era-primary)] mb-3 uppercase tracking-wide">
+              Account
+            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <span className="text-[10px] text-[var(--era-text)]/40 uppercase tracking-wide block">Display Name</span>
+                <span className="text-sm font-semibold text-[var(--era-text)]">{nickname || 'Not set'}</span>
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => { setEditingNickname(true); setNewNickname(nickname); }}>
+                Change
+              </Button>
+            </div>
+            {editingNickname && (
+              <div className="flex gap-2 mb-3">
+                <input
+                  value={newNickname}
+                  onChange={(e) => setNewNickname(e.target.value)}
+                  maxLength={20}
+                  className="flex-1 px-2 py-1.5 bg-[var(--era-surface)]/30 border border-[var(--era-primary)]/20 rounded text-sm text-[var(--era-text)]"
+                />
+                <Button variant="primary" size="sm" onClick={async () => {
+                  try {
+                    const result = await setNicknameApi(newNickname);
+                    useGameStore.getState().setNickname(result.nickname);
+                    setEditingNickname(false);
+                    addNotification({ message: 'Display name updated!', type: 'success' });
+                  } catch (err) {
+                    addNotification({ message: err instanceof Error ? err.message : 'Failed', type: 'error' });
+                  }
+                }}>Save</Button>
+                <Button variant="secondary" size="sm" onClick={() => setEditingNickname(false)}>Cancel</Button>
+              </div>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                localStorage.removeItem('foundation_token');
+                window.location.href = '/login';
+              }}
+              className="w-full"
+            >
+              Log Out
             </Button>
           </section>
 

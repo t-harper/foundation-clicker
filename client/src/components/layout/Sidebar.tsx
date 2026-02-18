@@ -11,6 +11,8 @@ import {
   PrestigeIcon,
   EncyclopediaIcon,
   ResearchIcon,
+  LeaderboardIcon,
+  StatsIcon,
   AdminIcon,
 } from '../../assets/svg/icons';
 
@@ -30,6 +32,8 @@ const SIDEBAR_TABS: SidebarTab[] = [
   { key: 'events', label: 'Events', icon: <EventsIcon className="w-5 h-5" /> },
   { key: 'prestige', label: 'Prestige', icon: <PrestigeIcon className="w-5 h-5" /> },
   { key: 'encyclopedia', label: 'Encyclopedia', icon: <EncyclopediaIcon className="w-5 h-5" /> },
+  { key: 'leaderboard', label: 'Leaderboard', icon: <LeaderboardIcon className="w-5 h-5" /> },
+  { key: 'stats', label: 'Stats', icon: <StatsIcon className="w-5 h-5" /> },
 ];
 
 export function Sidebar() {

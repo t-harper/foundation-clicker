@@ -20,6 +20,7 @@ export type ClientMessage =
   | { type: 'recallShip'; requestId: string; shipId: string }
   | { type: 'unlockTradeRoute'; requestId: string; routeKey: TradeRouteKey }
   | { type: 'triggerPrestige'; requestId: string }
+  | { type: 'replayEra'; requestId: string; era: number }
   | { type: 'chooseEvent'; requestId: string; eventKey: EventKey; choiceIndex: number }
   | { type: 'resetGame'; requestId: string }
   | { type: 'getStats'; requestId: string }

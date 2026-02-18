@@ -82,6 +82,14 @@ export function selectBestCreditROIUpgrade(state: StoreState): string | null {
   return computeBestCreditROI(state).upgradeKey;
 }
 
+/** Return the best ROI target across both buildings and upgrades. */
+export function selectBestCreditROITarget(state: StoreState): { tab: 'buildings' | 'upgrades'; key: string } | null {
+  const { buildingKey, upgradeKey } = computeBestCreditROI(state);
+  if (buildingKey) return { tab: 'buildings', key: buildingKey };
+  if (upgradeKey) return { tab: 'upgrades', key: upgradeKey };
+  return null;
+}
+
 /** Build a GameStats summary object. */
 export function selectGameStats(state: StoreState): GameStats {
   return {

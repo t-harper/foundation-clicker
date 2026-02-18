@@ -33,6 +33,7 @@ export async function listUsers(): Promise<AdminUserSummary[]> {
     results.push({
       id: u.id,
       username: u.username,
+      nickname: u.nickname,
       isAdmin: u.is_admin === 1,
       createdAt: u.created_at,
       currentEra: gs?.current_era ?? 0,

@@ -77,6 +77,7 @@ export function MobileBottomNav() {
               key={tab.key}
               type="button"
               onClick={() => handleTabPress(tab.key)}
+              data-tutorial={tab.key !== 'more' ? `sidebar-${tab.key}` : undefined}
               className={[
                 'flex flex-col items-center py-2 px-3 min-w-[56px] touch-action-manipulation',
                 isActive ? 'border-t-2 border-[var(--era-accent)]' : 'border-t-2 border-transparent',

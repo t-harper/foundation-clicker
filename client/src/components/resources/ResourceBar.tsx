@@ -1,5 +1,8 @@
 import React from 'react';
-import { useGameStore, selectProductionRates } from '../../store';
+import { useGameStore, selectProductionRates, selectBestCreditROITarget } from '../../store';
+import { useShallow } from 'zustand/react/shallow';
+import type { BuildingKey, UpgradeKey } from '@foundation/shared';
+import { BUILDING_DEFINITIONS, UPGRADE_DEFINITIONS } from '@foundation/shared';
 import type { ResourceKey, ActiveEffect } from '@foundation/shared';
 import { NumberDisplay, Tooltip } from '../common';
 import { formatResource } from '../../utils/format';
@@ -129,12 +132,48 @@ function ResourceItem({ config }: { config: ResourceConfig }) {
   );
 }
 
+function BestROIButton() {
+  const target = useGameStore(useShallow(selectBestCreditROITarget));
+  const setActiveTab = useGameStore((s) => s.setActiveTab);
+
+  if (!target) return null;
+
+  const label = target.tab === 'buildings'
+    ? BUILDING_DEFINITIONS[target.key as BuildingKey]?.name
+    : UPGRADE_DEFINITIONS[target.key as UpgradeKey]?.name;
+
+  const handleClick = () => {
+    setActiveTab(target.tab);
+    requestAnimationFrame(() => {
+      const prefix = target.tab === 'buildings' ? 'building' : 'upgrade';
+      const el = document.querySelector(`[data-tutorial="${prefix}-${target.key}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  };
+
+  return (
+    <Tooltip content="Jump to the best credits-per-second investment" position="bottom">
+      <button
+        type="button"
+        onClick={handleClick}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[var(--era-accent)]/15 border border-[var(--era-accent)]/30 hover:bg-[var(--era-accent)]/25 transition-colors text-[var(--era-accent)] text-xs font-semibold whitespace-nowrap"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+        Best ROI: {label}
+      </button>
+    </Tooltip>
+  );
+}
+
 export function ResourceBar() {
   return (
     <div data-tutorial="resource-bar" className="flex items-center gap-2 px-5 py-2 border-b border-[var(--era-surface)] bg-[var(--era-bg)]/90 overflow-x-auto">
       {RESOURCE_CONFIGS.map((config) => (
         <ResourceItem key={config.key} config={config} />
       ))}
+      <BestROIButton />
     </div>
   );
 }

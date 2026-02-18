@@ -21,6 +21,10 @@ export async function login(username: string, password: string): Promise<AuthRes
   return response;
 }
 
-export async function getMe(): Promise<{ user: { id: number; username: string; isAdmin: boolean } }> {
-  return apiClient.get<{ user: { id: number; username: string; isAdmin: boolean } }>('/auth/me');
+export async function getMe(): Promise<{ user: { id: number; username: string; nickname: string; isAdmin: boolean } }> {
+  return apiClient.get<{ user: { id: number; username: string; nickname: string; isAdmin: boolean } }>('/auth/me');
+}
+
+export async function setNickname(nickname: string): Promise<{ nickname: string }> {
+  return apiClient.patch<{ nickname: string }>('/auth/nickname', { nickname });
 }

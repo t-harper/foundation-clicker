@@ -25,7 +25,7 @@ export function MobileHeader() {
           </button>
         </div>
       )}
-      <header className={`flex items-center justify-between px-3 py-2 border-b border-[var(--era-surface)] bg-[var(--era-bg)]/95 ${!isImpersonating ? 'safe-top' : ''}`}>
+      <header className={`flex items-center justify-between px-3 py-2 ${!isImpersonating ? 'safe-top' : ''}`}>
         {/* Left: Era badge */}
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase border border-[var(--era-primary)]/40 bg-[var(--era-primary)]/10 text-[var(--era-primary)]">
           {eraDef.name}

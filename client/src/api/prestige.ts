@@ -2,6 +2,7 @@ import type {
   PrestigePreview,
   PrestigeResponse,
   PrestigeHistoryEntry,
+  ReplayEraResponse,
   GameState,
 } from '@foundation/shared';
 import { wsManager } from '../ws';
@@ -16,4 +17,8 @@ export async function triggerPrestige(): Promise<PrestigeResponse & { gameState:
 
 export async function getPrestigeHistory(): Promise<PrestigeHistoryEntry[]> {
   return wsManager.send<PrestigeHistoryEntry[]>({ type: 'getPrestigeHistory' });
+}
+
+export async function replayEra(era: number): Promise<ReplayEraResponse & { gameState: GameState }> {
+  return wsManager.send<ReplayEraResponse & { gameState: GameState }>({ type: 'replayEra', era });
 }

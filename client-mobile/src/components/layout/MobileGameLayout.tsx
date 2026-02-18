@@ -13,6 +13,8 @@ import { MobilePrestigePanel } from '../prestige';
 import { MobileEncyclopediaPanel } from '../encyclopedia';
 import { MobileColonyMapPanel } from '../colony-map';
 import { MobileResearchPanel } from '../research';
+import { MobileLeaderboardPanel } from '../leaderboard';
+import { MobileStatsPanel } from '../stats';
 import { MobileEventModal } from '../events';
 import { MobileEventHistoryPanel } from '../events';
 import { MobileClickTarget } from '../resources/MobileClickTarget';
@@ -20,6 +22,7 @@ import { FloatingClickButton } from '../resources/FloatingClickButton';
 import { MobileOfflineSheet } from '../resources/MobileOfflineSheet';
 import { MobileSettingsModal } from '../settings';
 import { NotificationArea } from '@desktop/components/common';
+import { TutorialOverlay } from '@desktop/components/tutorial';
 import { AdminPanel } from '@desktop/components/admin';
 
 function ActivePanel() {
@@ -46,6 +49,10 @@ function ActivePanel() {
       return <MobileEncyclopediaPanel />;
     case 'admin':
       return <AdminPanel />;
+    case 'leaderboard':
+      return <MobileLeaderboardPanel />;
+    case 'stats':
+      return <MobileStatsPanel />;
     case 'vault':
       return <MobileClickTarget />;
     default:
@@ -82,9 +89,12 @@ export function MobileGameLayout() {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col flex-1 min-h-0">
-        <MobileHeader />
-        <MobileResourceBar />
-        <MobileActiveEffectsBar />
+        {/* Sticky top chrome: header + resources + effects */}
+        <div className="shrink-0 border-b border-[var(--era-surface)] bg-[var(--era-bg)]/95">
+          <MobileHeader />
+          <MobileResourceBar />
+          <MobileActiveEffectsBar />
+        </div>
 
         {/* Main scrollable content */}
         <main className="flex-1 overflow-y-auto scroll-momentum px-3 py-3">
@@ -97,6 +107,9 @@ export function MobileGameLayout() {
         {/* Bottom nav */}
         <MobileBottomNav />
       </div>
+
+      {/* Tutorial */}
+      <TutorialOverlay />
 
       {/* Overlays */}
       <MobileSettingsModal isOpen={showSettings} />

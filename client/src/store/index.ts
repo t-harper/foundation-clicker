@@ -12,6 +12,7 @@ import { type TutorialSlice, createTutorialSlice } from './tutorial-slice.js';
 import { type HeroSlice, createHeroSlice } from './hero-slice.js';
 import { type ActivitySlice, createActivitySlice } from './activity-slice.js';
 import { type InventorySlice, createInventorySlice } from './inventory-slice.js';
+import { type StatsSlice, createStatsSlice } from './stats-slice.js';
 
 export type StoreState =
   & GameSlice
@@ -25,7 +26,8 @@ export type StoreState =
   & TutorialSlice
   & HeroSlice
   & ActivitySlice
-  & InventorySlice;
+  & InventorySlice
+  & StatsSlice;
 
 export const useGameStore = create<StoreState>()((...a) => ({
   ...createGameSlice(...a),
@@ -40,6 +42,7 @@ export const useGameStore = create<StoreState>()((...a) => ({
   ...createHeroSlice(...a),
   ...createActivitySlice(...a),
   ...createInventorySlice(...a),
+  ...createStatsSlice(...a),
 }));
 
 // Re-export selectors for convenience
@@ -52,6 +55,7 @@ export {
   selectGameStats,
   selectBestCreditROIBuilding,
   selectBestCreditROIUpgrade,
+  selectBestCreditROITarget,
 } from './selectors.js';
 
 // Re-export slice types
@@ -67,3 +71,4 @@ export type { TutorialSlice } from './tutorial-slice.js';
 export type { HeroSlice } from './hero-slice.js';
 export type { ActivitySlice } from './activity-slice.js';
 export type { InventorySlice } from './inventory-slice.js';
+export type { StatsSlice, StatsSnapshot } from './stats-slice.js';

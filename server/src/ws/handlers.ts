@@ -14,6 +14,7 @@ import {
   previewPrestige,
   triggerPrestige,
   getPrestigeHistoryForUser,
+  replayEra,
 } from '../services/prestige.js';
 import { handleEventChoice, getUserActiveEffects, getUserEventHistory, getUserEventHistoryPage, checkForEvent } from '../services/event.js';
 import { checkAchievements } from '../services/achievement.js';
@@ -105,6 +106,14 @@ export async function handleClientMessage(userId: number, msg: ClientMessage): P
 
     case 'triggerPrestige': {
       const result = await triggerPrestige(userId);
+      const fullState = await buildGameState(userId);
+      return {
+        response: { type: 'result', requestId: msg.requestId, data: { ...result, gameState: fullState } },
+      };
+    }
+
+    case 'replayEra': {
+      const result = await replayEra(userId, msg.era);
       const fullState = await buildGameState(userId);
       return {
         response: { type: 'result', requestId: msg.requestId, data: { ...result, gameState: fullState } },

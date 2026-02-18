@@ -1,6 +1,6 @@
 export { apiClient } from './client';
 
-export { register, login, getMe } from './auth';
+export { register, login, getMe, setNickname } from './auth';
 
 export { loadGame, click, saveGame, resetGame, getStats } from './game';
 
@@ -17,12 +17,14 @@ export {
 
 export { checkAchievements } from './achievements';
 
-export { previewPrestige, triggerPrestige, getPrestigeHistory } from './prestige';
+export { previewPrestige, triggerPrestige, getPrestigeHistory, replayEra } from './prestige';
 
 export { chooseEvent, getActiveEffects, getEventHistory } from './events';
 
 export { getHeroes } from './heroes';
 export { getActivities, startActivity, collectActivity } from './activities';
 export { getInventory, useConsumable } from './inventory';
+
+export { getLeaderboard } from './leaderboard';
 
 export * from './admin';

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGameStore, selectGameState } from '../../store';
 import type { PrestigePreview, PrestigeHistoryEntry } from '@foundation/shared';
-import { ERA_SELDON_THRESHOLDS } from '@foundation/shared';
-import { previewPrestige, triggerPrestige, getPrestigeHistory } from '../../api';
+import { ERA_SELDON_THRESHOLDS, ERA_DEFINITIONS, ERA_UNLOCK_THRESHOLDS, Era } from '@foundation/shared';
+import { previewPrestige, triggerPrestige, getPrestigeHistory, replayEra } from '../../api';
 import { Button, Modal, NumberDisplay } from '../common';
 import { PrestigeIcon, StarIcon } from '../../assets/svg/icons';
 import { formatNumber, formatTimeAgo } from '../../utils/format';
@@ -24,6 +24,9 @@ export function PrestigePanel() {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [loadingPrestige, setLoadingPrestige] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showReplayConfirm, setShowReplayConfirm] = useState(false);
+  const [replayTargetEra, setReplayTargetEra] = useState<number | null>(null);
+  const [loadingReplay, setLoadingReplay] = useState(false);
 
   // Load preview and history on mount
   useEffect(() => {
@@ -74,6 +77,34 @@ export function PrestigePanel() {
       setLoadingPrestige(false);
     }
   }, [loadingPrestige, setGameState, addNotification]);
+
+  const handleReplayEra = useCallback(async () => {
+    if (loadingReplay || replayTargetEra === null) return;
+    setLoadingReplay(true);
+    try {
+      const result = await replayEra(replayTargetEra);
+      setGameState(result.gameState);
+      setShowReplayConfirm(false);
+      setReplayTargetEra(null);
+      addNotification({
+        message: `Switched to ${ERA_DEFINITIONS[replayTargetEra as Era].name}!`,
+        type: 'success',
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to replay era';
+      addNotification({ message, type: 'error' });
+    } finally {
+      setLoadingReplay(false);
+    }
+  }, [loadingReplay, replayTargetEra, setGameState, addNotification]);
+
+  const unlockedEras = ([0, 1, 2, 3] as Era[]).filter((era) => {
+    if (era === currentEra) return false;
+    const threshold = ERA_UNLOCK_THRESHOLDS[era];
+    if (threshold.prestigeCount && prestigeCount < threshold.prestigeCount) return false;
+    if (threshold.seldonPoints && totalSeldonPoints < threshold.seldonPoints) return false;
+    return true;
+  });
 
   const canPrestige = preview !== null && preview.seldonPointsEarned > 0;
 
@@ -206,6 +237,33 @@ export function PrestigePanel() {
         </Button>
       </div>
 
+      {/* Era Replay */}
+      {unlockedEras.length > 0 && (
+        <div className="p-5 rounded-lg border border-red-500/20 bg-red-500/5">
+          <h3 className="text-lg font-display font-semibold text-red-400 mb-2">
+            Replay Previous Era
+          </h3>
+          <p className="text-sm text-[var(--era-text)]/50 mb-4">
+            Reset all progress and switch to a previously unlocked era. No Seldon Points are earned.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {unlockedEras.map((era) => (
+              <Button
+                key={era}
+                variant="danger"
+                size="md"
+                onClick={() => {
+                  setReplayTargetEra(era);
+                  setShowReplayConfirm(true);
+                }}
+              >
+                {ERA_DEFINITIONS[era].name}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Prestige history */}
       <div>
         <h3 className="text-lg font-display font-semibold text-[var(--era-primary)] mb-3">
@@ -246,7 +304,7 @@ export function PrestigePanel() {
         )}
       </div>
 
-      {/* Confirmation modal */}
+      {/* Seldon Crisis confirmation modal */}
       <Modal
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
@@ -293,6 +351,46 @@ export function PrestigePanel() {
               onClick={handleTriggerPrestige}
             >
               Confirm Crisis
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Era Replay confirmation modal */}
+      <Modal
+        isOpen={showReplayConfirm}
+        onClose={() => { setShowReplayConfirm(false); setReplayTargetEra(null); }}
+        title="Confirm Era Replay"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--era-text)]/70">
+            Replaying <span className="font-semibold text-[var(--era-primary)]">{replayTargetEra !== null ? ERA_DEFINITIONS[replayTargetEra as Era].name : ''}</span> will:
+          </p>
+          <ul className="text-sm text-[var(--era-text)]/60 space-y-1 ml-4 list-disc">
+            <li>Reset all resources to zero</li>
+            <li>Reset all buildings, upgrades, ships, and trade routes</li>
+            <li>Clear all active effects and missions</li>
+            <li>Switch to {replayTargetEra !== null ? ERA_DEFINITIONS[replayTargetEra as Era].name : ''}</li>
+          </ul>
+          <p className="text-xs text-amber-400/70">
+            No Seldon Points will be earned. This action cannot be undone.
+          </p>
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => { setShowReplayConfirm(false); setReplayTargetEra(null); }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              className="flex-1"
+              loading={loadingReplay}
+              onClick={handleReplayEra}
+            >
+              Confirm Replay
             </Button>
           </div>
         </div>

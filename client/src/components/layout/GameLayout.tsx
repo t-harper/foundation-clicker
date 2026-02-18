@@ -14,6 +14,8 @@ import { EncyclopediaPanel } from '../encyclopedia/EncyclopediaPanel';
 import { ColonyMapPanel } from '../colony-map';
 import { ResearchPanel } from '../research';
 import { AdminPanel } from '../admin';
+import { LeaderboardPanel } from '../leaderboard';
+import { StatsPanel } from '../stats';
 import { SettingsModal } from '../settings/SettingsModal';
 import { NotificationArea } from '../common';
 import { ActiveEffectsBar, EventModal, EventHistoryPanel } from '../events';
@@ -43,6 +45,10 @@ function ActivePanel() {
       return <EncyclopediaPanel />;
     case 'admin':
       return <AdminPanel />;
+    case 'leaderboard':
+      return <LeaderboardPanel />;
+    case 'stats':
+      return <StatsPanel />;
     default:
       return <BuildingPanel />;
   }

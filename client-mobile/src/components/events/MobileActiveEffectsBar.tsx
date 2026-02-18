@@ -93,7 +93,7 @@ export function MobileActiveEffectsBar() {
   if (visibleEffects.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1 border-b border-[var(--era-surface)] bg-[var(--era-bg)]/80 overflow-x-auto scrollbar-none">
+    <div className="flex items-center gap-1 px-2 py-1 overflow-x-auto scrollbar-none">
       {visibleEffects.map((effect) => (
         <EffectPill key={effect.id} effect={effect} />
       ))}

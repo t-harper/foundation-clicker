@@ -9,6 +9,8 @@ import {
   PrestigeIcon,
   EncyclopediaIcon,
   ColonyMapIcon,
+  LeaderboardIcon,
+  StatsIcon,
   AdminIcon,
 } from '@desktop/assets/svg/icons';
 
@@ -25,6 +27,8 @@ const MORE_TABS: MoreSheetTab[] = [
   { key: 'prestige', label: 'Prestige', icon: <PrestigeIcon className="w-5 h-5" /> },
   { key: 'encyclopedia', label: 'Encyclopedia', icon: <EncyclopediaIcon className="w-5 h-5" /> },
   { key: 'colonyMap', label: 'Colony Map', icon: <ColonyMapIcon className="w-5 h-5" /> },
+  { key: 'leaderboard', label: 'Leaderboard', icon: <LeaderboardIcon className="w-5 h-5" /> },
+  { key: 'stats', label: 'Stats', icon: <StatsIcon className="w-5 h-5" /> },
 ];
 
 export function MobileMoreSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {

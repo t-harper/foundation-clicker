@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { loadGame, getMe } from '@desktop/api';
 import { useGameStore } from '@desktop/store';
-import { useGameEngine, useWebSocketSync, useTutorial } from '@desktop/hooks';
+import { useGameEngine, useWebSocketSync, useTutorial, useStatsTracker } from '@desktop/hooks';
 import { MobileGameLayout } from '../components/layout';
 
 export function MobileGamePage() {
@@ -13,6 +13,7 @@ export function MobileGamePage() {
   useGameEngine();
   useWebSocketSync();
   useTutorial();
+  useStatsTracker();
 
   useEffect(() => {
     let cancelled = false;
@@ -25,10 +26,18 @@ export function MobileGamePage() {
 
         setGameState(response.gameState);
 
+        // Hydrate nickname
+        if (response.nickname) {
+          useGameStore.getState().setNickname(response.nickname);
+        }
+
         try {
           const me = await getMe();
           if (me.user?.isAdmin) {
             useGameStore.getState().setIsAdmin(true);
+          }
+          if (me.user?.nickname) {
+            useGameStore.getState().setNickname(me.user.nickname);
           }
         } catch {
           // Non-critical

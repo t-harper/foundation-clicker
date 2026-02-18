@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { loadGame, getMe } from '../api';
 import { useGameStore } from '../store';
-import { useGameEngine, useTutorial, useWebSocketSync } from '../hooks';
+import { useGameEngine, useTutorial, useWebSocketSync, useStatsTracker } from '../hooks';
 import { GameLayout } from '../components/layout';
 
 export function GamePage() {
@@ -10,10 +10,11 @@ export function GamePage() {
   const showOfflineEarnings = useGameStore((s) => s.showOfflineEarnings);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Start the game engine, WebSocket sync, and tutorial
+  // Start the game engine, WebSocket sync, tutorial, and stats tracking
   useGameEngine();
   useWebSocketSync();
   useTutorial();
+  useStatsTracker();
 
   // Load game state on mount
   useEffect(() => {
@@ -27,11 +28,19 @@ export function GamePage() {
 
         setGameState(response.gameState);
 
+        // Hydrate nickname
+        if (response.nickname) {
+          useGameStore.getState().setNickname(response.nickname);
+        }
+
         // Check admin status
         try {
           const me = await getMe();
           if (me.user?.isAdmin) {
             useGameStore.getState().setIsAdmin(true);
+          }
+          if (me.user?.nickname) {
+            useGameStore.getState().setNickname(me.user.nickname);
           }
         } catch {
           // Non-critical — continue without admin

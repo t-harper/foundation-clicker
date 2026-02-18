@@ -12,6 +12,8 @@ export type ActiveTab =
   | 'encyclopedia'
   | 'prestige'
   | 'research'
+  | 'leaderboard'
+  | 'stats'
   | 'admin';
 
 export type BuyAmount = 1 | 10 | 50 | 100 | 'max';
@@ -35,6 +37,7 @@ export interface UISlice {
   isAdmin: boolean;
   isImpersonating: boolean;
   originalAdminToken: string | null;
+  nickname: string;
 
   // Actions
   setActiveTab: (tab: ActiveTab) => void;
@@ -48,6 +51,7 @@ export interface UISlice {
   setIsAdmin: (isAdmin: boolean) => void;
   startImpersonation: (originalToken: string) => void;
   stopImpersonation: () => void;
+  setNickname: (nickname: string) => void;
 }
 
 let notificationCounter = 0;
@@ -65,6 +69,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set) =>
   isAdmin: false,
   isImpersonating: !!localStorage.getItem('foundation_admin_token'),
   originalAdminToken: localStorage.getItem('foundation_admin_token'),
+  nickname: '',
 
   // Actions
   setActiveTab: (tab) =>
@@ -122,4 +127,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set) =>
     set({ isImpersonating: false, originalAdminToken: null });
     window.location.reload();
   },
+
+  setNickname: (nickname) =>
+    set({ nickname }),
 });

@@ -128,6 +128,7 @@ export function MobileBuildingCard({ buildingState, isBestROI = false }: MobileB
 
   return (
     <div
+      data-tutorial={`building-${buildingState.buildingKey}`}
       className={[
         'relative w-full rounded-lg border p-3 transition-colors',
         isBestROI

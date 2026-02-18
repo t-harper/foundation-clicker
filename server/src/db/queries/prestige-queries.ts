@@ -65,7 +65,7 @@ export async function resetForPrestige(
     prestigeMultiplier: number;
   }
 ): Promise<void> {
-  // Parallel batch deletes of buildings, upgrades, ships, trade routes, inventory
+  // Parallel batch deletes of buildings, upgrades, ships, trade routes, inventory, effects, pending events
   // Heroes and activities persist across prestige (heroes are era-specific, shown as inactive)
   await Promise.all([
     deleteItemsByPrefix(userPK(userId), 'BUILDING#'),
@@ -75,6 +75,8 @@ export async function resetForPrestige(
     deleteItemsByPrefix(userPK(userId), 'ACTIVE_ACTIVITY#'),
     deleteItemsByPrefix(userPK(userId), 'INVENTORY#'),
     deleteItemsByPrefix(userPK(userId), 'ACTIVE_CONSUMABLE'),
+    deleteItemsByPrefix(userPK(userId), 'EFFECT#'),
+    deleteItemsByPrefix(userPK(userId), 'PENDING_EVENT'),
   ]);
 
   // Atomic update of game state with pre-computed prestige values
@@ -113,6 +115,74 @@ export async function resetForPrestige(
       ExpressionAttributeValues: {
         ':zero': 0,
         ':one': 1,
+        ':sp': prestige.seldonPoints,
+        ':tsp': prestige.totalSeldonPoints,
+        ':pc': prestige.prestigeCount,
+        ':pm': prestige.prestigeMultiplier,
+        ':now': now,
+      },
+    })
+  );
+}
+
+export async function resetForEraSwitch(
+  userId: number,
+  targetEra: number,
+  prestige: {
+    seldonPoints: number;
+    totalSeldonPoints: number;
+    prestigeCount: number;
+    prestigeMultiplier: number;
+  }
+): Promise<void> {
+  await Promise.all([
+    deleteItemsByPrefix(userPK(userId), 'BUILDING#'),
+    deleteItemsByPrefix(userPK(userId), 'UPGRADE#'),
+    deleteItemsByPrefix(userPK(userId), 'SHIP#'),
+    deleteItemsByPrefix(userPK(userId), 'TRADEROUTE#'),
+    deleteItemsByPrefix(userPK(userId), 'ACTIVE_ACTIVITY#'),
+    deleteItemsByPrefix(userPK(userId), 'INVENTORY#'),
+    deleteItemsByPrefix(userPK(userId), 'ACTIVE_CONSUMABLE'),
+    deleteItemsByPrefix(userPK(userId), 'EFFECT#'),
+    deleteItemsByPrefix(userPK(userId), 'PENDING_EVENT'),
+  ]);
+
+  const client = getDocClient();
+  const now = Math.floor(Date.now() / 1000);
+
+  await client.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: userPK(userId), SK: 'GAMESTATE' },
+      UpdateExpression: `
+        SET credits = :zero,
+            knowledge = :zero,
+            influence = :zero,
+            #nt = :zero,
+            #rm = :zero,
+            #cv = :one,
+            #ce = :era,
+            #sp = :sp,
+            #tsp = :tsp,
+            #pc = :pc,
+            #pm = :pm,
+            #lt = :now
+      `,
+      ExpressionAttributeNames: {
+        '#nt': 'nuclearTech',
+        '#rm': 'rawMaterials',
+        '#cv': 'clickValue',
+        '#ce': 'currentEra',
+        '#sp': 'seldonPoints',
+        '#tsp': 'totalSeldonPoints',
+        '#pc': 'prestigeCount',
+        '#pm': 'prestigeMultiplier',
+        '#lt': 'lastTickAt',
+      },
+      ExpressionAttributeValues: {
+        ':zero': 0,
+        ':one': 1,
+        ':era': targetEra,
         ':sp': prestige.seldonPoints,
         ':tsp': prestige.totalSeldonPoints,
         ':pc': prestige.prestigeCount,

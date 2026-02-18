@@ -1,6 +1,6 @@
 import { Router, Response, NextFunction } from 'express';
 
-import { register, login } from '../services/auth.js';
+import { register, login, setNickname } from '../services/auth.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { findUserById } from '../db/queries/user-queries.js';
 
@@ -42,9 +42,24 @@ router.get(
         user: {
           id: req.userId,
           username: req.username,
+          nickname: user?.nickname ?? req.username,
           isAdmin: user ? !!user.is_admin : false,
         },
       });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/api/auth/nickname',
+  authMiddleware,
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const { nickname } = req.body;
+      const result = await setNickname(req.userId!, nickname);
+      res.json({ nickname: result });
     } catch (err) {
       next(err);
     }

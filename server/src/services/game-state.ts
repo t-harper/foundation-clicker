@@ -24,6 +24,7 @@ import {
   createGameState,
   GameStateRow,
 } from '../db/queries/game-state-queries.js';
+import { findUserById } from '../db/queries/user-queries.js';
 import { getBuildings, upsertBuilding } from '../db/queries/building-queries.js';
 import { getUpgrades } from '../db/queries/upgrade-queries.js';
 import { getShips, updateShipStatus } from '../db/queries/ship-queries.js';
@@ -220,6 +221,8 @@ export async function loadGameState(userId: number): Promise<LoadGameResponse> {
 
   const state = await buildGameState(userId);
   const pendingEventKey = await getPendingEvent(userId);
+  const user = await findUserById(userId);
+  const nickname = user?.nickname ?? 'Unknown';
 
   const now = Math.floor(Date.now() / 1000);
   const elapsedSeconds = Math.max(0, now - state.lastTickAt);
@@ -263,6 +266,7 @@ export async function loadGameState(userId: number): Promise<LoadGameResponse> {
       offlineEarnings,
       offlineSeconds,
       pendingEventKey,
+      nickname,
     };
   }
 
@@ -274,6 +278,7 @@ export async function loadGameState(userId: number): Promise<LoadGameResponse> {
     offlineEarnings: null,
     offlineSeconds: 0,
     pendingEventKey,
+    nickname,
   };
 }
 

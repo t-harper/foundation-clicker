@@ -47,6 +47,7 @@ export function FloatingClickButton() {
   return (
     <button
       type="button"
+      data-tutorial="click-target"
       onClick={handleClick}
       className={[
         'fixed z-30 w-14 h-14 rounded-full',
