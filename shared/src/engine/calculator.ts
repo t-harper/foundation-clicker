@@ -5,7 +5,7 @@ import { ACHIEVEMENT_DEFINITIONS } from '../constants/achievements.js';
 import { ITEM_DEFINITIONS } from '../constants/items.js';
 import { Era } from '../types/eras.js';
 import { ERA_UNLOCK_THRESHOLDS } from '../constants/eras.js';
-import { calcBuildingCost, calcBulkCost, calcMaxAffordable, BASE_CLICK_VALUE } from '../constants/formulas.js';
+import { calcBuildingCost, calcBulkCost, calcMaxAffordable, BASE_CLICK_VALUE, CLICK_PRODUCTION_PERCENT } from '../constants/formulas.js';
 
 interface MultiplierSet {
   buildingMultipliers: Partial<Record<string, number>>;
@@ -258,6 +258,20 @@ export function calcClickValue(state: GameState): number {
     totalBuildings += bs.count;
   }
 
+  // Base click = 1% of base credit production (before multipliers), minimum BASE_CLICK_VALUE
+  let baseCreditRate = 0;
+  for (const bs of state.buildings) {
+    if (bs.count === 0) continue;
+    const bDef = BUILDING_DEFINITIONS[bs.buildingKey];
+    if (!bDef) continue;
+    for (const prod of bDef.production) {
+      if (prod.resource === 'credits') {
+        baseCreditRate += bs.count * prod.amount;
+      }
+    }
+  }
+  const baseClick = Math.max(BASE_CLICK_VALUE, baseCreditRate * CLICK_PRODUCTION_PERCENT);
+
   for (const us of state.upgrades) {
     if (!us.isPurchased) continue;
     const def = UPGRADE_DEFINITIONS[us.upgradeKey];
@@ -322,7 +336,7 @@ export function calcClickValue(state: GameState): number {
     }
   }
 
-  return (BASE_CLICK_VALUE + perBuildingBase) * clickMult * buildingScaleMult * totalBuildingScaleMult * state.prestige.prestigeMultiplier;
+  return (baseClick + perBuildingBase) * clickMult * buildingScaleMult * totalBuildingScaleMult * state.prestige.prestigeMultiplier;
 }
 
 /** Calculate bonus resource yields from clicking (fraction of credit click value) */

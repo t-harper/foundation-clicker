@@ -49,6 +49,9 @@ export function calcOfflineEarnings(
 /** Base click value */
 export const BASE_CLICK_VALUE = 1;
 
+/** Click value as a percentage of base credit production rate */
+export const CLICK_PRODUCTION_PERCENT = 0.01;
+
 /** Offline earnings multiplier (50% of normal production) */
 export const OFFLINE_MULTIPLIER = 0.5;
 
