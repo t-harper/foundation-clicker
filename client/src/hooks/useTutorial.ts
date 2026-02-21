@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '../store';
 import { TUTORIAL_STEPS } from '../components/tutorial/tutorial-steps';
+import { UPGRADE_DEFINITIONS } from '@foundation/shared';
 
 /**
  * Reactive hook that drives tutorial progression.
@@ -90,7 +91,15 @@ export function useTutorial() {
         }
         break;
       case 5: // Discover Upgrades: activeTab === 'upgrades'
-        if (activeTab === 'upgrades') advanceTutorial();
+        if (activeTab === 'upgrades') {
+          // Grant enough credits to buy the tutorial upgrade (Improved Tools)
+          const { resources, setResources } = useGameStore.getState();
+          const upgradeCost = UPGRADE_DEFINITIONS['improvedTools']?.cost.credits ?? 100;
+          if (resources.credits < upgradeCost) {
+            setResources({ ...resources, credits: upgradeCost });
+          }
+          advanceTutorial();
+        }
         break;
       case 6: // Buy an Upgrade: improvedTools isPurchased
         {

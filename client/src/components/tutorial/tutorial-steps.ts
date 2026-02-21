@@ -121,6 +121,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     message:
       'Research projects earn permanent artifacts that boost your production. Find \u201CCalibrate the Vault\u201D in the Projects list, select Hari Seldon as your hero, and start it. It only takes 5 seconds \u2014 then collect your reward.',
     type: 'spotlight',
+    target: 'activity-vaultCalibration',
     requiredTab: 'research',
     advanceMode: 'acknowledge',
     acknowledgeLabel: 'I\u2019ll try it',
@@ -132,6 +133,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     message:
       'Missions work the same way but are found on the Missions sub-tab. Try \u201CTerminus Perimeter Scan\u201D \u2014 another quick 5-second activity. You\u2019ll earn an Encyclopedia Volume, a different artifact from the one you just got. Assign a hero, start it, wait, and collect.',
     type: 'spotlight',
+    target: 'activity-terminusPatrol',
     requiredTab: 'research',
     advanceMode: 'acknowledge',
     acknowledgeLabel: 'Got it',

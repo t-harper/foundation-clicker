@@ -116,7 +116,9 @@ export function ActivityCard({ activityKey, timesCompleted }: ActivityCardProps)
   }, [loading, activityKey, def.name, removeActiveActivity, updateActivityCompletion, setInventory, addNotification]);
 
   return (
-    <div className={[
+    <div
+      data-tutorial={`activity-${activityKey}`}
+      className={[
       'p-4 rounded-lg border transition-colors',
       isActive
         ? 'border-amber-500/30 bg-[var(--era-surface)]/40'

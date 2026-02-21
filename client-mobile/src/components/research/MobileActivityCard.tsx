@@ -121,7 +121,9 @@ export function MobileActivityCard({ activityKey, timesCompleted }: MobileActivi
     : 0;
 
   return (
-    <div className={[
+    <div
+      data-tutorial={`activity-${activityKey}`}
+      className={[
       'w-full p-3 rounded-lg border transition-colors',
       isActive
         ? 'border-amber-500/30 bg-[var(--era-surface)]/40'

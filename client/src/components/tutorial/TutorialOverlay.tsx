@@ -106,6 +106,25 @@ export function TutorialOverlay() {
     });
   }, [isSpotlightActive, step?.target]);
 
+  // Elevate the target element above the overlay so it isn't hidden behind
+  // the semi-transparent backdrop (box-shadow at z-index 60).
+  useEffect(() => {
+    if (!isSpotlightActive || !step?.target) return;
+
+    const el = document.querySelector<HTMLElement>(`[data-tutorial="${step.target}"]`);
+    if (!el) return;
+
+    const prevPosition = el.style.position;
+    const prevZIndex = el.style.zIndex;
+    el.style.position = 'relative';
+    el.style.zIndex = '60';
+
+    return () => {
+      el.style.position = prevPosition;
+      el.style.zIndex = prevZIndex;
+    };
+  }, [isSpotlightActive, step?.target]);
+
   // Measure on step change and set up observers
   useEffect(() => {
     if (!isSpotlightActive) {
