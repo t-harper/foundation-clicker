@@ -38,6 +38,7 @@ import { deleteItemsByPrefix, userPK } from '../db/dynamo-utils.js';
 import {
   ValidationError,
   NotFoundError,
+  AuthenticationError,
 } from '../middleware/error-handler.js';
 import type {
   LoadGameResponse,
@@ -214,6 +215,18 @@ async function saveResources(userId: number, resources: Resources): Promise<void
 }
 
 export async function loadGameState(userId: number): Promise<LoadGameResponse> {
+  // Verify the user still exists (handles DB reset with stale JWT)
+  const user = await findUserById(userId);
+  if (!user) {
+    throw new AuthenticationError('User no longer exists');
+  }
+
+  // Auto-create game state if missing (e.g. partial DB reset)
+  const existingRow = await getGameState(userId);
+  if (!existingRow) {
+    await createGameState(userId);
+  }
+
   // Auto-grant starter hero for existing players who don't have it
   if (!(await hasHero(userId, 'hariSeldon'))) {
     await unlockHero(userId, 'hariSeldon', Math.floor(Date.now() / 1000));
@@ -221,8 +234,7 @@ export async function loadGameState(userId: number): Promise<LoadGameResponse> {
 
   const state = await buildGameState(userId);
   const pendingEventKey = await getPendingEvent(userId);
-  const user = await findUserById(userId);
-  const nickname = user?.nickname ?? 'Unknown';
+  const nickname = user.nickname ?? 'Unknown';
 
   const now = Math.floor(Date.now() / 1000);
   const elapsedSeconds = Math.max(0, now - state.lastTickAt);
