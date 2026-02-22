@@ -65,11 +65,10 @@ export async function resetForPrestige(
     prestigeMultiplier: number;
   }
 ): Promise<void> {
-  // Parallel batch deletes of buildings, upgrades, ships, trade routes, inventory, effects, pending events
-  // Heroes and activities persist across prestige (heroes are era-specific, shown as inactive)
+  // Parallel batch deletes of buildings, ships, trade routes, inventory, effects, pending events
+  // Heroes, activities, and upgrades persist across prestige
   await Promise.all([
     deleteItemsByPrefix(userPK(userId), 'BUILDING#'),
-    deleteItemsByPrefix(userPK(userId), 'UPGRADE#'),
     deleteItemsByPrefix(userPK(userId), 'SHIP#'),
     deleteItemsByPrefix(userPK(userId), 'TRADEROUTE#'),
     deleteItemsByPrefix(userPK(userId), 'ACTIVE_ACTIVITY#'),
@@ -137,7 +136,6 @@ export async function resetForEraSwitch(
 ): Promise<void> {
   await Promise.all([
     deleteItemsByPrefix(userPK(userId), 'BUILDING#'),
-    deleteItemsByPrefix(userPK(userId), 'UPGRADE#'),
     deleteItemsByPrefix(userPK(userId), 'SHIP#'),
     deleteItemsByPrefix(userPK(userId), 'TRADEROUTE#'),
     deleteItemsByPrefix(userPK(userId), 'ACTIVE_ACTIVITY#'),
