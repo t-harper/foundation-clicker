@@ -1,6 +1,6 @@
 import { GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { getDocClient, TABLE_NAME } from '../connection.js';
-import { userPK } from '../dynamo-utils.js';
+import { getDocClient, getDocClientSafe, TABLE_NAME } from '../connection.js';
+import { userPK, toNum, safeNum } from '../dynamo-utils.js';
 
 export interface GameStateRow {
   user_id: number;
@@ -24,21 +24,21 @@ export interface GameStateRow {
 function itemToRow(userId: number, item: Record<string, any>): GameStateRow {
   return {
     user_id: userId,
-    credits: item.credits ?? 0,
-    knowledge: item.knowledge ?? 0,
-    influence: item.influence ?? 0,
-    nuclear_tech: item.nuclearTech ?? 0,
-    raw_materials: item.rawMaterials ?? 0,
-    click_value: item.clickValue ?? 1,
-    current_era: item.currentEra ?? 0,
-    seldon_points: item.seldonPoints ?? 0,
-    total_seldon_points: item.totalSeldonPoints ?? 0,
-    prestige_count: item.prestigeCount ?? 0,
-    prestige_multiplier: item.prestigeMultiplier ?? 1,
-    last_tick_at: item.lastTickAt ?? null,
-    total_play_time: item.totalPlayTime ?? 0,
-    total_clicks: item.totalClicks ?? 0,
-    lifetime_credits: item.lifetimeCredits ?? 0,
+    credits: toNum(item.credits),
+    knowledge: toNum(item.knowledge),
+    influence: toNum(item.influence),
+    nuclear_tech: toNum(item.nuclearTech),
+    raw_materials: toNum(item.rawMaterials),
+    click_value: toNum(item.clickValue) || 1,
+    current_era: toNum(item.currentEra),
+    seldon_points: toNum(item.seldonPoints),
+    total_seldon_points: toNum(item.totalSeldonPoints),
+    prestige_count: toNum(item.prestigeCount),
+    prestige_multiplier: toNum(item.prestigeMultiplier) || 1,
+    last_tick_at: item.lastTickAt != null ? toNum(item.lastTickAt) : null,
+    total_play_time: toNum(item.totalPlayTime),
+    total_clicks: toNum(item.totalClicks),
+    lifetime_credits: toNum(item.lifetimeCredits),
   };
 }
 
@@ -71,7 +71,7 @@ export async function createGameState(userId: number): Promise<GameStateRow> {
 }
 
 export async function getGameState(userId: number): Promise<GameStateRow | undefined> {
-  const client = getDocClient();
+  const client = getDocClientSafe();
   const result = await client.send(
     new GetCommand({
       TableName: TABLE_NAME,
@@ -118,7 +118,7 @@ export async function updateGameState(
     const placeholder = `#${attr}`;
     const valuePlaceholder = `:${attr}`;
     attrNames[placeholder] = attr;
-    attrValues[valuePlaceholder] = val;
+    attrValues[valuePlaceholder] = typeof val === 'number' ? safeNum(val) : val;
     setExprs.push(`${placeholder} = ${valuePlaceholder}`);
   }
 

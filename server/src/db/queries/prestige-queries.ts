@@ -1,6 +1,6 @@
 import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { getDocClient, TABLE_NAME } from '../connection.js';
-import { queryItems, deleteItemsByPrefix, userPK } from '../dynamo-utils.js';
+import { getDocClient, getDocClientSafe, TABLE_NAME } from '../connection.js';
+import { queryItems, deleteItemsByPrefix, userPK, toNum, safeNum } from '../dynamo-utils.js';
 
 export interface PrestigeHistoryRow {
   id: number;
@@ -13,16 +13,16 @@ export interface PrestigeHistoryRow {
 }
 
 export async function getPrestigeHistory(userId: number): Promise<PrestigeHistoryRow[]> {
-  const items = await queryItems(userPK(userId), 'PRESTIGE#');
+  const items = await queryItems(userPK(userId), 'PRESTIGE#', { safe: true });
   return items
     .map((item, idx) => ({
       id: idx,
       user_id: userId,
-      prestige_number: item.prestigeNumber,
-      credits_at_reset: item.creditsAtReset,
-      seldon_points_earned: item.seldonPointsEarned,
-      era_at_reset: item.eraAtReset,
-      triggered_at: item.triggeredAt,
+      prestige_number: toNum(item.prestigeNumber),
+      credits_at_reset: toNum(item.creditsAtReset),
+      seldon_points_earned: toNum(item.seldonPointsEarned),
+      era_at_reset: toNum(item.eraAtReset),
+      triggered_at: toNum(item.triggeredAt),
     }))
     .sort((a, b) => a.prestige_number - b.prestige_number);
 }
@@ -47,7 +47,7 @@ export async function addPrestigeEntry(
         PK: userPK(userId),
         SK: `PRESTIGE#${paddedNumber}`,
         prestigeNumber: data.prestigeNumber,
-        creditsAtReset: data.creditsAtReset,
+        creditsAtReset: safeNum(data.creditsAtReset),
         seldonPointsEarned: data.seldonPointsEarned,
         eraAtReset: data.eraAtReset,
         triggeredAt: now,

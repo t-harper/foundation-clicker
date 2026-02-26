@@ -1,6 +1,6 @@
-export { getDocClient, TABLE_NAME } from './connection.js';
+export { getDocClient, getDocClientSafe, TABLE_NAME } from './connection.js';
 export { ensureTable } from './init-table.js';
-export { queryItems, deleteItemsByPrefix, batchDeleteItems, userPK } from './dynamo-utils.js';
+export { queryItems, deleteItemsByPrefix, batchDeleteItems, userPK, toNum, safeNum } from './dynamo-utils.js';
 
 export * from './queries/user-queries.js';
 export * from './queries/game-state-queries.js';
