@@ -1,5 +1,6 @@
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { getDocClient, TABLE_NAME } from '../db/connection.js';
+import { getDocClientSafe, TABLE_NAME } from '../db/connection.js';
+import { toNum } from '../db/dynamo-utils.js';
 import type { LeaderboardCategory, LeaderboardEntry, GetLeaderboardResponse } from '@foundation/shared';
 
 interface CacheEntry {
@@ -12,7 +13,7 @@ const CACHE_TTL_MS = 60_000;
 const MAX_ENTRIES = 100;
 
 async function scanBySort(sk: string): Promise<Record<string, any>[]> {
-  const client = getDocClient();
+  const client = getDocClientSafe();
   const items: Record<string, any>[] = [];
   let lastKey: Record<string, any> | undefined;
   do {
@@ -31,7 +32,7 @@ async function scanBySort(sk: string): Promise<Record<string, any>[]> {
 }
 
 async function scanByPrefix(prefix: string): Promise<Record<string, any>[]> {
-  const client = getDocClient();
+  const client = getDocClientSafe();
   const items: Record<string, any>[] = [];
   let lastKey: Record<string, any> | undefined;
   do {
@@ -91,16 +92,16 @@ export async function getLeaderboard(category: LeaderboardCategory): Promise<Get
     let value: number;
     switch (category) {
       case 'lifetimeCredits':
-        value = (gs.lifetimeCredits ?? 0) as number;
+        value = toNum(gs.lifetimeCredits);
         break;
       case 'totalSeldonPoints':
-        value = (gs.totalSeldonPoints ?? 0) as number;
+        value = toNum(gs.totalSeldonPoints);
         break;
       case 'prestigeCount':
-        value = (gs.prestigeCount ?? 0) as number;
+        value = toNum(gs.prestigeCount);
         break;
       case 'currentEra':
-        value = (gs.currentEra ?? 0) as number;
+        value = toNum(gs.currentEra);
         break;
       case 'totalAchievements':
         value = achievementCounts?.get(userId) ?? 0;
@@ -113,7 +114,7 @@ export async function getLeaderboard(category: LeaderboardCategory): Promise<Get
       rank: 0, // Will be set after sorting
       nickname: profile.nickname,
       value,
-      currentEra: (gs.currentEra ?? 0) as number,
+      currentEra: toNum(gs.currentEra),
     });
   }
 

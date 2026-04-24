@@ -1,5 +1,6 @@
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { getDocClient, TABLE_NAME } from '../db/connection.js';
+import { getDocClientSafe, TABLE_NAME } from '../db/connection.js';
+import { toNum } from '../db/dynamo-utils.js';
 import type { AdminDashboardResponse } from '@foundation/shared';
 
 interface DashboardCache {
@@ -11,7 +12,7 @@ let cache: DashboardCache | null = null;
 const CACHE_TTL_MS = 60_000;
 
 async function scanBySK(sk: string): Promise<Record<string, any>[]> {
-  const client = getDocClient();
+  const client = getDocClientSafe();
   const items: Record<string, any>[] = [];
   let lastKey: Record<string, any> | undefined;
   do {
@@ -30,7 +31,7 @@ async function scanBySK(sk: string): Promise<Record<string, any>[]> {
 }
 
 async function scanByPrefix(prefix: string): Promise<Record<string, any>[]> {
-  const client = getDocClient();
+  const client = getDocClientSafe();
   const items: Record<string, any>[] = [];
   let lastKey: Record<string, any> | undefined;
   do {
@@ -95,7 +96,7 @@ export async function getAdminDashboard(): Promise<AdminDashboardResponse> {
   for (const p of profiles) {
     profileMap.set(p.PK as string, {
       nickname: (p.nickname ?? p.username) as string,
-      createdAt: (p.createdAt ?? 0) as number,
+      createdAt: toNum(p.createdAt),
     });
   }
 
@@ -106,7 +107,7 @@ export async function getAdminDashboard(): Promise<AdminDashboardResponse> {
   let newPlayers7d = 0;
 
   for (const p of profiles) {
-    const createdAt = (p.createdAt ?? 0) as number;
+    const createdAt = toNum(p.createdAt);
     if (createdAt > nowSeconds - 604800) newPlayers7d++;
   }
 
@@ -119,27 +120,18 @@ export async function getAdminDashboard(): Promise<AdminDashboardResponse> {
   const lifetimeCreditsArr: number[] = [];
 
   for (const gs of gameStates) {
-    const lastTickAt = (gs.last_tick_at ?? 0) as number;
+    const lastTickAt = toNum(gs.lastTickAt);
     if (lastTickAt > nowSeconds - 86400) active24h++;
     if (lastTickAt > nowSeconds - 604800) active7d++;
 
-    const era = (gs.current_era ?? 0) as number;
+    const era = toNum(gs.currentEra);
     if (era >= 0 && era <= 3) playersPerEra[era]++;
 
-    const pc = (gs.prestige_count ?? 0) as number;
-    prestigeCounts.push(pc);
-
-    const sp = (gs.total_seldon_points ?? 0) as number;
-    seldonPointsArr.push(sp);
-
-    const pt = (gs.total_play_time ?? 0) as number;
-    playTimes.push(pt);
-
-    const tc = (gs.total_clicks ?? 0) as number;
-    totalClicksArr.push(tc);
-
-    const lc = (gs.lifetime_credits ?? 0) as number;
-    lifetimeCreditsArr.push(lc);
+    prestigeCounts.push(toNum(gs.prestigeCount));
+    seldonPointsArr.push(toNum(gs.totalSeldonPoints));
+    playTimes.push(toNum(gs.totalPlayTime));
+    totalClicksArr.push(toNum(gs.totalClicks));
+    lifetimeCreditsArr.push(toNum(gs.lifetimeCredits));
   }
 
   // --- Content Adoption ---
@@ -147,7 +139,7 @@ export async function getAdminDashboard(): Promise<AdminDashboardResponse> {
   const buildingCountsByUser = new Map<string, number>();
   for (const b of buildingItems) {
     const pk = b.PK as string;
-    const count = (b.count ?? 0) as number;
+    const count = toNum(b.count);
     buildingCountsByUser.set(pk, (buildingCountsByUser.get(pk) ?? 0) + count);
   }
   const buildingTotals = Array.from(buildingCountsByUser.values());
@@ -165,8 +157,8 @@ export async function getAdminDashboard(): Promise<AdminDashboardResponse> {
   for (const gs of gameStates) {
     const profile = profileMap.get(gs.PK as string);
     if (!profile) continue;
-    byCredits.push({ nickname: profile.nickname, value: (gs.lifetime_credits ?? 0) as number });
-    bySeldon.push({ nickname: profile.nickname, value: (gs.total_seldon_points ?? 0) as number });
+    byCredits.push({ nickname: profile.nickname, value: toNum(gs.lifetimeCredits) });
+    bySeldon.push({ nickname: profile.nickname, value: toNum(gs.totalSeldonPoints) });
   }
   byCredits.sort((a, b) => b.value - a.value);
   bySeldon.sort((a, b) => b.value - a.value);
