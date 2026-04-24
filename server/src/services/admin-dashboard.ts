@@ -9,7 +9,9 @@ interface DashboardCache {
 }
 
 let cache: DashboardCache | null = null;
-const CACHE_TTL_MS = 60_000;
+// 1 hour cache: dashboard scans the entire table (8 parallel scans), so refresh
+// frequency is the dominant cost driver. Admins rarely need sub-hour freshness.
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
 async function scanBySK(sk: string): Promise<Record<string, any>[]> {
   const client = getDocClientSafe();
