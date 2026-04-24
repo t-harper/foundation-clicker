@@ -44,6 +44,7 @@ foundation-game/
     cf-functions/
       device-routing.js     # CloudFront Function: routes mobile User-Agents to /mobile/index.html
     dns.tf                  # Route53 records + ACM certificate
+    monitoring.tf           # CloudWatch dashboard (Lambda, REST/WS, DynamoDB, CloudFront, billing)
   shared/
     src/
       index.ts              # Re-exports all types, constants, engine
@@ -51,9 +52,9 @@ foundation-game/
         game-state.ts       # GameState, GameStats interfaces
         resources.ts        # ResourceKey union, Resources interface, EMPTY_RESOURCES
         buildings.ts        # BuildingKey union (56 keys), BuildingDefinition, BuildingState
-        upgrades.ts         # UpgradeEffect discriminated union (8 types), UpgradeDefinition, UpgradeState
+        upgrades.ts         # UpgradeEffect discriminated union (9 types), UpgradeDefinition, UpgradeState
         ships.ts            # ShipType, ShipStatus, ShipDefinition, ShipState, TradeRoute types
-        achievements.ts     # AchievementCondition (8 types), AchievementDefinition, AchievementState
+        achievements.ts     # AchievementCondition (15 types), AchievementDefinition, AchievementState
         eras.ts             # Era enum (0-3), EraDefinition with theme colors
         prestige.ts         # PrestigeState, PrestigePreview, PrestigeHistoryEntry
         heroes.ts           # HeroKey, HeroSpecialization, HeroDefinition, HeroState
@@ -63,14 +64,14 @@ foundation-game/
         api.ts              # API request/response types (~20 interfaces)
       constants/
         buildings.ts        # BUILDING_DEFINITIONS -- 56 buildings across 4 eras (14 per era)
-        upgrades.ts         # UPGRADE_DEFINITIONS -- 178 upgrades with effects/prerequisites
-        ships.ts            # SHIP_DEFINITIONS (4 types), TRADE_ROUTE_DEFINITIONS (7 routes)
-        achievements.ts     # ACHIEVEMENT_DEFINITIONS -- 19+ achievements (milestones/clicks/eras/chronicles)
-        events.ts           # EVENT_DEFINITIONS -- ~246 events (206 probabilistic + 40 chronicle), EVENT_CHAIN_DEFINITIONS
+        upgrades.ts         # UPGRADE_DEFINITIONS -- 218 upgrades with effects/prerequisites
+        ships.ts            # SHIP_DEFINITIONS (7 types), TRADE_ROUTE_DEFINITIONS (10 routes)
+        achievements.ts     # ACHIEVEMENT_DEFINITIONS -- 70 achievements (milestones/clicks/eras/chronicles/heroes/activities)
+        events.ts           # EVENT_DEFINITIONS -- 246 events (206 probabilistic + 40 chronicle), EVENT_CHAIN_DEFINITIONS
         eras.ts             # ERA_DEFINITIONS with theme colors, ERA_UNLOCK_THRESHOLDS
-        heroes.ts           # HERO_DEFINITIONS -- 16 heroes across 4 eras (4 per era)
-        activities.ts       # ACTIVITY_DEFINITIONS -- 40 activities (5 research + 5 missions per era)
-        items.ts            # ITEM_DEFINITIONS -- 40 items (20 artifacts + 20 consumables)
+        heroes.ts           # HERO_DEFINITIONS -- 25 heroes across 4 eras (~6-7 per era)
+        activities.ts       # ACTIVITY_DEFINITIONS -- 74 activities (21 research + 53 missions across 4 eras)
+        items.ts            # ITEM_DEFINITIONS -- 74 items (22 artifacts + 52 consumables)
         formulas.ts         # Cost scaling, Seldon Points, prestige multiplier, offline calc
       engine/
         tick.ts             # tick(), applyClick(), processTradeShips()
@@ -113,7 +114,8 @@ foundation-game/
         heroes.ts           # GET /api/heroes
         activities.ts       # GET, POST start, POST collect
         inventory.ts        # GET, POST use consumable
-        admin.ts            # Full admin CRUD panel
+        leaderboard.ts      # GET /api/leaderboard (public, no auth)
+        admin.ts            # Full admin CRUD panel + dashboard analytics
       services/             # Business logic layer (all async)
         auth.ts             # register (bcrypt 10 rounds), login, JWT (7-day expiry)
         game-state.ts       # buildGameState, loadGameState, saveGameState, handleClick, projectResources
@@ -121,16 +123,18 @@ foundation-game/
         upgrade.ts          # buyUpgrade (prerequisite + affordability validation)
         ship.ts             # buildShip, sendShip, recallShip
         trade.ts            # unlockTradeRoute (with affordability check)
-        prestige.ts         # previewPrestige, triggerPrestige, getPrestigeHistory
+        prestige.ts         # previewPrestige, triggerPrestige, replayEra, getPrestigeHistoryForUser
         achievement.ts      # checkAchievements (evaluates all condition types)
         hero.ts             # getHeroes, unlockHero
         activity.ts         # getActivities, startActivity, collectActivity
         inventory.ts        # getInventory, useConsumable
         event.ts            # checkForEvent, handleEventChoice, getUserActiveEffects
+        leaderboard.ts      # getLeaderboard (public, scans GAMESTATE rows by category)
         admin.ts            # Admin operations (list users, impersonate, modify state, etc.)
+        admin-dashboard.ts  # Admin analytics aggregation (60s cache, scans table)
       ws/
         handlers.ts         # Async message handler switch (returns Promise<HandlerResult>)
-        sync.ts             # WebSocket server (local dev) -- pushes buildings/upgrades at 2 Hz, async intervals
+        sync.ts             # WebSocket server (local dev) -- delta sync every 5s, achievement check 5s, event check 10s, ping 30s
         api-gw-utils.ts     # API Gateway WebSocket utilities (postToConnection for Lambda)
   client/
     src/
@@ -143,14 +147,16 @@ foundation-game/
         ships.ts
         prestige.ts
         achievements.ts
+        events.ts           # Event history pagination + active effects
         heroes.ts           # getHeroes
         activities.ts       # getActivities, startActivity, collectActivity
         inventory.ts        # getInventory, useConsumable
+        leaderboard.ts      # getLeaderboard (public)
         admin.ts            # Admin panel API calls
       assets/svg/
         buildings/          # 56 building art SVG components + GenericBuildingArt fallback
-        ships/              # 4 ship art SVG components
-        icons/              # 20 UI icon SVG components (resources, tabs, actions)
+        ships/              # 7 ship art SVG components (one per ShipType)
+        icons/              # 25 UI icon SVG components (resources, tabs, actions)
         backgrounds/        # GalaxyMap, StarField, TerminusSkyline, SeldonHologram
       components/
         buildings/          # BuildingCard, BuildingPanel, BuyAmountSelector
@@ -165,8 +171,11 @@ foundation-game/
         layout/             # GameLayout, Header, Sidebar, EraTransition
         common/             # Button, Modal, NotificationArea, NumberDisplay, ProgressBar, TabGroup, Tooltip
         research/           # ResearchPanel, ActivityCard, HeroCard, InventoryPanel, ItemCard
+        leaderboard/        # LeaderboardPanel (public rankings by category)
+        stats/              # StatsPanel (production/resource history charts from local stats-slice)
+        tutorial/           # TutorialOverlay (new-player onboarding, milestone-driven)
         settings/           # SettingsModal (stats, export/import save, hard reset)
-        admin/              # Admin panel components
+        admin/              # Admin panel components (users, dashboard, impersonation)
       hooks/
         useGameEngine.ts    # RAF loop -- runs shared tick() each frame
         useAutoSave.ts      # Interval-based save to server (30s default)
@@ -177,7 +186,7 @@ foundation-game/
       pages/
         GamePage.tsx        # Initializes hooks, loads game state, offline modal
         LoginPage.tsx       # Dual-mode (login/register) form
-      store/                # Zustand store with slice pattern
+      store/                # Zustand store with slice pattern (13 slices)
         index.ts            # Combined store creation, type exports, selector re-exports
         game-slice.ts       # Resources, era, click value, play time, lifetime stats
         building-slice.ts   # Building state array + buy/sell actions
@@ -189,6 +198,8 @@ foundation-game/
         activity-slice.ts   # Activity state/active arrays + start/collect actions
         inventory-slice.ts  # Inventory items, active consumable + use/clear actions
         event-slice.ts      # Event history, active effects, pending event modal + addEventHistoryEntry
+        stats-slice.ts      # Local-only production/resource snapshot history (localStorage, 24h ring buffer)
+        tutorial-slice.ts   # Tutorial step, acknowledged/fired milestones (localStorage)
         ui-slice.ts         # Active tab, buy amount, settings modal, notifications, save state
         selectors.ts        # selectGameState(), selectProductionRates(), selectClickValue(), etc.
       styles/
@@ -220,6 +231,8 @@ foundation-game/
         prestige/           # MobilePrestigePanel, MobileChainProgress
         events/             # MobileEventModal, MobileActiveEffectsBar, MobileEventHistoryPanel
         research/           # MobileResearchPanel, MobileActivityCard, MobileHeroCard, MobileInventoryPanel, MobileItemCard
+        leaderboard/        # MobileLeaderboardPanel
+        stats/              # MobileStatsPanel
         encyclopedia/       # MobileEncyclopediaPanel
         colony-map/         # MobileColonyMapPanel (touch pan/pinch-zoom)
         settings/           # MobileSettingsModal
@@ -293,7 +306,7 @@ A separate npm workspace package providing a touch-optimized UI for mobile devic
 3. Mutations (buy, sell, prestige) are POST requests; server validates against projected resources and returns new state.
 4. Auto-save (`useAutoSave`) sends resource snapshots to the server every 30 seconds.
 5. On reconnect, the server calculates offline earnings using `calculateOfflineEarnings()`.
-6. WebSocket sync pushes building/upgrade state from server to client at 2 Hz.
+6. WebSocket sync pushes building/upgrade/ship state from server to client every 5 seconds (`WS_SYNC_INTERVAL`); state saves are pushed client→server every 2 seconds (`WS_SAVE_INTERVAL`).
 
 ### Game Data Philosophy
 
@@ -308,8 +321,8 @@ All game content (buildings, upgrades, ships, trade routes, achievements, eras, 
 | `shared/src/engine/tick.ts` | Per-frame tick function, click application, trade ship processing |
 | `shared/src/engine/offline.ts` | Offline earnings calculation (capped at 24h, 50% multiplier) |
 | `shared/src/constants/buildings.ts` | All 56 building definitions with costs, production, unlock requirements |
-| `shared/src/constants/upgrades.ts` | All 178 upgrade definitions with effects and prerequisites |
-| `shared/src/constants/ships.ts` | Ship types + trade route definitions |
+| `shared/src/constants/upgrades.ts` | All 218 upgrade definitions with effects and prerequisites |
+| `shared/src/constants/ships.ts` | 7 ship types + 10 trade route definitions |
 | `shared/src/types/game-state.ts` | `GameState` interface -- the canonical shape of all player state |
 | `server/src/db/connection.ts` | DynamoDB DocumentClient singleton and TABLE_NAME |
 | `server/src/db/init-table.ts` | Table creation with GSI1, TTL, and atomic counter seed |
@@ -318,16 +331,19 @@ All game content (buildings, upgrades, ships, trade routes, achievements, eras, 
 | `server/src/middleware/auth.ts` | JWT verification middleware |
 | `server/src/ws/sync.ts` | WebSocket server for real-time state push |
 | `server/src/ws/handlers.ts` | Async message handler for all WebSocket client messages |
-| `shared/src/constants/heroes.ts` | 16 hero definitions (4 per era) with specialization and duration bonuses |
-| `shared/src/constants/activities.ts` | 40 activity definitions (5 research + 5 missions per era) |
-| `shared/src/constants/items.ts` | 40 item definitions (20 artifacts + 20 consumables) |
+| `shared/src/constants/heroes.ts` | 25 hero definitions across 4 eras with specialization and duration bonuses |
+| `shared/src/constants/activities.ts` | 74 activity definitions (21 research + 53 missions across 4 eras) |
+| `shared/src/constants/items.ts` | 74 item definitions (22 artifacts + 52 consumables) |
+| `shared/src/constants/achievements.ts` | 70 achievement definitions across 15 condition types |
 | `server/src/services/activity.ts` | Activity start/collect logic with hero assignment, cost deduction, timer validation |
 | `server/src/services/event.ts` | Event checking (guaranteed vs probabilistic), choice handling, effect application |
 | `shared/src/constants/events.ts` | ~246 event definitions + `EVENT_CHAIN_DEFINITIONS` (4 chronicle chains) |
 | `client/src/components/events/EventModal.tsx` | Event choice modal with chronicle chain indicator ("Main Story" banner) |
 | `client/src/components/prestige/ChainProgressSection.tsx` | Era chronicle progress tracking in prestige tab |
 | `client/src/store/event-slice.ts` | Event history, active effects, pending event state + `addEventHistoryEntry` |
-| `client/src/store/index.ts` | Zustand store assembly from all 10 slices |
+| `client/src/store/index.ts` | Zustand store assembly from all 13 slices |
+| `server/src/services/leaderboard.ts` | Public leaderboard (top players by lifetime credits / SP / prestige / era / achievements) |
+| `server/src/services/admin-dashboard.ts` | Admin dashboard analytics (60s in-process cache, table scans) |
 | `client/src/store/selectors.ts` | Derived state: `selectGameState()`, production rates, click value, ROI analysis |
 | `client/src/hooks/useGameEngine.ts` | RAF loop driving the client-side tick |
 | `client/src/hooks/useAutoSave.ts` | 30-second auto-save interval |
@@ -442,9 +458,15 @@ All endpoints except auth require a `Bearer` token in the `Authorization` header
 | GET | `/api/inventory` | List inventory items + active consumable |
 | POST | `/api/inventory/use` | Use a consumable (body: `{ itemKey }`) |
 
+### Leaderboard
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/leaderboard?category=<cat>` | Public top-N rankings. Categories: `lifetimeCredits`, `totalSeldonPoints`, `prestigeCount`, `currentEra`, `totalAchievements`. **No auth required.** |
+
 ### Admin
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/api/admin/dashboard` | Aggregate analytics (user counts, era distribution, totals). 60s in-process cache. |
 | GET | `/api/admin/users` | List all users with summary |
 | POST | `/api/admin/users/:userId/impersonate` | Generate token for user |
 | DELETE | `/api/admin/users/:userId` | Delete user and all data |
@@ -466,7 +488,7 @@ All endpoints except auth require a `Bearer` token in the `Authorization` header
 ### WebSocket
 | Path | Description |
 |------|-------------|
-| `/ws?token=<jwt>` | Server-push sync + bidirectional mutations (buildings, upgrades, ships, clicks, prestige, events, etc.) |
+| `/ws?token=<jwt>` | Server-push sync + bidirectional mutations. Message types include `saveState`, `click`, `buyBuilding`, `sellBuilding`, `buyUpgrade`, `buildShip`, `sendShip`, `recallShip`, `unlockTradeRoute`, `triggerPrestige`, `replayEra`, `eventChoice`, `startActivity`, `collectActivity`, `useConsumable`. The `replayEra` mutation (let players revisit a completed era at full reward) lives only on WebSocket — no REST equivalent. |
 
 ## Game Engine
 
@@ -538,6 +560,16 @@ When a player returns after being away:
 - **Era 2 (Psychological Influence)**: Requires 100 Seldon Points
 - **Era 3 (Galactic Reunification)**: Requires 10,000 Seldon Points
 
+### Prestige (Seldon Crisis)
+
+`triggerPrestige` requires ≥1 billion lifetime credits. Seldon Points are awarded via `floor(150 * sqrt(lifetimeCredits / 1e9))` and accumulate into `totalSeldonPoints`, which drives the prestige multiplier (`1 + totalSeldonPoints * 0.02`).
+
+**What resets** (`resetForPrestige` in `prestige-queries.ts`): `BUILDING#`, `SHIP#`, `TRADEROUTE#`, `ACTIVE_ACTIVITY#`, `INVENTORY#`, `ACTIVE_CONSUMABLE`, `EFFECT#`, `PENDING_EVENT`, plus all resource fields on GAMESTATE (credits/knowledge/influence/nuclearTech/rawMaterials zeroed, clickValue→1, currentEra→0).
+
+**What survives**: `UPGRADE#`, `HERO#`, `ACTIVITY#` (completion counters), `ACHIEVEMENT#`, `EVENT#` (history), `PRESTIGE#` history. The latest design intent (commit `76cc8e7`) is to keep upgrade progression sticky across crises, making prestige a softer reset than typical incrementals.
+
+**Replay era** (`replayEra` WS handler): lets a player revisit a previously-completed era; same reset semantics but the target era is preserved.
+
 ### Event System
 
 The game has two kinds of events:
@@ -585,6 +617,8 @@ The store uses the **slice pattern** -- each domain has its own `StateCreator` f
 | `activity-slice` | activities (ActivityState[]), activeActivities (ActiveActivity[]) | setActivities, setActiveActivities, addActiveActivity, removeActiveActivity, updateActivityCompletion |
 | `inventory-slice` | inventory (InventoryItem[]), activeConsumable (ActiveConsumable \| null) | setInventory, setActiveConsumable, clearExpiredConsumable |
 | `event-slice` | activeEffects (ActiveEffect[]), eventHistory (EventHistoryEntry[]), pendingEvent, showEventModal | setActiveEffects, addActiveEffects, setEventHistory, addEventHistoryEntry, showEvent, hideEventModal |
+| `stats-slice` | statsHistory (StatsSnapshot[]) — local-only ring buffer of production rates + resource totals (24h, max 2880 snapshots) | addStatsSnapshot, loadStatsHistory, clearStatsHistory. Persists to `localStorage` under `foundation_stats_history` |
+| `tutorial-slice` | tutorialStep, isComplete, isDismissed, acknowledgedSteps, firedMilestones | initTutorial, advanceTutorial, acknowledgeStep, fireMilestone, skipTutorial. Persists to `localStorage` under `foundation_tutorial` |
 
 ### Selectors (`selectors.ts`)
 
@@ -627,8 +661,8 @@ interface BuildingArtProps {
 | Category | Count | Notes |
 |----------|-------|-------|
 | Building art | 56 + 1 fallback + 2 legacy | All 56 BuildingKeys have custom art |
-| Ship art | 4 | All 4 ShipTypes have custom art |
-| Icons | 20 | 5 resource, 9 navigation, 6 utility |
+| Ship art | 7 | All 7 ShipTypes have custom art |
+| Icons | 25 | Resources, navigation tabs, action/utility icons |
 | Backgrounds | 4 | StarField, TerminusSkyline, GalaxyMap, SeldonHologram |
 
 ## Era Theming
@@ -791,7 +825,8 @@ All AWS infrastructure is defined in `infra/*.tf` and managed by Terraform:
 | S3 + CloudFront | `s3-cloudfront.tf` | Static site hosting, OAC, device-routing CF function, custom domain `app.foundation-clicker.com` |
 | DNS + TLS | `dns.tf` | Route53 records, ACM wildcard certificate |
 | IAM | `iam.tf` | Lambda execution roles with DynamoDB + API Gateway permissions |
-| CI/CD | `cicd.tf` | GitHub OIDC provider + IAM role for GitHub Actions |
+| CI/CD | `cicd.tf` | GitHub OIDC provider + IAM role for GitHub Actions (currently scoped with `AdministratorAccess` — over-permissioned) |
+| Monitoring | `monitoring.tf` | CloudWatch dashboard with Lambda, REST/WS API, DynamoDB, CloudFront/S3, billing widgets. **No alarms, no SNS topics, no X-Ray tracing.** |
 
 ### Production URLs
 
