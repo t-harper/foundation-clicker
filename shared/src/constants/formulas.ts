@@ -62,7 +62,7 @@ export const MAX_OFFLINE_SECONDS = 86400;
 export const AUTO_SAVE_INTERVAL = 30000;
 
 /** WebSocket save interval in milliseconds */
-export const WS_SAVE_INTERVAL = 2000;
+export const WS_SAVE_INTERVAL = 6000;
 
 /** WebSocket sync interval in milliseconds (server push of buildings/upgrades/ships) */
 export const WS_SYNC_INTERVAL = 5000;
