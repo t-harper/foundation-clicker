@@ -3,6 +3,7 @@ resource "aws_lambda_function" "rest_api" {
   role          = aws_iam_role.lambda_rest.arn
   handler       = "lambda-rest.handler"
   runtime       = "nodejs20.x"
+  architectures = ["arm64"]
   memory_size   = 256
   timeout       = 30
 

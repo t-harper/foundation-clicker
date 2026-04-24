@@ -3,6 +3,7 @@ resource "aws_lambda_function" "ws_connect" {
   role          = aws_iam_role.lambda_ws.arn
   handler       = "lambda-ws-connect.handler"
   runtime       = "nodejs20.x"
+  architectures = ["arm64"]
   memory_size   = 256
   timeout       = 30
 
@@ -27,6 +28,7 @@ resource "aws_lambda_function" "ws_disconnect" {
   role          = aws_iam_role.lambda_ws.arn
   handler       = "lambda-ws-disconnect.handler"
   runtime       = "nodejs20.x"
+  architectures = ["arm64"]
   memory_size   = 256
   timeout       = 30
 
@@ -51,6 +53,7 @@ resource "aws_lambda_function" "ws_default" {
   role          = aws_iam_role.lambda_ws.arn
   handler       = "lambda-ws-default.handler"
   runtime       = "nodejs20.x"
+  architectures = ["arm64"]
   memory_size   = 256
   timeout       = 30
 
